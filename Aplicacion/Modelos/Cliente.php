@@ -16,7 +16,8 @@ class Cliente
         string $apellido,
         string $cedula,
         string $correo,
-        string $passwordHash,
+        string $passwordHash
+        ,
         int $idCliente = 0,
         ?string $fechaRegistro = null
     ) {
