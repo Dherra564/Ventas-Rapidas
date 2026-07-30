@@ -8,7 +8,8 @@ class Cliente
     private string $apellido;
     private string $cedula;
     private string $correo;
-    private string $passwordHash;
+    private string $passwordHash
+    ;
     private ?string $fechaRegistro;
 
     public function __construct(
