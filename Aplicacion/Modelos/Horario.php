@@ -25,11 +25,26 @@ class Horario
         $this->setHoraCierre($horaCierre);
     }
 
-    public function getIdHorario(): int { return $this->idHorario; }
-    public function getIdLocal(): int { return $this->idLocal; }
-    public function getDiaSemana(): string { return $this->diaSemana; }
-    public function getHoraApertura(): string { return $this->horaApertura; }
-    public function getHoraCierre(): string { return $this->horaCierre; }
+    public function getIdHorario(): int
+    {
+        return $this->idHorario;
+    }
+    public function getIdLocal(): int
+    {
+        return $this->idLocal;
+    }
+    public function getDiaSemana(): string
+    {
+        return $this->diaSemana;
+    }
+    public function getHoraApertura(): string
+    {
+        return $this->horaApertura;
+    }
+    public function getHoraCierre(): string
+    {
+        return $this->horaCierre;
+    }
 
     public function setDiaSemana(string $diaSemana): void
     {

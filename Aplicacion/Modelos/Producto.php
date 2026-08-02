@@ -36,18 +36,51 @@ class Producto
         $this->agotado = $agotado;
     }
 
-    public function getIdProducto(): int { return $this->idProducto; }
-    public function getIdLocal(): int { return $this->idLocal; }
-    public function getNombre(): string { return $this->nombre; }
-    public function getDescripcion(): ?string { return $this->descripcion; }
-    public function getPrecioOriginal(): float { return $this->precioOriginal; }
-    public function getPrecioDescuento(): float { return $this->precioDescuento; }
-    public function getCantidadDisponible(): int { return $this->cantidadDisponible; }
-    public function isAgotado(): bool { return $this->agotado; }
-    public function getFechaCreacion(): ?DateTime { return $this->fechaCreacion; }
+    public function getIdProducto(): int
+    {
+        return $this->idProducto;
+    }
+    public function getIdLocal(): int
+    {
+        return $this->idLocal;
+    }
+    public function getNombre(): string
+    {
+        return $this->nombre;
+    }
+    public function getDescripcion(): ?string
+    {
+        return $this->descripcion;
+    }
+    public function getPrecioOriginal(): float
+    {
+        return $this->precioOriginal;
+    }
+    public function getPrecioDescuento(): float
+    {
+        return $this->precioDescuento;
+    }
+    public function getCantidadDisponible(): int
+    {
+        return $this->cantidadDisponible;
+    }
+    public function isAgotado(): bool
+    {
+        return $this->agotado;
+    }
+    public function getFechaCreacion(): ?DateTime
+    {
+        return $this->fechaCreacion;
+    }
 
-    public function setNombre(string $nombre): void { $this->nombre = $nombre; }
-    public function setDescripcion(?string $descripcion): void { $this->descripcion = $descripcion; }
+    public function setNombre(string $nombre): void
+    {
+        $this->nombre = $nombre;
+    }
+    public function setDescripcion(?string $descripcion): void
+    {
+        $this->descripcion = $descripcion;
+    }
 
     public function setPrecioOriginal(float $precioOriginal): void
     {
@@ -77,5 +110,8 @@ class Producto
         $this->agotado = $cantidadDisponible <= 0;
     }
 
-    public function setAgotado(bool $agotado): void { $this->agotado = $agotado; }
+    public function setAgotado(bool $agotado): void
+    {
+        $this->agotado = $agotado;
+    }
 }

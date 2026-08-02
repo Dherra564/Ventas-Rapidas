@@ -10,6 +10,7 @@ class Proveedor
     private string $passwordHash
     ;
     private ?DateTime $fechaRegistro;
+    private bool $activo;
 
     public function __construct(
         string $nombre,
@@ -17,11 +18,13 @@ class Proveedor
         string $cedula,
         string $correo,
         string $passwordHash,
+        bool $activo = true,
         int $idProveedor = 0,
         ?DateTime $fechaRegistro = null
     ) {
         $this->idProveedor = $idProveedor;
         $this->cedula = $cedula;
+        $this->activo = $activo;
         $this->passwordHash = $passwordHash;
         $this->fechaRegistro = $fechaRegistro;
 
@@ -30,13 +33,38 @@ class Proveedor
         $this->setCorreo($correo);
     }
 
-    public function getIdProveedor(): int { return $this->idProveedor; }
-    public function getNombre(): string { return $this->nombre; }
-    public function getApellido(): string { return $this->apellido; }
-    public function getCedula(): string { return $this->cedula; }
-    public function getCorreo(): string { return $this->correo; }
-    public function getPasswordHash(): string { return $this->passwordHash; }
-    public function getFechaRegistro(): ?DateTime { return $this->fechaRegistro; }
+    public function getIdProveedor(): int
+    {
+        return $this->idProveedor;
+    }
+    public function getNombre(): string
+    {
+        return $this->nombre;
+    }
+    public function getApellido(): string
+    {
+        return $this->apellido;
+    }
+    public function getCedula(): string
+    {
+        return $this->cedula;
+    }
+    public function getCorreo(): string
+    {
+        return $this->correo;
+    }
+    public function getPasswordHash(): string
+    {
+        return $this->passwordHash;
+    }
+    public function getFechaRegistro(): ?DateTime
+    {
+        return $this->fechaRegistro;
+    }
+    public function isActivo(): bool
+    {
+        return $this->activo;
+    }
 
     public function setNombre(string $nombre): void
     {
@@ -62,5 +90,12 @@ class Proveedor
         $this->correo = $correo;
     }
 
-    public function setPasswordHash(string $passwordHash): void { $this->passwordHash = $passwordHash; }
+    public function setPasswordHash(string $passwordHash): void
+    {
+        $this->passwordHash = $passwordHash;
+    }
+    public function setActivo(bool $activo): void
+    {
+        $this->activo = $activo;
+    }
 }
