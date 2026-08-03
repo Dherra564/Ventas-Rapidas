@@ -1,0 +1,181 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    background: #f4f6f8;
+    color: #222;
+}
+
+.cabecera {
+    background: #1f6f50;
+    color: white;
+    padding: 1.2rem 2rem;
+}
+
+.cabecera h1 {
+    margin-bottom: 0.8rem;
+}
+
+.menu {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.menu-boton {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.menu-boton:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.menu-boton.activo {
+    background: white;
+    color: #1f6f50;
+    font-weight: bold;
+}
+
+.contenedor {
+    max-width: 700px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.vista {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.vista h2 {
+    margin-bottom: 1rem;
+    color: #1f6f50;
+}
+
+.oculto {
+    display: none;
+}
+
+.formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.formulario label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 0.6rem;
+}
+
+.formulario input,
+.formulario select,
+.formulario textarea {
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.formulario button {
+    margin-top: 1.2rem;
+    padding: 0.7rem;
+    background: #1f6f50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.formulario button:hover {
+    background: #17573e;
+}
+
+.mensaje {
+    max-width: 700px;
+    margin: 1rem auto 0;
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.mensaje.exito {
+    background: #d4edda;
+    color: #155724;
+}
+
+.mensaje.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.tarjetas {
+    display: grid;
+    gap: 1rem;
+}
+
+.tarjeta {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.tarjeta h3 {
+    color: #1f6f50;
+    margin-bottom: 0.4rem;
+}
+
+.ayuda {
+    display: block;
+    font-size: 0.8rem;
+    min-height: 1.1rem;
+    margin-top: 0.15rem;
+}
+
+.ayuda.exito {
+    color: #1f6f50;
+    font-weight: 600;
+}
+
+.ayuda.error {
+    color: #a12525;
+    font-weight: 600;
+}
+
+.tarjeta-clic {
+    cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.tarjeta-clic:hover {
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.boton-secundario {
+    background: transparent;
+    color: #1f6f50;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 0.8rem;
+    padding: 0;
+    font-size: 0.95rem;
+}
+
+.boton-secundario:hover {
+    text-decoration: underline;
+}
