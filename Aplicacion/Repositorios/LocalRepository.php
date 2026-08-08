@@ -29,7 +29,7 @@ class LocalRepository
                         tblocaldescripcion,
                         tblocaltelefono,
                         tblocalcorreo,
-                        tblocalimagen,
+                        tblocallogo,
                         tblocalactivo
                     )
                     VALUES
@@ -39,19 +39,19 @@ class LocalRepository
                         :descripcion,
                         :telefono,
                         :correo,
-                        :imagen,
+                        :logo,
                         :activo
                     )";
 
             $consulta = $this->conexion->prepare($sql);
 
             $consulta->execute([
-                ":idProveedor" => $local->getIdProveedor(),
+                ":idProveedor" => $local->getIdComerciante(),
                 ":nombre" => $local->getNombreLocal(),
                 ":descripcion" => $local->getDescripcion(),
                 ":telefono" => $local->getTelefono(),
                 ":correo" => $local->getCorreo(),
-                ":imagen" => $local->getImagen(),
+                ":logo" => $local->getLogo(),
                 ":activo" => $local->isActivo()
             ]);
 
@@ -87,7 +87,7 @@ class LocalRepository
                 $fila["tblocaltelefono"],
                 $fila["tblocalcorreo"],
                 $fila["tblocaldescripcion"],
-                $fila["tblocalimagen"],
+                $fila["tblocallogo"],
                 (bool) $fila["tblocalactivo"],
                 (int) $fila["tblocalid"],
                 $fila["tblocalfecharegistro"] != null
@@ -118,7 +118,7 @@ class LocalRepository
             $fila["tblocaltelefono"],
             $fila["tblocalcorreo"],
             $fila["tblocaldescripcion"],
-            $fila["tblocalimagen"],
+            $fila["tblocallogo"],
             (bool) $fila["tblocalactivo"],
             (int) $fila["tblocalid"],
             $fila["tblocalfecharegistro"] != null
@@ -153,12 +153,12 @@ class LocalRepository
 
 
         $local = new Local(
-            (int) $fila["tbproveedorid"],
+            (int) $fila["tbcomercianteid"],
             $fila["tblocalnombre"],
             $fila["tblocaltelefono"],
             $fila["tblocalcorreo"],
             $fila["tblocaldescripcion"],
-            $fila["tblocalimagen"],
+            $fila["tblocallogo"],
             (bool) $fila["tblocalactivo"],
             (int) $fila["tblocalid"],
 
@@ -201,7 +201,7 @@ class LocalRepository
                         tblocaldescripcion = :descripcion,
                         tblocaltelefono = :telefono,
                         tblocalcorreo = :correo,
-                        tblocalimagen = :imagen,
+                        tblocallogo = :logo,
                         tblocalactivo = :activo
                     WHERE tblocalid = :id";
 
@@ -211,12 +211,12 @@ class LocalRepository
 
             $consulta->execute([
 
-                ":idProveedor" => $local->getIdProveedor(),
+                ":idProveedor" => $local->getIdComerciante(),
                 ":nombre" => $local->getNombreLocal(),
                 ":descripcion" => $local->getDescripcion(),
                 ":telefono" => $local->getTelefono(),
                 ":correo" => $local->getCorreo(),
-                ":imagen" => $local->getImagen(),
+                ":logo" => $local->getLogo(),
                 ":activo" => $local->isActivo(),
                 ":id" => $local->getIdLocal()
 

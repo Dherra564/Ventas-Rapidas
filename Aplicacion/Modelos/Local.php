@@ -3,27 +3,27 @@
 class Local
 {
     private int $idLocal;
-    private int $idProveedor;
+    private int $idComerciante;
     private string $nombreLocal;
     private ?string $descripcion;
     private string $telefono;
     private string $correo;
-    private ?string $imagen;
+    private ?string $logo;
     private bool $activo;
     private ?DateTime $fechaRegistro;
 
     public function __construct(
-        int $idProveedor,
+        int $idComerciante,
         string $nombreLocal,
         string $telefono,
         string $correo,
         ?string $descripcion = null,
-        ?string $imagen = null,
+        ?string $logo = null,
         bool $activo = true,
         int $idLocal = 0,
         ?DateTime $fechaRegistro = null
     ) {
-        $this->idProveedor = $idProveedor;
+        $this->idComerciante = $idComerciante;
         $this->idLocal = $idLocal;
         $this->activo = $activo;
         $this->fechaRegistro = $fechaRegistro;
@@ -32,16 +32,16 @@ class Local
         $this->setTelefono($telefono);
         $this->setCorreo($correo);
         $this->setDescripcion($descripcion);
-        $this->setImagen($imagen);
+        $this->setLogo($logo);
     }
 
     public function getIdLocal(): int
     {
         return $this->idLocal;
     }
-    public function getIdProveedor(): int
+    public function getIdComerciante(): int
     {
-        return $this->idProveedor;
+        return $this->idComerciante;
     }
     public function getNombreLocal(): string
     {
@@ -59,9 +59,9 @@ class Local
     {
         return $this->correo;
     }
-    public function getImagen(): ?string
+    public function getLogo(): ?string
     {
-        return $this->imagen;
+        return $this->logo;
     }
     public function isActivo(): bool
     {
@@ -104,9 +104,9 @@ class Local
         $this->correo = $correo;
     }
 
-    public function setImagen(?string $imagen): void
+    public function setLogo(?string $logo): void
     {
-        $this->imagen = $imagen;
+        $this->logo = $logo;
     }
 
     public function setActivo(bool $activo): void

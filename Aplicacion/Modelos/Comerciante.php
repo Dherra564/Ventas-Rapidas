@@ -1,10 +1,10 @@
 <?php
 
-class Proveedor
+class Comerciante
 {
-    private int $idProveedor;
-    private string $nombre;
-    private string $apellido;
+    private int $idComerciante;
+    private string $nombreCompleto;
+    private string $alias;
     public readonly string $cedula;
     private string $correo;
     private string $passwordHash
@@ -13,37 +13,37 @@ class Proveedor
     private bool $activo;
 
     public function __construct(
-        string $nombre,
-        string $apellido,
+        string $nombreCompleto,
+        string $alias,
         string $cedula,
         string $correo,
         string $passwordHash,
         bool $activo = true,
-        int $idProveedor = 0,
+        int $idComerciante = 0,
         ?DateTime $fechaRegistro = null
     ) {
-        $this->idProveedor = $idProveedor;
+        $this->idComerciante = $idComerciante;
         $this->cedula = $cedula;
         $this->activo = $activo;
         $this->passwordHash = $passwordHash;
         $this->fechaRegistro = $fechaRegistro;
 
-        $this->setNombre($nombre);
-        $this->setApellido($apellido);
+        $this->setNombreCompleto($nombreCompleto);
+        $this->setAlias($alias);
         $this->setCorreo($correo);
     }
 
-    public function getIdProveedor(): int
+    public function getIdComerciante(): int
     {
-        return $this->idProveedor;
+        return $this->idComerciante;
     }
-    public function getNombre(): string
+    public function getNombreCompleto(): string
     {
-        return $this->nombre;
+        return $this->nombreCompleto;
     }
-    public function getApellido(): string
+    public function getAlias(): string
     {
-        return $this->apellido;
+        return $this->alias;
     }
     public function getCedula(): string
     {
@@ -66,20 +66,20 @@ class Proveedor
         return $this->activo;
     }
 
-    public function setNombre(string $nombre): void
+    public function setNombreCompleto(string $nombreCompleto): void
     {
-        if (trim($nombre) === '') {
+        if (trim($nombreCompleto) === '') {
             throw new InvalidArgumentException("El nombre no puede estar vacío");
         }
-        $this->nombre = $nombre;
+        $this->nombreCompleto = $nombreCompleto;
     }
 
-    public function setApellido(string $apellido): void
+    public function setAlias(string $alias): void
     {
-        if (trim($apellido) === '') {
-            throw new InvalidArgumentException("El apellido no puede estar vacío");
+        if (trim($alias) === '') {
+            throw new InvalidArgumentException("El alias no puede estar vacío");
         }
-        $this->apellido = $apellido;
+        $this->alias = $alias;
     }
 
     public function setCorreo(string $correo): void
