@@ -3,9 +3,10 @@
 class Local
 {
     private int $idLocal;
-    private int $idComerciante;
+    private int $idTipoLocal;
     private string $nombreLocal;
     private ?string $descripcion;
+    private string $productosAOfrecer;
     private string $telefono;
     private string $correo;
     private ?string $logo;
@@ -13,17 +14,18 @@ class Local
     private ?DateTime $fechaRegistro;
 
     public function __construct(
-        int $idComerciante,
+        int $idTipoLocal,
         string $nombreLocal,
         string $telefono,
         string $correo,
+        string $productosAOfrecer,
         ?string $descripcion = null,
         ?string $logo = null,
         bool $activo = true,
         int $idLocal = 0,
         ?DateTime $fechaRegistro = null
     ) {
-        $this->idComerciante = $idComerciante;
+        $this->idTipoLocal = $idTipoLocal;
         $this->idLocal = $idLocal;
         $this->activo = $activo;
         $this->fechaRegistro = $fechaRegistro;
@@ -33,15 +35,16 @@ class Local
         $this->setCorreo($correo);
         $this->setDescripcion($descripcion);
         $this->setLogo($logo);
+        $this->setProductosAOfrecer($productosAOfrecer);
     }
 
     public function getIdLocal(): int
     {
         return $this->idLocal;
     }
-    public function getIdComerciante(): int
+    public function getIdTipoLocal(): int
     {
-        return $this->idComerciante;
+        return $this->idTipoLocal;
     }
     public function getNombreLocal(): string
     {
@@ -50,6 +53,10 @@ class Local
     public function getDescripcion(): ?string
     {
         return $this->descripcion;
+    }
+    public function getProductosAOfrecer(): string
+    {
+        return $this->productosAOfrecer;
     }
     public function getTelefono(): string
     {
@@ -86,6 +93,14 @@ class Local
             throw new InvalidArgumentException("La descripción no puede estar vacía");
         }
         $this->descripcion = $descripcion;
+    }
+
+    public function setProductosAOfrecer(string $productosAOfrecer): void
+    {
+        if (trim($productosAOfrecer) === '') {
+            throw new InvalidArgumentException("Debe indicar los productos a ofrecer");
+        }
+        $this->productosAOfrecer = $productosAOfrecer;
     }
 
     public function setTelefono(string $telefono): void

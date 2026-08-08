@@ -4,36 +4,36 @@ class Producto
 {
     private int $idProducto;
     private int $idLocal;
+    private int $idTipoProducto;
     private string $nombre;
     private ?string $descripcion;
     private float $precioOriginal;
     private float $precioDescuento;
-    private int $cantidadDisponible
-    ;
+    private int $cantidadDisponible;
     private bool $agotado;
     private ?DateTime $fechaCreacion;
 
     public function __construct(
         int $idLocal,
+        int $idTipoProducto,
         string $nombre,
         float $precioOriginal,
         float $precioDescuento,
         ?string $descripcion = null,
         int $cantidadDisponible = 0,
-        bool $agotado = false,
         int $idProducto = 0,
         ?DateTime $fechaCreacion = null
     ) {
         $this->idLocal = $idLocal;
-        $this->nombre = $nombre;
-        $this->descripcion = $descripcion;
+        $this->idTipoProducto = $idTipoProducto;
         $this->idProducto = $idProducto;
         $this->fechaCreacion = $fechaCreacion;
 
+        $this->setNombre($nombre);
+        $this->setDescripcion($descripcion);
         $this->setPrecioOriginal($precioOriginal);
         $this->setPrecioDescuento($precioDescuento);
         $this->setCantidadDisponible($cantidadDisponible);
-        $this->agotado = $agotado;
     }
 
     public function getIdProducto(): int
@@ -43,6 +43,10 @@ class Producto
     public function getIdLocal(): int
     {
         return $this->idLocal;
+    }
+    public function getIdTipoProducto(): int
+    {
+        return $this->idTipoProducto;
     }
     public function getNombre(): string
     {
@@ -75,10 +79,17 @@ class Producto
 
     public function setNombre(string $nombre): void
     {
+        if (trim($nombre) === '') {
+            throw new InvalidArgumentException("El nombre del producto no puede estar vacío");
+        }
         $this->nombre = $nombre;
     }
+
     public function setDescripcion(?string $descripcion): void
     {
+        if ($descripcion !== null && trim($descripcion) === '') {
+            throw new InvalidArgumentException("La descripción no puede estar vacía");
+        }
         $this->descripcion = $descripcion;
     }
 
@@ -108,10 +119,5 @@ class Producto
         }
         $this->cantidadDisponible = $cantidadDisponible;
         $this->agotado = $cantidadDisponible <= 0;
-    }
-
-    public function setAgotado(bool $agotado): void
-    {
-        $this->agotado = $agotado;
     }
 }

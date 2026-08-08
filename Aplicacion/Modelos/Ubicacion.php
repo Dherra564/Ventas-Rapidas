@@ -2,31 +2,20 @@
 
 class Ubicacion
 {
-    private const PROVINCIAS_VALIDAS = [
-        'San José',
-        'Alajuela',
-        'Cartago',
-        'Heredia',
-        'Guanacaste',
-        'Puntarenas',
-        'Limón'
-    ];
-
     private int $idUbicacion;
     private int $idLocal;
-    private string $provincia;
-    private string $canton;
-    private string $distrito
-    ;
+    private int $idProvincia;
+    private int $idCanton;
+    private int $idDistrito;
     private string $direccionExacta;
     private ?string $referencia;
     private bool $activo;
 
     public function __construct(
         int $idLocal,
-        string $provincia,
-        string $canton,
-        string $distrito,
+        int $idProvincia,
+        int $idCanton,
+        int $idDistrito,
         string $direccionExacta,
         ?string $referencia = null,
         bool $activo = true,
@@ -34,10 +23,10 @@ class Ubicacion
     ) {
         $this->idUbicacion = $idUbicacion;
         $this->idLocal = $idLocal;
+        $this->idProvincia = $idProvincia;
+        $this->idCanton = $idCanton;
+        $this->idDistrito = $idDistrito;
 
-        $this->setProvincia($provincia);
-        $this->setCanton($canton);
-        $this->setDistrito($distrito);
         $this->setDireccionExacta($direccionExacta);
         $this->setReferencia($referencia);
         $this->setActivo($activo);
@@ -52,26 +41,32 @@ class Ubicacion
     {
         return $this->idLocal;
     }
-    public function getProvincia(): string
+
+    public function getIdProvincia(): int
     {
-        return $this->provincia;
+        return $this->idProvincia;
     }
-    public function getCanton(): string
+
+    public function getIdCanton(): int
     {
-        return $this->canton;
+        return $this->idCanton;
     }
-    public function getDistrito(): string
+
+    public function getIdDistrito(): int
     {
-        return $this->distrito;
+        return $this->idDistrito;
     }
+
     public function getDireccionExacta(): string
     {
         return $this->direccionExacta;
     }
+
     public function getReferencia(): ?string
     {
         return $this->referencia;
     }
+
     public function isActivo(): bool
     {
         return $this->activo;
@@ -80,30 +75,6 @@ class Ubicacion
     public function setIdLocal(int $idLocal): void
     {
         $this->idLocal = $idLocal;
-    }
-
-    public function setProvincia(string $provincia): void
-    {
-        if (!in_array($provincia, self::PROVINCIAS_VALIDAS, true)) {
-            throw new InvalidArgumentException("Provincia inválida: $provincia");
-        }
-        $this->provincia = $provincia;
-    }
-
-    public function setCanton(string $canton): void
-    {
-        if (trim($canton) === '') {
-            throw new InvalidArgumentException("El cantón no puede estar vacío");
-        }
-        $this->canton = $canton;
-    }
-
-    public function setDistrito(string $distrito): void
-    {
-        if (trim($distrito) === '') {
-            throw new InvalidArgumentException("El distrito no puede estar vacío");
-        }
-        $this->distrito = $distrito;
     }
 
     public function setDireccionExacta(string $direccionExacta): void
@@ -119,7 +90,6 @@ class Ubicacion
         if ($referencia !== null && trim($referencia) === '') {
             throw new InvalidArgumentException("La referencia no puede estar vacía");
         }
-
         $this->referencia = $referencia;
     }
 
