@@ -95,10 +95,7 @@ class LocalController
         return $this->localRepository->buscar($nombre, $idTipoLocal, $idProvincia, $idCanton, $idDistrito, $activo);
     }
 
-    /**
-     * Autocompletar: tipos de local cuyo nombre coincide parcialmente
-     * con lo que el comerciante lleva escrito hasta el momento.
-     */
+    
     public function buscarTiposCoincidentes(string $textoParcial): array
     {
         if (trim($textoParcial) === "") {

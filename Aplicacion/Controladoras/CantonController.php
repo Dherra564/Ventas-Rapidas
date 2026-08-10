@@ -22,7 +22,6 @@ class CantonController
         return $this->cantonRepository->obtenerPorId($idCanton);
     }
 
-    // Para el select en cascada: cantones que pertenecen a una provincia
     public function listarPorProvincia(int $idProvincia): array
     {
         return $this->cantonRepository->obtenerPorProvincia($idProvincia);

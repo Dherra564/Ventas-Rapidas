@@ -22,7 +22,6 @@ class DistritoController
         return $this->distritoRepository->obtenerPorId($idDistrito);
     }
 
-    // Para el select en cascada: distritos que pertenecen a un cantón
     public function listarPorCanton(int $idCanton): array
     {
         return $this->distritoRepository->obtenerPorCanton($idCanton);
