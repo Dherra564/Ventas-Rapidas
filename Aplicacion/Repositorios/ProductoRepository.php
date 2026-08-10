@@ -112,8 +112,88 @@ class ProductoRepository
         return $productos;
     }
 
+    /**
+     * Busca productos combinando filtros opcionales.
+     * Todos los parámetros son opcionales; los que se pasen como null se ignoran.
+     *
+     * @param string|null $nombre         Coincidencia parcial (LIKE) sobre el nombre
+     * @param int|null    $idLocal        Coincidencia exacta sobre el local
+     * @param int|null    $idTipoProducto Coincidencia exacta sobre el tipo de producto
+     * @param float|null  $precioMinimo   Precio mayor o igual a este valor
+     * @param float|null  $precioMaximo   Precio menor o igual a este valor
+     * @param bool|null   $activo         Coincidencia exacta sobre el estado activo
+     */
+    public function buscar(
+        ?string $nombre = null,
+        ?int $idLocal = null,
+        ?int $idTipoProducto = null,
+        ?float $precioMinimo = null,
+        ?float $precioMaximo = null,
+        ?bool $activo = null
+    ): array {
+        $condiciones = [];
+        $parametros = [];
+
+        if ($nombre !== null && $nombre !== "") {
+            $condiciones[] = "tbproductonombre LIKE :nombre";
+            $parametros[":nombre"] = "%{$nombre}%";
+        }
+
+        if ($idLocal !== null) {
+            $condiciones[] = "tblocalid = :idLocal";
+            $parametros[":idLocal"] = $idLocal;
+        }
+
+        if ($idTipoProducto !== null) {
+            $condiciones[] = "tbproductotipoid = :idTipoProducto";
+            $parametros[":idTipoProducto"] = $idTipoProducto;
+        }
+
+        if ($precioMinimo !== null) {
+            $condiciones[] = "tbproductoprecio >= :precioMinimo";
+            $parametros[":precioMinimo"] = $precioMinimo;
+        }
+
+        if ($precioMaximo !== null) {
+            $condiciones[] = "tbproductoprecio <= :precioMaximo";
+            $parametros[":precioMaximo"] = $precioMaximo;
+        }
+
+        if ($activo !== null) {
+            $condiciones[] = "tbproductoactivo = :activo";
+            $parametros[":activo"] = $activo;
+        }
+
+        $sql = "SELECT * FROM tbproducto";
+
+        if (!empty($condiciones)) {
+            $sql .= " WHERE " . implode(" AND ", $condiciones);
+        }
+
+        $sql .= " ORDER BY tbproductonombre";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute($parametros);
+
+        $productos = [];
+
+        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
+            $productos[] = $this->mapearFila($fila);
+        }
+
+        return $productos;
+    }
+
     public function actualizar(Producto $producto): bool
     {
+        $this->validarReferencia(
+            $this->conexion,
+            "tbproductotipo",
+            "tbproductotipoid",
+            $producto->getIdTipoProducto(),
+            "El tipo de producto con ID {$producto->getIdTipoProducto()} no existe"
+        );
+
         $sql = "UPDATE tbproducto
                 SET
                     tbproductotipoid = :idTipoProducto,

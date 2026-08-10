@@ -90,6 +90,10 @@ class UbicacionRepository
 
     public function actualizar(Ubicacion $ubicacion): bool
     {
+        $this->validarReferencia($this->conexion, "tbprovincia", "tbprovinciaid", $ubicacion->getIdProvincia(), "La provincia con ID {$ubicacion->getIdProvincia()} no existe");
+        $this->validarReferencia($this->conexion, "tbcanton", "tbcantonid", $ubicacion->getIdCanton(), "El cantón con ID {$ubicacion->getIdCanton()} no existe");
+        $this->validarReferencia($this->conexion, "tbdistrito", "tbdistritoid", $ubicacion->getIdDistrito(), "El distrito con ID {$ubicacion->getIdDistrito()} no existe");
+
         $sql = "UPDATE tbubicacion
                 SET
                     tbprovinciaid = :idProvincia,

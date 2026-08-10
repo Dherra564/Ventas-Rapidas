@@ -52,4 +52,9 @@ class ComercianteController
     {
         return $this->comercianteRepository->eliminar($idComerciante);
     }
+
+    public function buscarConFiltros(?string $nombre = null, ?string $alias = null, ?bool $activo = null): array
+    {
+        return $this->comercianteRepository->buscar($nombre, $alias, $activo);
+    }
 }

@@ -1,41 +1,38 @@
 <?php
 
-require_once __DIR__ . "/Aplicacion/Controladoras/ProveedorController.php";
+require_once __DIR__ . "/Aplicacion/Controladoras/ComercianteController.php";
 require_once __DIR__ . "/Aplicacion/Controladoras/LocalController.php";
 
-$proveedorController = new ProveedorController();
+$comercianteController = new ComercianteController();
 $localController = new LocalController();
-
-
 
 do {
 
     echo "\n=========================\n";
     echo "   SISTEMA DE PRUEBA\n";
     echo "=========================\n";
-    echo "1. Registrar proveedor\n";
-    echo "2. Listar proveedores\n";
+    echo "1. Registrar comerciante\n";
+    echo "2. Listar comerciantes\n";
     echo "3. Registrar local\n";
     echo "4. Listar locales\n";
     echo "5. Buscar local por ID\n";
     echo "6. Eliminar local\n";
+    echo "7. Buscar comerciantes (filtros)\n";
+    echo "8. Buscar locales (filtros)\n";
     echo "0. Salir\n";
     echo "Seleccione una opción: ";
 
     $opcion = trim(fgets(STDIN));
 
-
-
     switch ($opcion) {
 
+        case "1":
 
-        case 1:
+            echo "\nNombre completo: ";
+            $nombreCompleto = trim(fgets(STDIN));
 
-            echo "\nNombre: ";
-            $nombre = trim(fgets(STDIN));
-
-            echo "Apellido: ";
-            $apellido = trim(fgets(STDIN));
+            echo "Alias: ";
+            $alias = trim(fgets(STDIN));
 
             echo "Cédula: ";
             $cedula = trim(fgets(STDIN));
@@ -46,282 +43,226 @@ do {
             echo "Password: ";
             $password = trim(fgets(STDIN));
 
-
-
-            if (
-                $proveedorController->registrar(
-                    $nombre,
-                    $apellido,
+            try {
+                $id = $comercianteController->registrar(
+                    $nombreCompleto,
+                    $alias,
                     $cedula,
                     $correo,
                     $password
-                )
-            ) {
+                );
 
-                echo "\nProveedor registrado correctamente\n";
+                echo $id ? "\nComerciante registrado con ID $id\n" : "\nError al registrar comerciante\n";
 
-            } else {
-
-                echo "\nError al registrar proveedor\n";
+            } catch (Exception $e) {
+                echo "\nError: " . $e->getMessage() . "\n";
             }
-
 
             break;
 
+        case "2":
 
+            $comerciantes = $comercianteController->listar();
 
+            echo "\n------ COMERCIANTES ------\n";
 
-        case 2:
-
-            $proveedores = $proveedorController->listar();
-
-
-            echo "\n------ PROVEEDORES ------\n";
-
-
-            foreach ($proveedores as $proveedor) {
-
-
-                echo "ID: "
-                    . $proveedor->getIdProveedor()
-                    . "\n";
-
-
-                echo "Nombre: "
-                    . $proveedor->getNombre()
-                    . " "
-                    . $proveedor->getApellido()
-                    . "\n";
-
-
-                echo "Correo: "
-                    . $proveedor->getCorreo()
-                    . "\n";
-
-
+            foreach ($comerciantes as $comerciante) {
+                echo "ID: " . $comerciante->getIdComerciante() . "\n";
+                echo "Nombre: " . $comerciante->getNombreCompleto() . "\n";
+                echo "Alias: " . $comerciante->getAlias() . "\n";
+                echo "Correo: " . $comerciante->getCorreo() . "\n";
                 echo "--------------------\n";
             }
 
-
             break;
 
+        case "3":
 
+            echo "\nID del comerciante: ";
+            $idComerciante = (int) trim(fgets(STDIN));
 
-
-        case 3:
-
-
-            echo "\nID del proveedor: ";
-            $idProveedor = (int) trim(fgets(STDIN));
-
+            echo "ID del tipo de local: ";
+            $idTipoLocal = (int) trim(fgets(STDIN));
 
             echo "Nombre local: ";
             $nombreLocal = trim(fgets(STDIN));
 
-
-            echo "Descripción: ";
-            $descripcion = trim(fgets(STDIN));
-
-
             echo "Teléfono: ";
             $telefono = trim(fgets(STDIN));
-
 
             echo "Correo: ";
             $correo = trim(fgets(STDIN));
 
+            echo "Descripción (opcional, Enter para omitir): ";
+            $descripcion = trim(fgets(STDIN));
+            $descripcion = $descripcion === "" ? null : $descripcion;
 
-            echo "Imagen: ";
-            $imagen = trim(fgets(STDIN));
+            echo "Productos a ofrecer (opcional, Enter para omitir): ";
+            $productos = trim(fgets(STDIN));
+            $productos = $productos === "" ? null : $productos;
 
+            echo "Logo (opcional, Enter para omitir): ";
+            $logo = trim(fgets(STDIN));
+            $logo = $logo === "" ? null : $logo;
 
+            echo "\n--- UBICACIÓN (usar IDs existentes en tbprovincia/tbcanton/tbdistrito) ---\n";
 
-            echo "\n--- UBICACIÓN ---\n";
+            echo "ID Provincia: ";
+            $idProvincia = (int) trim(fgets(STDIN));
 
+            echo "ID Cantón: ";
+            $idCanton = (int) trim(fgets(STDIN));
 
-            echo "Provincia: ";
-            $provincia = trim(fgets(STDIN));
-
-
-            echo "Cantón: ";
-            $canton = trim(fgets(STDIN));
-
-
-            echo "Distrito: ";
-            $distrito = trim(fgets(STDIN));
-
+            echo "ID Distrito: ";
+            $idDistrito = (int) trim(fgets(STDIN));
 
             echo "Dirección exacta: ";
             $direccion = trim(fgets(STDIN));
 
-
-            echo "Referencia: ";
+            echo "Referencia (opcional, Enter para omitir): ";
             $referencia = trim(fgets(STDIN));
+            $referencia = $referencia === "" ? null : $referencia;
 
-
-
-            if (
-                $localController->registrar(
-                    $idProveedor,
+            try {
+                $resultado = $localController->registrar(
+                    $idComerciante,
+                    $idTipoLocal,
                     $nombreLocal,
-                    $descripcion,
                     $telefono,
                     $correo,
-                    $imagen,
-                    $provincia,
-                    $canton,
-                    $distrito,
+                    $descripcion,
+                    $productos,
+                    $logo,
+                    $idProvincia,
+                    $idCanton,
+                    $idDistrito,
                     $direccion,
                     $referencia
+                );
 
-                )
-            ) {
+                echo $resultado ? "\nLocal registrado con ID $resultado\n" : "\nError al registrar local\n";
 
-
-                echo "\nLocal registrado correctamente\n";
-
-
-            } else {
-
-
-                echo "\nError al registrar local\n";
-
+            } catch (Exception $e) {
+                echo "\nError: " . $e->getMessage() . "\n";
             }
-
 
             break;
 
-
-
-
-
-        case 4:
-
+        case "4":
 
             $locales = $localController->listar();
 
-
             echo "\n------ LOCALES ------\n";
 
-
             foreach ($locales as $local) {
-
-
-                echo "ID: "
-                    . $local->getIdLocal()
-                    . "\n";
-
-
-                echo "Nombre: "
-                    . $local->getNombreLocal()
-                    . "\n";
-
-
-                echo "Correo: "
-                    . $local->getCorreo()
-                    . "\n";
-
-
-                echo "Teléfono: "
-                    . $local->getTelefono()
-                    . "\n";
-
-
+                echo "ID: " . $local->getIdLocal() . "\n";
+                echo "Nombre: " . $local->getNombreLocal() . "\n";
+                echo "Correo: " . $local->getCorreo() . "\n";
+                echo "Teléfono: " . $local->getTelefono() . "\n";
                 echo "--------------------\n";
-
             }
-
 
             break;
 
-
-
-
-        case 5:
-
+        case "5":
 
             echo "Ingrese ID del local: ";
-
             $id = (int) trim(fgets(STDIN));
-
 
             $resultado = $localController->buscarConUbicacion($id);
 
-
-
             if ($resultado != null) {
-
 
                 $local = $resultado["local"];
                 $ubicacion = $resultado["ubicacion"];
 
-
-
                 echo "\nLOCAL\n";
+                echo $local->getNombreLocal() . "\n";
 
-                echo $local->getNombreLocal()
-                    . "\n";
-
-
-                echo "Ubicación:\n";
-
-                echo $ubicacion->getProvincia()
-                    . ", "
-                    . $ubicacion->getCanton()
-                    . ", "
-                    . $ubicacion->getDistrito()
-                    . "\n";
-
+                echo "Ubicación (IDs): ";
+                echo $ubicacion->getIdProvincia() . ", "
+                    . $ubicacion->getIdCanton() . ", "
+                    . $ubicacion->getIdDistrito() . "\n";
+                echo "Dirección: " . $ubicacion->getDireccionExacta() . "\n";
 
             } else {
-
-
                 echo "No existe ese local\n";
-
             }
-
 
             break;
 
-
-
-
-        case 6:
-
+        case "6":
 
             echo "ID del local a eliminar: ";
-
             $id = (int) trim(fgets(STDIN));
 
-
-
-            if ($localController->eliminar($id)) {
-
-                echo "Local eliminado correctamente\n";
-
-            } else {
-
-                echo "Error al eliminar\n";
-
-            }
-
+            echo $localController->eliminar($id)
+                ? "Local eliminado correctamente\n"
+                : "Error al eliminar\n";
 
             break;
 
+        case "7":
 
+            echo "\nFiltrar por nombre (Enter para omitir): ";
+            $nombre = trim(fgets(STDIN));
+            $nombre = $nombre === "" ? null : $nombre;
 
-        case 0:
+            echo "Filtrar por alias (Enter para omitir): ";
+            $alias = trim(fgets(STDIN));
+            $alias = $alias === "" ? null : $alias;
 
+            echo "Filtrar por activo (1=si, 0=no, Enter para omitir): ";
+            $activoInput = trim(fgets(STDIN));
+            $activo = $activoInput === "" ? null : (bool) (int) $activoInput;
+
+            $resultados = $comercianteController->buscarConFiltros($nombre, $alias, $activo);
+
+            echo "\n------ RESULTADOS (" . count($resultados) . ") ------\n";
+
+            foreach ($resultados as $comerciante) {
+                echo "ID: " . $comerciante->getIdComerciante() . "\n";
+                echo "Nombre: " . $comerciante->getNombreCompleto() . "\n";
+                echo "Alias: " . $comerciante->getAlias() . "\n";
+                echo "Activo: " . ($comerciante->isActivo() ? "Sí" : "No") . "\n";
+                echo "--------------------\n";
+            }
+
+            break;
+
+        case "8":
+
+            echo "\nFiltrar por nombre (Enter para omitir): ";
+            $nombre = trim(fgets(STDIN));
+            $nombre = $nombre === "" ? null : $nombre;
+
+            echo "Filtrar por ID tipo de local (Enter para omitir): ";
+            $idTipoLocalInput = trim(fgets(STDIN));
+            $idTipoLocal = $idTipoLocalInput === "" ? null : (int) $idTipoLocalInput;
+
+            echo "Filtrar por activo (1=si, 0=no, Enter para omitir): ";
+            $activoInput = trim(fgets(STDIN));
+            $activo = $activoInput === "" ? null : (bool) (int) $activoInput;
+
+            $resultados = $localController->buscarConFiltros($nombre, $idTipoLocal, $activo);
+
+            echo "\n------ RESULTADOS (" . count($resultados) . ") ------\n";
+
+            foreach ($resultados as $local) {
+                echo "ID: " . $local->getIdLocal() . "\n";
+                echo "Nombre: " . $local->getNombreLocal() . "\n";
+                echo "Activo: " . ($local->isActivo() ? "Sí" : "No") . "\n";
+                echo "--------------------\n";
+            }
+
+            break;
+
+        case "0":
             echo "\nSaliendo...\n";
             break;
 
-
-
         default:
-
             echo "\nOpción inválida\n";
-
     }
 
-
-} while ($opcion != 0);
+} while ($opcion != "0");

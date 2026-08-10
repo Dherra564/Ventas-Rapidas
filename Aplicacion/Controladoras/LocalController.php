@@ -29,7 +29,7 @@ class LocalController
         string $direccionExacta,
         ?string $referencia
 
-    ): bool {
+    ): int|false {
 
         $local = new Local(
             $idTipoLocal,
@@ -76,5 +76,10 @@ class LocalController
     public function eliminar(int $idLocal): bool
     {
         return $this->localRepository->eliminar($idLocal);
+    }
+
+    public function buscarConFiltros(?string $nombre = null, ?int $idTipoLocal = null, ?bool $activo = null): array
+    {
+        return $this->localRepository->buscar($nombre, $idTipoLocal, $activo);
     }
 }

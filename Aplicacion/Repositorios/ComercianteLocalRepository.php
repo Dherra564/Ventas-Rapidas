@@ -33,6 +33,12 @@ class ComercianteLocalRepository
             "El local con ID {$comercianteLocal->getIdLocal()} no existe"
         );
 
+        if ($comercianteLocal->isActivo() && $this->existeComercianteActivoParaLocal($comercianteLocal->getIdLocal())) {
+            throw new InvalidArgumentException(
+                "El local con ID {$comercianteLocal->getIdLocal()} ya tiene un comerciante activo asignado"
+            );
+        }
+
         $id = $this->generarSiguienteId($this->conexion, "tbcomerciantelocal", "tbcomerciantelocalid");
 
         $sql = "INSERT INTO tbcomerciantelocal

@@ -23,7 +23,7 @@ class LocalRepository
         $this->comercianteLocalRepository = new ComercianteLocalRepository($this->conexion);
     }
 
-    public function insertar(Local $local, Ubicacion $ubicacion, int $idComerciante): bool
+    public function insertar(Local $local, Ubicacion $ubicacion, int $idComerciante): int|false
     {
         try {
             $this->conexion->beginTransaction();
@@ -85,7 +85,7 @@ class LocalRepository
 
             $this->conexion->commit();
 
-            return true;
+            return $idLocal;
 
         } catch (Exception $e) {
             $this->conexion->rollBack();
@@ -103,20 +103,7 @@ class LocalRepository
         $locales = [];
 
         while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
-            $locales[] = new Local(
-                (int) $fila["tblocaltipoid"],
-                $fila["tblocalnombre"],
-                $fila["tblocaltelefono"],
-                $fila["tblocalcorreo"],
-                $fila["tblocaldescripcion"],
-                $fila["tblocalproductosaofrecer"],
-                $fila["tblocallogo"],
-                (bool) $fila["tblocalactivo"],
-                (int) $fila["tblocalid"],
-                $fila["tblocalfecharegistroportal"] != null
-                ? new DateTime($fila["tblocalfecharegistroportal"])
-                : null
-            );
+            $locales[] = $this->mapearFila($fila);
         }
 
         return $locales;
@@ -131,24 +118,55 @@ class LocalRepository
 
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
 
-        if (!$fila) {
-            return null;
+        return $fila ? $this->mapearFila($fila) : null;
+    }
+
+    /**
+     * Busca locales combinando filtros opcionales.
+     * Todos los parámetros son opcionales; los que se pasen como null se ignoran.
+     *
+     * @param string|null $nombre      Coincidencia parcial (LIKE) sobre el nombre
+     * @param int|null    $idTipoLocal Coincidencia exacta sobre el tipo de local
+     * @param bool|null   $activo      Coincidencia exacta sobre el estado activo
+     */
+    public function buscar(?string $nombre = null, ?int $idTipoLocal = null, ?bool $activo = null): array
+    {
+        $condiciones = [];
+        $parametros = [];
+
+        if ($nombre !== null && $nombre !== "") {
+            $condiciones[] = "tblocalnombre LIKE :nombre";
+            $parametros[":nombre"] = "%{$nombre}%";
         }
 
-        return new Local(
-            (int) $fila["tblocaltipoid"],
-            $fila["tblocalnombre"],
-            $fila["tblocaltelefono"],
-            $fila["tblocalcorreo"],
-            $fila["tblocaldescripcion"],
-            $fila["tblocalproductosaofrecer"],
-            $fila["tblocallogo"],
-            (bool) $fila["tblocalactivo"],
-            (int) $fila["tblocalid"],
-            $fila["tblocalfecharegistroportal"] != null
-            ? new DateTime($fila["tblocalfecharegistroportal"])
-            : null
-        );
+        if ($idTipoLocal !== null) {
+            $condiciones[] = "tblocaltipoid = :idTipoLocal";
+            $parametros[":idTipoLocal"] = $idTipoLocal;
+        }
+
+        if ($activo !== null) {
+            $condiciones[] = "tblocalactivo = :activo";
+            $parametros[":activo"] = $activo;
+        }
+
+        $sql = "SELECT * FROM tblocal";
+
+        if (!empty($condiciones)) {
+            $sql .= " WHERE " . implode(" AND ", $condiciones);
+        }
+
+        $sql .= " ORDER BY tblocalnombre";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute($parametros);
+
+        $locales = [];
+
+        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
+            $locales[] = $this->mapearFila($fila);
+        }
+
+        return $locales;
     }
 
     public function obtenerLocalConUbicacion(int $idLocal): ?array
@@ -167,20 +185,7 @@ class LocalRepository
             return null;
         }
 
-        $local = new Local(
-            (int) $fila["tblocaltipoid"],
-            $fila["tblocalnombre"],
-            $fila["tblocaltelefono"],
-            $fila["tblocalcorreo"],
-            $fila["tblocaldescripcion"],
-            $fila["tblocalproductosaofrecer"],
-            $fila["tblocallogo"],
-            (bool) $fila["tblocalactivo"],
-            (int) $fila["tblocalid"],
-            $fila["tblocalfecharegistroportal"] != null
-            ? new DateTime($fila["tblocalfecharegistroportal"])
-            : null
-        );
+        $local = $this->mapearFila($fila);
 
         $ubicacion = new Ubicacion(
             (int) $fila["tblocalid"],
@@ -235,10 +240,47 @@ class LocalRepository
 
     public function eliminar(int $idLocal): bool
     {
-        $sql = "UPDATE tblocal SET tblocalactivo = 0 WHERE tblocalid = :id";
+        try {
+            $this->conexion->beginTransaction();
 
-        $consulta = $this->conexion->prepare($sql);
+            $sql = "UPDATE tblocal SET tblocalactivo = 0 WHERE tblocalid = :id";
+            $consulta = $this->conexion->prepare($sql);
+            $consulta->execute([":id" => $idLocal]);
 
-        return $consulta->execute([":id" => $idLocal]);
+            $sqlUbicacion = "UPDATE tbubicacion SET tbubicacionactivo = 0 WHERE tblocalid = :id";
+            $consultaUbicacion = $this->conexion->prepare($sqlUbicacion);
+            $consultaUbicacion->execute([":id" => $idLocal]);
+
+            $sqlComercianteLocal = "UPDATE tbcomerciantelocal SET tbcomerciantelocalactivo = 0 WHERE tblocalid = :id";
+            $consultaComercianteLocal = $this->conexion->prepare($sqlComercianteLocal);
+            $consultaComercianteLocal->execute([":id" => $idLocal]);
+
+            $this->conexion->commit();
+
+            return true;
+
+        } catch (Exception $e) {
+            $this->conexion->rollBack();
+            error_log("Error al eliminar local: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function mapearFila(array $fila): Local
+    {
+        return new Local(
+            (int) $fila["tblocaltipoid"],
+            $fila["tblocalnombre"],
+            $fila["tblocaltelefono"],
+            $fila["tblocalcorreo"],
+            $fila["tblocaldescripcion"],
+            $fila["tblocalproductosaofrecer"],
+            $fila["tblocallogo"],
+            (bool) $fila["tblocalactivo"],
+            (int) $fila["tblocalid"],
+            $fila["tblocalfecharegistroportal"] != null
+            ? new DateTime($fila["tblocalfecharegistroportal"])
+            : null
+        );
     }
 }
