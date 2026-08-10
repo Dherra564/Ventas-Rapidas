@@ -87,4 +87,9 @@ class LocalController
         return $this->localRepository->eliminar($idLocal);
     }
 
+    public function existeNombreLocal(string $nombreLocal): bool
+    {
+        return $this->localRepository->existeNombre($nombreLocal);
+    }
+
 }
