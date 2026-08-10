@@ -129,33 +129,59 @@ class LocalRepository
      * @param int|null    $idTipoLocal Coincidencia exacta sobre el tipo de local
      * @param bool|null   $activo      Coincidencia exacta sobre el estado activo
      */
-    public function buscar(?string $nombre = null, ?int $idTipoLocal = null, ?bool $activo = null): array
-    {
+    public function buscar(
+        ?string $nombre = null,
+        ?int $idTipoLocal = null,
+        ?int $idProvincia = null,
+        ?int $idCanton = null,
+        ?int $idDistrito = null,
+        ?bool $activo = null
+    ): array {
         $condiciones = [];
         $parametros = [];
+        $join = "";
+
+        if ($idProvincia !== null || $idCanton !== null || $idDistrito !== null) {
+            $join = "INNER JOIN tbubicacion u ON l.tblocalid = u.tblocalid";
+        }
 
         if ($nombre !== null && $nombre !== "") {
-            $condiciones[] = "tblocalnombre LIKE :nombre";
+            $condiciones[] = "l.tblocalnombre LIKE :nombre";
             $parametros[":nombre"] = "%{$nombre}%";
         }
 
         if ($idTipoLocal !== null) {
-            $condiciones[] = "tblocaltipoid = :idTipoLocal";
+            $condiciones[] = "l.tblocaltipoid = :idTipoLocal";
             $parametros[":idTipoLocal"] = $idTipoLocal;
         }
 
+        if ($idProvincia !== null) {
+            $condiciones[] = "u.tbprovinciaid = :idProvincia";
+            $parametros[":idProvincia"] = $idProvincia;
+        }
+
+        if ($idCanton !== null) {
+            $condiciones[] = "u.tbcantonid = :idCanton";
+            $parametros[":idCanton"] = $idCanton;
+        }
+
+        if ($idDistrito !== null) {
+            $condiciones[] = "u.tbdistritoid = :idDistrito";
+            $parametros[":idDistrito"] = $idDistrito;
+        }
+
         if ($activo !== null) {
-            $condiciones[] = "tblocalactivo = :activo";
+            $condiciones[] = "l.tblocalactivo = :activo";
             $parametros[":activo"] = $activo;
         }
 
-        $sql = "SELECT * FROM tblocal";
+        $sql = "SELECT l.* FROM tblocal l $join";
 
         if (!empty($condiciones)) {
             $sql .= " WHERE " . implode(" AND ", $condiciones);
         }
 
-        $sql .= " ORDER BY tblocalnombre";
+        $sql .= " ORDER BY l.tblocalnombre";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute($parametros);
