@@ -6,7 +6,7 @@ class Local
     private int $idTipoLocal;
     private string $nombreLocal;
     private ?string $descripcion;
-    private string $productosAOfrecer;
+    private ?string $productosAOfrecer;
     private string $telefono;
     private string $correo;
     private ?string $logo;
@@ -18,8 +18,8 @@ class Local
         string $nombreLocal,
         string $telefono,
         string $correo,
-        string $productosAOfrecer,
         ?string $descripcion = null,
+        ?string $productosAOfrecer = null,
         ?string $logo = null,
         bool $activo = true,
         int $idLocal = 0,
@@ -34,8 +34,8 @@ class Local
         $this->setTelefono($telefono);
         $this->setCorreo($correo);
         $this->setDescripcion($descripcion);
-        $this->setLogo($logo);
         $this->setProductosAOfrecer($productosAOfrecer);
+        $this->setLogo($logo);
     }
 
     public function getIdLocal(): int
@@ -54,7 +54,7 @@ class Local
     {
         return $this->descripcion;
     }
-    public function getProductosAOfrecer(): string
+    public function getProductosAOfrecer(): ?string
     {
         return $this->productosAOfrecer;
     }
@@ -95,11 +95,8 @@ class Local
         $this->descripcion = $descripcion;
     }
 
-    public function setProductosAOfrecer(string $productosAOfrecer): void
+    public function setProductosAOfrecer(?string $productosAOfrecer): void
     {
-        if (trim($productosAOfrecer) === '') {
-            throw new InvalidArgumentException("Debe indicar los productos a ofrecer");
-        }
         $this->productosAOfrecer = $productosAOfrecer;
     }
 

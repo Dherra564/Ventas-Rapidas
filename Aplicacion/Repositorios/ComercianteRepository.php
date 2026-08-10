@@ -2,9 +2,12 @@
 
 require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
 require_once __DIR__ . "/../Modelos/Comerciante.php";
+require_once __DIR__ . "/../Comun/GeneradorId.php";
 
 class ComercianteRepository
 {
+    use GeneradorId;
+
     private PDO $conexion;
 
     public function __construct()
@@ -12,19 +15,23 @@ class ComercianteRepository
         $this->conexion = BaseDatos::obtenerConexion();
     }
 
-    public function insertar(Comerciante $comerciante): bool
+    public function insertar(Comerciante $comerciante): int|false
     {
+        $id = $this->generarSiguienteId($this->conexion, "tbcomerciante", "tbcomercianteid");
+
         $sql = "INSERT INTO tbcomerciante
                 (
-                    tbcomerciantenombre,
+                    tbcomercianteid,
+                    tbcomeriantenombre,
                     tbcomerciantealias,
                     tbcomerciantecedula,
                     tbcomerciantecorreo,
-                    tbcomerciantepassword,
+                    tbcomeriantepassword,
                     tbcomercianteactivo
                 )
                 VALUES
                 (
+                    :id,
                     :nombre,
                     :alias,
                     :cedula,
@@ -35,7 +42,8 @@ class ComercianteRepository
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([
+        $exito = $consulta->execute([
+            ":id" => $id,
             ":nombre" => $comerciante->getNombreCompleto(),
             ":alias" => $comerciante->getAlias(),
             ":cedula" => $comerciante->getCedula(),
@@ -43,46 +51,25 @@ class ComercianteRepository
             ":password" => $comerciante->getPasswordHash(),
             ":activo" => $comerciante->isActivo()
         ]);
+
+        return $exito ? $id : false;
     }
 
     public function obtenerTodos(): array
     {
-        $sql = "SELECT * FROM tbcomerciante ORDER BY tbcomerciantenombre";
+        $sql = "SELECT * FROM tbcomerciante ORDER BY tbcomeriantenombre";
 
         $consulta = $this->conexion->query($sql);
 
-        $comerciantes = [];
-
-        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
-
-            $comerciantes[] = new Comerciante(
-                $fila["tbcomerciantenombre"],
-                $fila["tbcomerciantealias"],
-                $fila["tbcomerciantecedula"],
-                $fila["tbcomerciantecorreo"],
-                $fila["tbcomerciantepassword"],
-                (bool) $fila["tbcomercianteactivo"],
-                (int) $fila["tbcomercianteid"],
-                $fila["tbcomerciantefecharegistroportal"] != null
-                ? new DateTime($fila["tbcomerciantefecharegistroportal"])
-: null
-            );
-        }
-
-        return $comerciantes;
+        return $this->mapearFilas($consulta);
     }
 
     public function obtenerPorId(int $idComerciante): ?Comerciante
     {
-        $sql = "SELECT *
-                FROM tbcomerciante
-                WHERE tbcomercianteid = :id";
-            
-        $consulta = $this->conexion->prepare($sql);
+        $sql = "SELECT * FROM tbcomerciante WHERE tbcomercianteid = :id";
 
-        $consulta->execute([
-            ":id" => $idComerciante
-        ]);
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":id" => $idComerciante]);
 
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
 
@@ -90,28 +77,59 @@ class ComercianteRepository
             return null;
         }
 
-        return new Comerciante(
-            $fila["tbcomerciantenombre"],
-            $fila["tbcomerciantealias"],
-            $fila["tbcomerciantecedula"],
-            $fila["tbcomerciantecorreo"],
-            $fila["tbcomerciantepassword"],
-            (bool) $fila["tbcomercianteactivo"],
-            (int) $fila["tbcomercianteid"],
-            $fila["tbcomerciantefecharegistroportal"] != null
-            ? new DateTime($fila["tbcomerciantefecharegistroportal"])
-            : null
-        );
+        return $this->mapearFila($fila);
+    }
+
+    /**
+     * Busca comerciantes combinando filtros opcionales.
+     * Todos los parámetros son opcionales, los que se pasen como null se ignoran.
+     *
+     * @param string|null $nombre  Coincidencia parcial sobre el nombre completo
+     * @param string|null $alias   Coincidencia parcial sobre el alias
+     * @param bool|null   $activo  Coincidencia exacta sobre el estado activo
+     */
+    public function buscar(?string $nombre = null, ?string $alias = null, ?bool $activo = null): array
+    {
+        $condiciones = [];
+        $parametros = [];
+
+        if ($nombre !== null && $nombre !== "") {
+            $condiciones[] = "tbcomeriantenombre LIKE :nombre";
+            $parametros[":nombre"] = "%{$nombre}%";
+        }
+
+        if ($alias !== null && $alias !== "") {
+            $condiciones[] = "tbcomerciantealias LIKE :alias";
+            $parametros[":alias"] = "%{$alias}%";
+        }
+
+        if ($activo !== null) {
+            $condiciones[] = "tbcomercianteactivo = :activo";
+            $parametros[":activo"] = $activo;
+        }
+
+        $sql = "SELECT * FROM tbcomerciante";
+
+        if (!empty($condiciones)) {
+            $sql .= " WHERE " . implode(" AND ", $condiciones);
+        }
+
+        $sql .= " ORDER BY tbcomeriantenombre";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute($parametros);
+
+        return $this->mapearFilas($consulta);
     }
 
     public function actualizar(Comerciante $comerciante): bool
     {
         $sql = "UPDATE tbcomerciante
                 SET
-                    tbcomerciantenombre = :nombre,
+                    tbcomeriantenombre = :nombre,
                     tbcomerciantealias = :alias,
                     tbcomerciantecorreo = :correo,
-                    tbcomerciantepassword = :password,
+                    tbcomeriantepassword = :password,
                     tbcomercianteactivo = :activo
                 WHERE tbcomercianteid = :id";
 
@@ -129,14 +147,39 @@ class ComercianteRepository
 
     public function eliminar(int $idComerciante): bool
     {
-        $sql = "DELETE
-                FROM tbcomerciante
-                WHERE tbcomercianteid = :id";
+        $sql = "UPDATE tbcomerciante SET tbcomercianteactivo = 0 WHERE tbcomercianteid = :id";
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([
-            ":id" => $idComerciante
-        ]);
+        return $consulta->execute([":id" => $idComerciante]);
+    }
+
+    
+    private function mapearFilas(PDOStatement $consulta): array
+    {
+        $comerciantes = [];
+
+        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
+            $comerciantes[] = $this->mapearFila($fila);
+        }
+
+        return $comerciantes;
+    }
+
+    
+    private function mapearFila(array $fila): Comerciante
+    {
+        return new Comerciante(
+            $fila["tbcomeriantenombre"],
+            $fila["tbcomerciantealias"],
+            $fila["tbcomerciantecedula"],
+            $fila["tbcomerciantecorreo"],
+            $fila["tbcomeriantepassword"],
+            (bool) $fila["tbcomercianteactivo"],
+            (int) $fila["tbcomercianteid"],
+            $fila["tbcomeriantefecharegistroportal"] != null
+            ? new DateTime($fila["tbcomeriantefecharegistroportal"])
+            : null
+        );
     }
 }

@@ -2,34 +2,46 @@
 
 require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
-
+require_once __DIR__ . "/../Comun/GeneradorId.php";
+require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
 class UbicacionRepository
 {
+    use GeneradorId, ValidadorReferencia;
+
     private PDO $conexion;
 
-    public function __construct()
+    public function __construct(?PDO $conexion = null)
     {
-        $this->conexion = BaseDatos::obtenerConexion();
+        $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
     }
 
-    public function insertar(Ubicacion $ubicacion): bool
+    public function insertar(Ubicacion $ubicacion): int|false
     {
+        $this->validarReferencia($this->conexion, "tblocal", "tblocalid", $ubicacion->getIdLocal(), "El local con ID {$ubicacion->getIdLocal()} no existe");
+        $this->validarReferencia($this->conexion, "tbprovincia", "tbprovinciaid", $ubicacion->getIdProvincia(), "La provincia con ID {$ubicacion->getIdProvincia()} no existe");
+        $this->validarReferencia($this->conexion, "tbcanton", "tbcantonid", $ubicacion->getIdCanton(), "El cantón con ID {$ubicacion->getIdCanton()} no existe");
+        $this->validarReferencia($this->conexion, "tbdistrito", "tbdistritoid", $ubicacion->getIdDistrito(), "El distrito con ID {$ubicacion->getIdDistrito()} no existe");
+
+        $id = $this->generarSiguienteId($this->conexion, "tbubicacion", "tbubicacionid");
+
         $sql = "INSERT INTO tbubicacion
                 (
+                    tbubicacionid,
                     tblocalid,
-                    tbubicacionprovincia,
-                    tbubicacioncanton,
-                    tbubicaciondistrito,
+                    tbprovinciaid,
+                    tbcantonid,
+                    tbdistritoid,
                     tbubicaciondireccionexacta,
-                    tbubicacionreferencia,
+                    tbubicaciondereferencia,
                     tbubicacionactivo
                 )
                 VALUES
                 (
+                    :id,
                     :idLocal,
-                    :provincia,
-                    :canton,
-                    :distrito,
+                    :idProvincia,
+                    :idCanton,
+                    :idDistrito,
                     :direccionExacta,
                     :referencia,
                     :activo
@@ -37,85 +49,26 @@ class UbicacionRepository
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([
+        $exito = $consulta->execute([
+            ":id" => $id,
             ":idLocal" => $ubicacion->getIdLocal(),
-            ":provincia" => $ubicacion->getProvincia(),
-            ":canton" => $ubicacion->getCanton(),
-            ":distrito" => $ubicacion->getDistrito(),
+            ":idProvincia" => $ubicacion->getIdProvincia(),
+            ":idCanton" => $ubicacion->getIdCanton(),
+            ":idDistrito" => $ubicacion->getIdDistrito(),
             ":direccionExacta" => $ubicacion->getDireccionExacta(),
             ":referencia" => $ubicacion->getReferencia(),
             ":activo" => $ubicacion->isActivo()
         ]);
-    }
 
-    public function obtenerTodos(): array
-    {
-        $sql = "SELECT *
-                FROM tbubicacion
-                ORDER BY tbubicacionprovincia, tbubicacioncanton";
-
-        $consulta = $this->conexion->query($sql);
-
-        $ubicaciones = [];
-
-        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
-
-            $ubicaciones[] = new Ubicacion(
-                (int) $fila["tblocalid"],
-                $fila["tbubicacionprovincia"],
-                $fila["tbubicacioncanton"],
-                $fila["tbubicaciondistrito"],
-                $fila["tbubicaciondireccionexacta"],
-                $fila["tbubicacionreferencia"],
-                (bool) $fila["tbubicacionactivo"],
-                (int) $fila["tbubicacionid"]
-            );
-        }
-
-        return $ubicaciones;
-    }
-
-    public function obtenerPorId(int $idUbicacion): ?Ubicacion
-    {
-        $sql = "SELECT *
-                FROM tbubicacion
-                WHERE tbubicacionid = :id";
-
-        $consulta = $this->conexion->prepare($sql);
-
-        $consulta->execute([
-            ":id" => $idUbicacion
-        ]);
-
-        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
-
-        if (!$fila) {
-            return null;
-        }
-
-        return new Ubicacion(
-            (int) $fila["tblocalid"],
-            $fila["tbubicacionprovincia"],
-            $fila["tbubicacioncanton"],
-            $fila["tbubicaciondistrito"],
-            $fila["tbubicaciondireccionexacta"],
-            $fila["tbubicacionreferencia"],
-            (bool) $fila["tbubicacionactivo"],
-            (int) $fila["tbubicacionid"]
-        );
+        return $exito ? $id : false;
     }
 
     public function obtenerPorLocal(int $idLocal): ?Ubicacion
     {
-        $sql = "SELECT *
-                FROM tbubicacion
-                WHERE tblocalid = :idLocal";
+        $sql = "SELECT * FROM tbubicacion WHERE tblocalid = :idLocal";
 
         $consulta = $this->conexion->prepare($sql);
-
-        $consulta->execute([
-            ":idLocal" => $idLocal
-        ]);
+        $consulta->execute([":idLocal" => $idLocal]);
 
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
 
@@ -125,11 +78,11 @@ class UbicacionRepository
 
         return new Ubicacion(
             (int) $fila["tblocalid"],
-            $fila["tbubicacionprovincia"],
-            $fila["tbubicacioncanton"],
-            $fila["tbubicaciondistrito"],
+            (int) $fila["tbprovinciaid"],
+            (int) $fila["tbcantonid"],
+            (int) $fila["tbdistritoid"],
             $fila["tbubicaciondireccionexacta"],
-            $fila["tbubicacionreferencia"],
+            $fila["tbubicaciondereferencia"],
             (bool) $fila["tbubicacionactivo"],
             (int) $fila["tbubicacionid"]
         );
@@ -137,39 +90,30 @@ class UbicacionRepository
 
     public function actualizar(Ubicacion $ubicacion): bool
     {
+        $this->validarReferencia($this->conexion, "tbprovincia", "tbprovinciaid", $ubicacion->getIdProvincia(), "La provincia con ID {$ubicacion->getIdProvincia()} no existe");
+        $this->validarReferencia($this->conexion, "tbcanton", "tbcantonid", $ubicacion->getIdCanton(), "El cantón con ID {$ubicacion->getIdCanton()} no existe");
+        $this->validarReferencia($this->conexion, "tbdistrito", "tbdistritoid", $ubicacion->getIdDistrito(), "El distrito con ID {$ubicacion->getIdDistrito()} no existe");
+
         $sql = "UPDATE tbubicacion
                 SET
-                    tbubicacionprovincia = :provincia,
-                    tbubicacioncanton = :canton,
-                    tbubicaciondistrito = :distrito,
+                    tbprovinciaid = :idProvincia,
+                    tbcantonid = :idCanton,
+                    tbdistritoid = :idDistrito,
                     tbubicaciondireccionexacta = :direccionExacta,
-                    tbubicacionreferencia = :referencia,
+                    tbubicaciondereferencia = :referencia,
                     tbubicacionactivo = :activo
                 WHERE tblocalid = :idLocal";
 
         $consulta = $this->conexion->prepare($sql);
 
         return $consulta->execute([
-            ":provincia" => $ubicacion->getProvincia(),
-            ":canton" => $ubicacion->getCanton(),
-            ":distrito" => $ubicacion->getDistrito(),
+            ":idProvincia" => $ubicacion->getIdProvincia(),
+            ":idCanton" => $ubicacion->getIdCanton(),
+            ":idDistrito" => $ubicacion->getIdDistrito(),
             ":direccionExacta" => $ubicacion->getDireccionExacta(),
             ":referencia" => $ubicacion->getReferencia(),
             ":activo" => $ubicacion->isActivo(),
             ":idLocal" => $ubicacion->getIdLocal()
-        ]);
-    }
-
-    public function eliminar(int $idLocal): bool
-    {
-        $sql = "UPDATE tbubicacion
-                SET tbubicacionactivo = 0
-                WHERE tblocalid = :idLocal";
-
-        $consulta = $this->conexion->prepare($sql);
-
-        return $consulta->execute([
-            ":idLocal" => $idLocal
         ]);
     }
 }
