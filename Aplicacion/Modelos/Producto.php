@@ -8,9 +8,11 @@ class Producto
     private string $nombre;
     private ?string $descripcion;
     private float $precioOriginal;
-    private float $precioDescuento;
+    private ?float $porcentajeDescuento;
     private int $cantidadDisponible;
     private bool $agotado;
+    private ?string $imagen;
+    private bool $activo;
     private ?DateTime $fechaCreacion;
 
     public function __construct(
@@ -18,22 +20,26 @@ class Producto
         int $idTipoProducto,
         string $nombre,
         float $precioOriginal,
-        float $precioDescuento,
+        ?float $porcentajeDescuento = null,
         ?string $descripcion = null,
         int $cantidadDisponible = 0,
+        ?string $imagen = null,
+        bool $activo = true,
         int $idProducto = 0,
         ?DateTime $fechaCreacion = null
     ) {
         $this->idLocal = $idLocal;
         $this->idTipoProducto = $idTipoProducto;
         $this->idProducto = $idProducto;
+        $this->activo = $activo;
         $this->fechaCreacion = $fechaCreacion;
 
         $this->setNombre($nombre);
         $this->setDescripcion($descripcion);
         $this->setPrecioOriginal($precioOriginal);
-        $this->setPrecioDescuento($precioDescuento);
+        $this->setPorcentajeDescuento($porcentajeDescuento);
         $this->setCantidadDisponible($cantidadDisponible);
+        $this->setImagen($imagen);
     }
 
     public function getIdProducto(): int
@@ -60,10 +66,27 @@ class Producto
     {
         return $this->precioOriginal;
     }
-    public function getPrecioDescuento(): float
+    public function getPorcentajeDescuento(): ?float
     {
-        return $this->precioDescuento;
+        return $this->porcentajeDescuento;
     }
+    public function tieneDescuento(): bool
+    {
+        return $this->porcentajeDescuento !== null;
+    }
+
+    public function getPrecioFinal(): float
+    {
+        if (!$this->tieneDescuento()) {
+            return $this->precioOriginal;
+        }
+
+        return round(
+            $this->precioOriginal * (1 - ($this->porcentajeDescuento / 100)),
+            2
+        );
+    }
+
     public function getCantidadDisponible(): int
     {
         return $this->cantidadDisponible;
@@ -71,6 +94,14 @@ class Producto
     public function isAgotado(): bool
     {
         return $this->agotado;
+    }
+    public function getImagen(): ?string
+    {
+        return $this->imagen;
+    }
+    public function isActivo(): bool
+    {
+        return $this->activo;
     }
     public function getFechaCreacion(): ?DateTime
     {
@@ -101,15 +132,16 @@ class Producto
         $this->precioOriginal = $precioOriginal;
     }
 
-    public function setPrecioDescuento(float $precioDescuento): void
+    public function setPorcentajeDescuento(?float $porcentajeDescuento): void
     {
-        if ($precioDescuento <= 0) {
-            throw new InvalidArgumentException("El precio de descuento debe ser mayor a 0");
+        if ($porcentajeDescuento !== null) {
+            if ($porcentajeDescuento <= 0 || $porcentajeDescuento >= 100) {
+                throw new InvalidArgumentException(
+                    "El porcentaje de descuento debe estar entre 0 y 100, sin llegar a ninguno de los dos"
+                );
+            }
         }
-        if (isset($this->precioOriginal) && $precioDescuento >= $this->precioOriginal) {
-            throw new InvalidArgumentException("El precio de descuento debe ser menor al precio original");
-        }
-        $this->precioDescuento = $precioDescuento;
+        $this->porcentajeDescuento = $porcentajeDescuento;
     }
 
     public function setCantidadDisponible(int $cantidadDisponible): void
@@ -119,5 +151,15 @@ class Producto
         }
         $this->cantidadDisponible = $cantidadDisponible;
         $this->agotado = $cantidadDisponible <= 0;
+    }
+
+    public function setImagen(?string $imagen): void
+    {
+        $this->imagen = $imagen;
+    }
+
+    public function setActivo(bool $activo): void
+    {
+        $this->activo = $activo;
     }
 }
