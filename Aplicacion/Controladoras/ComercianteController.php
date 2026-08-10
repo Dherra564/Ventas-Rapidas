@@ -3,10 +3,8 @@
 require_once __DIR__ . "/../Repositorios/ComercianteRepository.php";
 require_once __DIR__ . "/../Modelos/Comerciante.php";
 
-
 class ComercianteController
 {
-
     private ComercianteRepository $comercianteRepository;
 
     public function __construct()
@@ -16,32 +14,23 @@ class ComercianteController
 
     public function registrar(
         string $nombre,
-        string $apellido,
+        string $alias,
         string $cedula,
         string $correo,
         string $password
-    ): bool {
+    ): int|false {
 
-
-        $passwordHash = password_hash(
-            $password,
-            PASSWORD_DEFAULT
-        );
-
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
         $comerciante = new Comerciante(
-
             $nombre,
-            $apellido,
+            $alias,
             $cedula,
             $correo,
             $passwordHash
-
         );
 
-
         return $this->comercianteRepository->insertar($comerciante);
-
     }
 
     public function listar(): array
@@ -64,4 +53,8 @@ class ComercianteController
         return $this->comercianteRepository->eliminar($idComerciante);
     }
 
+    public function buscarConFiltros(?string $nombre = null, ?string $alias = null, ?bool $activo = null): array
+    {
+        return $this->comercianteRepository->buscar($nombre, $alias, $activo);
+    }
 }
