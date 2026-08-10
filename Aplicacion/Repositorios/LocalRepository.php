@@ -123,9 +123,9 @@ class LocalRepository
 
     /**
      * Busca locales combinando filtros opcionales.
-     * Todos los parámetros son opcionales; los que se pasen como null se ignoran.
+     * Todos los parámetros son opcionales, los que se pasen como null se ignoran.
      *
-     * @param string|null $nombre      Coincidencia parcial (LIKE) sobre el nombre
+     * @param string|null $nombre      Coincidencia parcial sobre el nombre
      * @param int|null    $idTipoLocal Coincidencia exacta sobre el tipo de local
      * @param bool|null   $activo      Coincidencia exacta sobre el estado activo
      */

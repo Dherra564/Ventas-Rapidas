@@ -82,10 +82,10 @@ class ComercianteRepository
 
     /**
      * Busca comerciantes combinando filtros opcionales.
-     * Todos los parámetros son opcionales; los que se pasen como null se ignoran.
+     * Todos los parámetros son opcionales, los que se pasen como null se ignoran.
      *
-     * @param string|null $nombre  Coincidencia parcial (LIKE) sobre el nombre completo
-     * @param string|null $alias   Coincidencia parcial (LIKE) sobre el alias
+     * @param string|null $nombre  Coincidencia parcial sobre el nombre completo
+     * @param string|null $alias   Coincidencia parcial sobre el alias
      * @param bool|null   $activo  Coincidencia exacta sobre el estado activo
      */
     public function buscar(?string $nombre = null, ?string $alias = null, ?bool $activo = null): array
@@ -124,7 +124,6 @@ class ComercianteRepository
 
     public function actualizar(Comerciante $comerciante): bool
     {
-        // La cédula no se actualiza intencionalmente: es un identificador fijo del comerciante.
         $sql = "UPDATE tbcomerciante
                 SET
                     tbcomeriantenombre = :nombre,
@@ -155,9 +154,7 @@ class ComercianteRepository
         return $consulta->execute([":id" => $idComerciante]);
     }
 
-    /**
-     * Mapea todas las filas de un PDOStatement a objetos Comerciante.
-     */
+    
     private function mapearFilas(PDOStatement $consulta): array
     {
         $comerciantes = [];
@@ -169,9 +166,7 @@ class ComercianteRepository
         return $comerciantes;
     }
 
-    /**
-     * Mapea una sola fila a un objeto Comerciante.
-     */
+    
     private function mapearFila(array $fila): Comerciante
     {
         return new Comerciante(
