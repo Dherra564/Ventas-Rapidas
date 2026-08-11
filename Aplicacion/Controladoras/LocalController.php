@@ -24,7 +24,6 @@ class LocalController
         string $telefono,
         string $correo,
         ?string $descripcion,
-        ?string $productosAOfrecer,
         ?string $logo,
 
         int $idProvincia,
@@ -35,6 +34,10 @@ class LocalController
 
     ): int|false {
 
+        if ($this->localRepository->existeCorreo($correo)) {
+            throw new InvalidArgumentException("Ya existe un local registrado con ese correo");
+        }
+
         $idTipoLocal = $this->resolverOCrearTipoLocal($nombreTipoLocal);
 
         $local = new Local(
@@ -43,16 +46,16 @@ class LocalController
             $telefono,
             $correo,
             $descripcion,
-            $productosAOfrecer,
             $logo
         );
 
         $ubicacion = new Ubicacion(
-            0,
             $idProvincia,
             $idCanton,
             $idDistrito,
             $direccionExacta,
+            0,
+            0,
             $referencia
         );
 
@@ -83,7 +86,7 @@ class LocalController
     {
         return $this->localRepository->eliminar($idLocal);
     }
-    
+
     public function buscarConFiltros(
         ?string $nombre = null,
         ?int $idTipoLocal = null,
@@ -138,5 +141,10 @@ class LocalController
     {
         return $this->resolverOCrearTipoLocal($nombreTipoLocal);
     }
-    
+
+    public function existeCorreoLocal(string $correo): bool
+    {
+        return $this->localRepository->existeCorreo($correo);
+    }
+
 }

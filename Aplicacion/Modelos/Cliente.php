@@ -3,45 +3,39 @@
 class Cliente
 {
     private int $idCliente;
-    private string $nombre;
-    private string $apellido;
-    private string $numeroIdentificacion;
+    private string $nombreCompleto;
+    private readonly string $numeroIdentificacion;
     private string $fotoPerfil;
     private string $correo;
     private string $passwordHash;
-    private ?string $fechaRegistro;
+    private bool $activo;
 
     public function __construct(
-        string $nombre,
-        string $apellido,
+        string $nombreCompleto,
         string $numeroIdentificacion,
-        string $fotoPerfil,
         string $correo,
         string $passwordHash,
-        int $idCliente = 0,
-        ?string $fechaRegistro = null
+        string $fotoPerfil = '',
+        bool $activo = true,
+        int $idCliente = 0
     ) {
         $this->idCliente = $idCliente;
-        $this->nombre = $nombre;
-        $this->apellido = $apellido;
         $this->numeroIdentificacion = $numeroIdentificacion;
-        $this->fotoPerfil = $fotoPerfil;
-        $this->correo = $correo;
+        $this->activo = $activo;
         $this->passwordHash = $passwordHash;
-        $this->fechaRegistro = $fechaRegistro;
+
+        $this->setNombreCompleto($nombreCompleto);
+        $this->setCorreo($correo);
+        $this->setFotoPerfil($fotoPerfil);
     }
 
     public function getIdCliente(): int
     {
         return $this->idCliente;
     }
-    public function getNombre(): string
+    public function getNombreCompleto(): string
     {
-        return $this->nombre;
-    }
-    public function getApellido(): string
-    {
-        return $this->apellido;
+        return $this->nombreCompleto;
     }
     public function getNumeroIdentificacion(): string
     {
@@ -59,29 +53,39 @@ class Cliente
     {
         return $this->passwordHash;
     }
-    public function getFechaRegistro(): ?string
+    public function isActivo(): bool
     {
-        return $this->fechaRegistro;
+        return $this->activo;
     }
 
-    public function setNombre(string $nombre): void
+    public function setNombreCompleto(string $nombreCompleto): void
     {
-        $this->nombre = $nombre;
+        if (trim($nombreCompleto) === '') {
+            throw new InvalidArgumentException("El nombre no puede estar vacío");
+        }
+        $this->nombreCompleto = $nombreCompleto;
     }
-    public function setApellido(string $apellido): void
+
+    public function setCorreo(string $correo): void
     {
-        $this->apellido = $apellido;
+        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException("Correo inválido: $correo");
+        }
+        $this->correo = $correo;
     }
+
     public function setFotoPerfil(string $fotoPerfil): void
     {
         $this->fotoPerfil = $fotoPerfil;
     }
-    public function setCorreo(string $correo): void
-    {
-        $this->correo = $correo;
-    }
+
     public function setPasswordHash(string $passwordHash): void
     {
         $this->passwordHash = $passwordHash;
+    }
+
+    public function setActivo(bool $activo): void
+    {
+        $this->activo = $activo;
     }
 }

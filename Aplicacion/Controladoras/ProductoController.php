@@ -1,20 +1,24 @@
 <?php
 
 require_once __DIR__ . "/../Repositorios/ProductoRepository.php";
+require_once __DIR__ . "/../Repositorios/TipoProductoRepository.php";
 require_once __DIR__ . "/../Modelos/Producto.php";
+require_once __DIR__ . "/../Modelos/TipoProducto.php";
 
 class ProductoController
 {
     private ProductoRepository $productoRepository;
+    private TipoProductoRepository $tipoProductoRepository;
 
     public function __construct()
     {
         $this->productoRepository = new ProductoRepository();
+        $this->tipoProductoRepository = new TipoProductoRepository();
     }
 
     public function registrar(
         int $idLocal,
-        int $idTipoProducto,
+        string $nombreTipoProducto,
         string $nombre,
         float $precioOriginal,
         ?float $porcentajeDescuento,
@@ -22,6 +26,8 @@ class ProductoController
         int $cantidadDisponible,
         ?string $imagen
     ): int|false {
+
+        $idTipoProducto = $this->resolverOCrearTipoProducto($nombreTipoProducto);
 
         $producto = new Producto(
             $idLocal,
@@ -71,5 +77,44 @@ class ProductoController
     public function eliminar(int $idProducto): bool
     {
         return $this->productoRepository->eliminar($idProducto);
+    }
+
+    public function buscarTiposCoincidentes(string $textoParcial): array
+    {
+        if (trim($textoParcial) === "") {
+            return [];
+        }
+
+        return $this->tipoProductoRepository->buscarPorNombre($textoParcial);
+    }
+
+    public function buscarTipoProducto(int $idTipoProducto): ?TipoProducto
+    {
+        return $this->tipoProductoRepository->obtenerPorId($idTipoProducto);
+    }
+
+    public function resolverTipoProducto(string $nombreTipoProducto): int
+    {
+        return $this->resolverOCrearTipoProducto($nombreTipoProducto);
+    }
+
+    private function resolverOCrearTipoProducto(string $nombreTipoProducto): int
+    {
+        $nombreNormalizado = trim($nombreTipoProducto);
+
+        $existente = $this->tipoProductoRepository->obtenerPorNombreExacto($nombreNormalizado);
+
+        if ($existente !== null) {
+            return $existente->getIdTipoProducto();
+        }
+
+        $nuevoTipo = new TipoProducto($nombreNormalizado);
+        $id = $this->tipoProductoRepository->insertar($nuevoTipo);
+
+        if ($id === false) {
+            throw new Exception("No se pudo registrar el nuevo tipo de producto");
+        }
+
+        return $id;
     }
 }

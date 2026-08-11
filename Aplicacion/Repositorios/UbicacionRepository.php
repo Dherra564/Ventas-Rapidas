@@ -17,7 +17,20 @@ class UbicacionRepository
 
     public function insertar(Ubicacion $ubicacion): int|false
     {
-        $this->validarReferencia($this->conexion, "tblocal", "tblocalid", $ubicacion->getIdLocal(), "El local con ID {$ubicacion->getIdLocal()} no existe");
+        if (!$ubicacion->tieneDuenoValido()) {
+            throw new InvalidArgumentException(
+                "La ubicación debe pertenecer a un local o a un cliente, no a ambos ni a ninguno"
+            );
+        }
+
+        if ($ubicacion->getIdLocal() > 0) {
+            $this->validarReferencia($this->conexion, "tblocal", "tblocalid", $ubicacion->getIdLocal(), "El local con ID {$ubicacion->getIdLocal()} no existe");
+        }
+
+        if ($ubicacion->getIdCliente() > 0) {
+            $this->validarReferencia($this->conexion, "tbcliente", "tbclienteid", $ubicacion->getIdCliente(), "El cliente con ID {$ubicacion->getIdCliente()} no existe");
+        }
+
         $this->validarReferencia($this->conexion, "tbprovincia", "tbprovinciaid", $ubicacion->getIdProvincia(), "La provincia con ID {$ubicacion->getIdProvincia()} no existe");
         $this->validarReferencia($this->conexion, "tbcanton", "tbcantonid", $ubicacion->getIdCanton(), "El cantón con ID {$ubicacion->getIdCanton()} no existe");
         $this->validarReferencia($this->conexion, "tbdistrito", "tbdistritoid", $ubicacion->getIdDistrito(), "El distrito con ID {$ubicacion->getIdDistrito()} no existe");
@@ -28,6 +41,7 @@ class UbicacionRepository
                 (
                     tbubicacionid,
                     tblocalid,
+                    tbubicacionidcliente,
                     tbprovinciaid,
                     tbcantonid,
                     tbdistritoid,
@@ -39,6 +53,7 @@ class UbicacionRepository
                 (
                     :id,
                     :idLocal,
+                    :idCliente,
                     :idProvincia,
                     :idCanton,
                     :idDistrito,
@@ -52,6 +67,7 @@ class UbicacionRepository
         $exito = $consulta->execute([
             ":id" => $id,
             ":idLocal" => $ubicacion->getIdLocal(),
+            ":idCliente" => $ubicacion->getIdCliente(),
             ":idProvincia" => $ubicacion->getIdProvincia(),
             ":idCanton" => $ubicacion->getIdCanton(),
             ":idDistrito" => $ubicacion->getIdDistrito(),
@@ -72,20 +88,19 @@ class UbicacionRepository
 
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
 
-        if (!$fila) {
-            return null;
-        }
+        return $fila ? $this->mapearFila($fila) : null;
+    }
 
-        return new Ubicacion(
-            (int) $fila["tblocalid"],
-            (int) $fila["tbprovinciaid"],
-            (int) $fila["tbcantonid"],
-            (int) $fila["tbdistritoid"],
-            $fila["tbubicaciondireccionexacta"],
-            $fila["tbubicaciondereferencia"],
-            (bool) $fila["tbubicacionactivo"],
-            (int) $fila["tbubicacionid"]
-        );
+    public function obtenerPorCliente(int $idCliente): ?Ubicacion
+    {
+        $sql = "SELECT * FROM tbubicacion WHERE tbubicacionidcliente = :idCliente";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":idCliente" => $idCliente]);
+
+        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        return $fila ? $this->mapearFila($fila) : null;
     }
 
     public function actualizar(Ubicacion $ubicacion): bool
@@ -102,7 +117,7 @@ class UbicacionRepository
                     tbubicaciondireccionexacta = :direccionExacta,
                     tbubicaciondereferencia = :referencia,
                     tbubicacionactivo = :activo
-                WHERE tblocalid = :idLocal";
+                WHERE tbubicacionid = :id";
 
         $consulta = $this->conexion->prepare($sql);
 
@@ -113,7 +128,22 @@ class UbicacionRepository
             ":direccionExacta" => $ubicacion->getDireccionExacta(),
             ":referencia" => $ubicacion->getReferencia(),
             ":activo" => $ubicacion->isActivo(),
-            ":idLocal" => $ubicacion->getIdLocal()
+            ":id" => $ubicacion->getIdUbicacion()
         ]);
+    }
+
+    private function mapearFila(array $fila): Ubicacion
+    {
+        return new Ubicacion(
+            (int) $fila["tbprovinciaid"],
+            (int) $fila["tbcantonid"],
+            (int) $fila["tbdistritoid"],
+            $fila["tbubicaciondireccionexacta"],
+            (int) $fila["tblocalid"],
+            (int) $fila["tbubicacionidcliente"],
+            $fila["tbubicaciondereferencia"],
+            (bool) $fila["tbubicacionactivo"],
+            (int) $fila["tbubicacionid"]
+        );
     }
 }

@@ -4,32 +4,32 @@ class Ubicacion
 {
     private int $idUbicacion;
     private int $idLocal;
+    private int $idCliente;
     private int $idProvincia;
     private int $idCanton;
     private int $idDistrito;
-    private int $idCliente;
     private string $direccionExacta;
     private ?string $referencia;
     private bool $activo;
 
     public function __construct(
-        int $idLocal,
         int $idProvincia,
         int $idCanton,
         int $idDistrito,
-        int $idCliente,
         string $direccionExacta,
+        int $idLocal = 0,
+        int $idCliente = 0,
         ?string $referencia = null,
         bool $activo = true,
         int $idUbicacion = 0
     ) {
         $this->idUbicacion = $idUbicacion;
-        $this->idLocal = $idLocal;
         $this->idProvincia = $idProvincia;
         $this->idCanton = $idCanton;
         $this->idDistrito = $idDistrito;
+        $this->idLocal = $idLocal;
+        $this->idCliente = $idCliente;
 
-        $this->setIdCliente($idCliente);
         $this->setDireccionExacta($direccionExacta);
         $this->setReferencia($referencia);
         $this->setActivo($activo);
@@ -45,6 +45,11 @@ class Ubicacion
         return $this->idLocal;
     }
 
+    public function getIdCliente(): int
+    {
+        return $this->idCliente;
+    }
+
     public function getIdProvincia(): int
     {
         return $this->idProvincia;
@@ -58,11 +63,6 @@ class Ubicacion
     public function getIdDistrito(): int
     {
         return $this->idDistrito;
-    }
-
-    public function getIdCliente(): int
-    {
-        return $this->idCliente;
     }
 
     public function getDireccionExacta(): string
@@ -87,10 +87,16 @@ class Ubicacion
 
     public function setIdCliente(int $idCliente): void
     {
-        if ($idCliente <= 0) {
-            throw new InvalidArgumentException("El ID de cliente debe ser mayor a cero");
-        }
         $this->idCliente = $idCliente;
+    }
+
+    // Una ubicación debe pertenecer a un local O a un cliente, nunca a los dos ni a ninguno.
+    public function tieneDuenoValido(): bool
+    {
+        $tieneLocal = $this->idLocal > 0;
+        $tieneCliente = $this->idCliente > 0;
+
+        return $tieneLocal xor $tieneCliente;
     }
 
     public function setDireccionExacta(string $direccionExacta): void

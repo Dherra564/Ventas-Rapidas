@@ -44,7 +44,6 @@ class LocalRepository
                         tblocaltipoid,
                         tblocalnombre,
                         tblocaldescripcion,
-                        tblocalproductosaofrecer,
                         tblocaltelefono,
                         tblocalcorreo,
                         tblocallogo,
@@ -56,7 +55,6 @@ class LocalRepository
                         :idTipoLocal,
                         :nombre,
                         :descripcion,
-                        :productos,
                         :telefono,
                         :correo,
                         :logo,
@@ -70,7 +68,6 @@ class LocalRepository
                 ":idTipoLocal" => $local->getIdTipoLocal(),
                 ":nombre" => $local->getNombreLocal(),
                 ":descripcion" => $local->getDescripcion(),
-                ":productos" => $local->getProductosAOfrecer(),
                 ":telefono" => $local->getTelefono(),
                 ":correo" => $local->getCorreo(),
                 ":logo" => $local->getLogo(),
@@ -78,6 +75,11 @@ class LocalRepository
             ]);
 
             $ubicacion->setIdLocal($idLocal);
+
+            if (!$ubicacion->tieneDuenoValido()) {
+                throw new InvalidArgumentException("La ubicación del local no quedó asociada correctamente");
+            }
+
             $this->ubicacionRepository->insertar($ubicacion);
 
             $comercianteLocal = new ComercianteLocal($idComerciante, $idLocal);
@@ -121,14 +123,6 @@ class LocalRepository
         return $fila ? $this->mapearFila($fila) : null;
     }
 
-    /**
-     * Busca locales combinando filtros opcionales.
-     * Todos los parámetros son opcionales, los que se pasen como null se ignoran.
-     *
-     * @param string|null $nombre      Coincidencia parcial sobre el nombre
-     * @param int|null    $idTipoLocal Coincidencia exacta sobre el tipo de local
-     * @param bool|null   $activo      Coincidencia exacta sobre el estado activo
-     */
     public function buscar(
         ?string $nombre = null,
         ?int $idTipoLocal = null,
@@ -214,11 +208,12 @@ class LocalRepository
         $local = $this->mapearFila($fila);
 
         $ubicacion = new Ubicacion(
-            (int) $fila["tblocalid"],
             (int) $fila["tbprovinciaid"],
             (int) $fila["tbcantonid"],
             (int) $fila["tbdistritoid"],
             $fila["tbubicaciondireccionexacta"],
+            (int) $fila["tblocalid"],
+            (int) $fila["tbubicacionidcliente"],
             $fila["tbubicaciondereferencia"],
             (bool) $fila["tbubicacionactivo"],
             (int) $fila["tbubicacionid"]
@@ -242,7 +237,6 @@ class LocalRepository
                     tblocaltipoid = :idTipoLocal,
                     tblocalnombre = :nombre,
                     tblocaldescripcion = :descripcion,
-                    tblocalproductosaofrecer = :productos,
                     tblocaltelefono = :telefono,
                     tblocalcorreo = :correo,
                     tblocallogo = :logo,
@@ -255,7 +249,6 @@ class LocalRepository
             ":idTipoLocal" => $local->getIdTipoLocal(),
             ":nombre" => $local->getNombreLocal(),
             ":descripcion" => $local->getDescripcion(),
-            ":productos" => $local->getProductosAOfrecer(),
             ":telefono" => $local->getTelefono(),
             ":correo" => $local->getCorreo(),
             ":logo" => $local->getLogo(),
@@ -300,7 +293,6 @@ class LocalRepository
             $fila["tblocaltelefono"],
             $fila["tblocalcorreo"],
             $fila["tblocaldescripcion"],
-            $fila["tblocalproductosaofrecer"],
             $fila["tblocallogo"],
             (bool) $fila["tblocalactivo"],
             (int) $fila["tblocalid"],
@@ -317,5 +309,13 @@ class LocalRepository
         $consulta->execute([":nombre" => $nombreLocal]);
         return (int) $consulta->fetchColumn() > 0;
     }
-    
+
+    public function existeCorreo(string $correo): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tblocal WHERE tblocalcorreo = :correo";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":correo" => $correo]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
 }

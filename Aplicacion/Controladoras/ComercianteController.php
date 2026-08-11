@@ -15,9 +15,10 @@ class ComercianteController
     public function registrar(
         string $nombre,
         string $alias,
-        string $cedula,
+        string $numeroIdentificacion,
         string $correo,
-        string $password
+        string $password,
+        string $fotoPerfil = ''
     ): int|false {
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
@@ -25,9 +26,10 @@ class ComercianteController
         $comerciante = new Comerciante(
             $nombre,
             $alias,
-            $cedula,
+            $numeroIdentificacion,
             $correo,
-            $passwordHash
+            $passwordHash,
+            $fotoPerfil
         );
 
         return $this->comercianteRepository->insertar($comerciante);
@@ -58,9 +60,9 @@ class ComercianteController
         return $this->comercianteRepository->buscar($nombre, $alias, $activo);
     }
 
-    public function existeCedula(string $cedula): bool
+    public function existeIdentificacion(string $numeroIdentificacion): bool
     {
-        return $this->comercianteRepository->existeCedula($cedula);
+        return $this->comercianteRepository->existeIdentificacion($numeroIdentificacion);
     }
 
     public function existeCorreo(string $correo): bool
@@ -68,9 +70,9 @@ class ComercianteController
         return $this->comercianteRepository->existeCorreo($correo);
     }
 
-    public function buscarPorCedula(string $cedula): ?Comerciante
+    public function buscarPorIdentificacion(string $numeroIdentificacion): ?Comerciante
     {
-        return $this->comercianteRepository->obtenerPorCedula($cedula);
+        return $this->comercianteRepository->obtenerPorIdentificacion($numeroIdentificacion);
     }
-    
+
 }

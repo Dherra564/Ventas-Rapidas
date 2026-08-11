@@ -22,11 +22,12 @@ class ComercianteRepository
         $sql = "INSERT INTO tbcomerciante
                 (
                     tbcomercianteid,
-                    tbcomeriantenombre,
+                    tbcomerciantenombre,
                     tbcomerciantealias,
-                    tbcomerciantecedula,
+                    tbcomerciantenumerodeidentificacion,
+                    tbcomercianteimagenperfil,
                     tbcomerciantecorreo,
-                    tbcomeriantepassword,
+                    tbcomerciantepassword,
                     tbcomercianteactivo
                 )
                 VALUES
@@ -34,7 +35,8 @@ class ComercianteRepository
                     :id,
                     :nombre,
                     :alias,
-                    :cedula,
+                    :numeroIdentificacion,
+                    :fotoPerfil,
                     :correo,
                     :password,
                     :activo
@@ -46,7 +48,8 @@ class ComercianteRepository
             ":id" => $id,
             ":nombre" => $comerciante->getNombreCompleto(),
             ":alias" => $comerciante->getAlias(),
-            ":cedula" => $comerciante->getCedula(),
+            ":numeroIdentificacion" => $comerciante->getNumeroIdentificacion(),
+            ":fotoPerfil" => $comerciante->getFotoPerfil(),
             ":correo" => $comerciante->getCorreo(),
             ":password" => $comerciante->getPasswordHash(),
             ":activo" => $comerciante->isActivo()
@@ -57,7 +60,7 @@ class ComercianteRepository
 
     public function obtenerTodos(): array
     {
-        $sql = "SELECT * FROM tbcomerciante ORDER BY tbcomeriantenombre";
+        $sql = "SELECT * FROM tbcomerciante ORDER BY tbcomerciantenombre";
 
         $consulta = $this->conexion->query($sql);
 
@@ -80,21 +83,13 @@ class ComercianteRepository
         return $this->mapearFila($fila);
     }
 
-    /**
-     * Busca comerciantes combinando filtros opcionales.
-     * Todos los parámetros son opcionales, los que se pasen como null se ignoran.
-     *
-     * @param string|null $nombre  Coincidencia parcial sobre el nombre completo
-     * @param string|null $alias   Coincidencia parcial sobre el alias
-     * @param bool|null   $activo  Coincidencia exacta sobre el estado activo
-     */
     public function buscar(?string $nombre = null, ?string $alias = null, ?bool $activo = null): array
     {
         $condiciones = [];
         $parametros = [];
 
         if ($nombre !== null && $nombre !== "") {
-            $condiciones[] = "tbcomeriantenombre LIKE :nombre";
+            $condiciones[] = "tbcomerciantenombre LIKE :nombre";
             $parametros[":nombre"] = "%{$nombre}%";
         }
 
@@ -114,7 +109,7 @@ class ComercianteRepository
             $sql .= " WHERE " . implode(" AND ", $condiciones);
         }
 
-        $sql .= " ORDER BY tbcomeriantenombre";
+        $sql .= " ORDER BY tbcomerciantenombre";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute($parametros);
@@ -128,8 +123,9 @@ class ComercianteRepository
                 SET
                     tbcomeriantenombre = :nombre,
                     tbcomerciantealias = :alias,
+                    tbcomercianteimagenperfil = :fotoPerfil,
                     tbcomerciantecorreo = :correo,
-                    tbcomeriantepassword = :password,
+                    tbcomerciantepassword = :password,
                     tbcomercianteactivo = :activo
                 WHERE tbcomercianteid = :id";
 
@@ -138,6 +134,7 @@ class ComercianteRepository
         return $consulta->execute([
             ":nombre" => $comerciante->getNombreCompleto(),
             ":alias" => $comerciante->getAlias(),
+            ":fotoPerfil" => $comerciante->getFotoPerfil(),
             ":correo" => $comerciante->getCorreo(),
             ":password" => $comerciante->getPasswordHash(),
             ":activo" => $comerciante->isActivo(),
@@ -154,7 +151,6 @@ class ComercianteRepository
         return $consulta->execute([":id" => $idComerciante]);
     }
 
-    
     private function mapearFilas(PDOStatement $consulta): array
     {
         $comerciantes = [];
@@ -166,28 +162,28 @@ class ComercianteRepository
         return $comerciantes;
     }
 
-    
     private function mapearFila(array $fila): Comerciante
     {
         return new Comerciante(
-            $fila["tbcomeriantenombre"],
+            $fila["tbcomerciantenombre"],
             $fila["tbcomerciantealias"],
-            $fila["tbcomerciantecedula"],
+            $fila["tbcomerciantenumerodeidentificacion"],
             $fila["tbcomerciantecorreo"],
-            $fila["tbcomeriantepassword"],
+            $fila["tbcomerciantepassword"],
+            $fila["tbcomercianteimagenperfil"] ?? '',
             (bool) $fila["tbcomercianteactivo"],
             (int) $fila["tbcomercianteid"],
-            $fila["tbcomeriantefecharegistroportal"] != null
-            ? new DateTime($fila["tbcomeriantefecharegistroportal"])
+            $fila["tbcomerciantefecharegistroportal"] != null
+            ? new DateTime($fila["tbcomerciantefecharegistroportal"])
             : null
         );
     }
 
-    public function existeCedula(string $cedula): bool
+    public function existeIdentificacion(string $numeroIdentificacion): bool
     {
-        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomerciantecedula = :cedula";
+        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomerciantenumerodeidentificacion = :numeroIdentificacion";
         $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":cedula" => $cedula]);
+        $consulta->execute([":numeroIdentificacion" => $numeroIdentificacion]);
         return (int) $consulta->fetchColumn() > 0;
     }
 
@@ -199,14 +195,13 @@ class ComercianteRepository
         return (int) $consulta->fetchColumn() > 0;
     }
 
-    public function obtenerPorCedula(string $cedula): ?Comerciante
+    public function obtenerPorIdentificacion(string $numeroIdentificacion): ?Comerciante
     {
-        $sql = "SELECT * FROM tbcomerciante WHERE tbcomerciantecedula = :cedula";
+        $sql = "SELECT * FROM tbcomerciante WHERE tbcomerciantenumerodeidentificacion = :numeroIdentificacion";
         $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":cedula" => $cedula]);
+        $consulta->execute([":numeroIdentificacion" => $numeroIdentificacion]);
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
 
         return $fila ? $this->mapearFila($fila) : null;
     }
-    
 }
