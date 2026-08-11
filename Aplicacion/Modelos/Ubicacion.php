@@ -7,6 +7,7 @@ class Ubicacion
     private int $idProvincia;
     private int $idCanton;
     private int $idDistrito;
+    private int $idCliente;
     private string $direccionExacta;
     private ?string $referencia;
     private bool $activo;
@@ -16,6 +17,7 @@ class Ubicacion
         int $idProvincia,
         int $idCanton,
         int $idDistrito,
+        int $idCliente,
         string $direccionExacta,
         ?string $referencia = null,
         bool $activo = true,
@@ -27,6 +29,7 @@ class Ubicacion
         $this->idCanton = $idCanton;
         $this->idDistrito = $idDistrito;
 
+        $this->setIdCliente($idCliente);
         $this->setDireccionExacta($direccionExacta);
         $this->setReferencia($referencia);
         $this->setActivo($activo);
@@ -57,6 +60,11 @@ class Ubicacion
         return $this->idDistrito;
     }
 
+    public function getIdCliente(): int
+    {
+        return $this->idCliente;
+    }
+
     public function getDireccionExacta(): string
     {
         return $this->direccionExacta;
@@ -75,6 +83,14 @@ class Ubicacion
     public function setIdLocal(int $idLocal): void
     {
         $this->idLocal = $idLocal;
+    }
+
+    public function setIdCliente(int $idCliente): void
+    {
+        if ($idCliente <= 0) {
+            throw new InvalidArgumentException("El ID de cliente debe ser mayor a cero");
+        }
+        $this->idCliente = $idCliente;
     }
 
     public function setDireccionExacta(string $direccionExacta): void

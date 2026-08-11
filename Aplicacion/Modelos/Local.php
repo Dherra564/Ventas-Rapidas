@@ -6,7 +6,6 @@ class Local
     private int $idTipoLocal;
     private string $nombreLocal;
     private ?string $descripcion;
-    private ?string $productosAOfrecer;
     private string $telefono;
     private string $correo;
     private ?string $logo;
@@ -19,7 +18,6 @@ class Local
         string $telefono,
         string $correo,
         ?string $descripcion = null,
-        ?string $productosAOfrecer = null,
         ?string $logo = null,
         bool $activo = true,
         int $idLocal = 0,
@@ -34,7 +32,6 @@ class Local
         $this->setTelefono($telefono);
         $this->setCorreo($correo);
         $this->setDescripcion($descripcion);
-        $this->setProductosAOfrecer($productosAOfrecer);
         $this->setLogo($logo);
     }
 
@@ -53,10 +50,6 @@ class Local
     public function getDescripcion(): ?string
     {
         return $this->descripcion;
-    }
-    public function getProductosAOfrecer(): ?string
-    {
-        return $this->productosAOfrecer;
     }
     public function getTelefono(): string
     {
@@ -93,11 +86,6 @@ class Local
             throw new InvalidArgumentException("La descripción no puede estar vacía");
         }
         $this->descripcion = $descripcion;
-    }
-
-    public function setProductosAOfrecer(?string $productosAOfrecer): void
-    {
-        $this->productosAOfrecer = $productosAOfrecer;
     }
 
     public function setTelefono(string $telefono): void

@@ -1,31 +1,31 @@
 <?php
 
-
 class Cliente
 {
     private int $idCliente;
     private string $nombre;
     private string $apellido;
-    private string $cedula;
+    private string $numeroIdentificacion;
+    private string $fotoPerfil;
     private string $correo;
-    private string $passwordHash
-    ;
+    private string $passwordHash;
     private ?string $fechaRegistro;
 
     public function __construct(
         string $nombre,
         string $apellido,
-        string $cedula,
+        string $numeroIdentificacion,
+        string $fotoPerfil,
         string $correo,
-        string $passwordHash
-        ,
+        string $passwordHash,
         int $idCliente = 0,
         ?string $fechaRegistro = null
     ) {
         $this->idCliente = $idCliente;
         $this->nombre = $nombre;
         $this->apellido = $apellido;
-        $this->cedula = $cedula;
+        $this->numeroIdentificacion = $numeroIdentificacion;
+        $this->fotoPerfil = $fotoPerfil;
         $this->correo = $correo;
         $this->passwordHash = $passwordHash;
         $this->fechaRegistro = $fechaRegistro;
@@ -43,9 +43,13 @@ class Cliente
     {
         return $this->apellido;
     }
-    public function getCedula(): string
+    public function getNumeroIdentificacion(): string
     {
-        return $this->cedula;
+        return $this->numeroIdentificacion;
+    }
+    public function getFotoPerfil(): string
+    {
+        return $this->fotoPerfil;
     }
     public function getCorreo(): string
     {
@@ -67,6 +71,10 @@ class Cliente
     public function setApellido(string $apellido): void
     {
         $this->apellido = $apellido;
+    }
+    public function setFotoPerfil(string $fotoPerfil): void
+    {
+        $this->fotoPerfil = $fotoPerfil;
     }
     public function setCorreo(string $correo): void
     {
