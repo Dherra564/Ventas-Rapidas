@@ -123,4 +123,20 @@ class LocalController
 
         return $id;
     }
+
+    public function existeNombreLocal(string $nombreLocal): bool
+    {
+        return $this->localRepository->existeNombre($nombreLocal);
+    }
+
+    public function buscarTipoLocal(int $idTipoLocal): ?TipoLocal
+    {
+        return $this->tipoLocalRepository->obtenerPorId($idTipoLocal);
+    }
+
+    public function resolverTipoLocal(string $nombreTipoLocal): int
+    {
+        return $this->resolverOCrearTipoLocal($nombreTipoLocal);
+    }
+    
 }

@@ -182,4 +182,31 @@ class ComercianteRepository
             : null
         );
     }
+
+    public function existeCedula(string $cedula): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomerciantecedula = :cedula";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":cedula" => $cedula]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
+    public function existeCorreo(string $correo): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomerciantecorreo = :correo";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":correo" => $correo]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
+    public function obtenerPorCedula(string $cedula): ?Comerciante
+    {
+        $sql = "SELECT * FROM tbcomerciante WHERE tbcomerciantecedula = :cedula";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":cedula" => $cedula]);
+        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        return $fila ? $this->mapearFila($fila) : null;
+    }
+    
 }
