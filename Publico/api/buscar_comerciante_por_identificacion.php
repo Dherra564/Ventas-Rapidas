@@ -2,11 +2,11 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ComercianteController.php';
 
-$cedula = trim($_GET['cedula'] ?? '');
+$numeroIdentificacion = trim($_GET['numeroIdentificacion'] ?? '');
 
 try {
     $controlador = new ComercianteController();
-    $comerciante = $controlador->buscarPorCedula($cedula);
+    $comerciante = $controlador->buscarPorIdentificacion($numeroIdentificacion);
 
     if ($comerciante === null) {
         echo json_encode(['encontrado' => false]);

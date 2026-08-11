@@ -22,7 +22,6 @@ try {
         $datos['telefono'] ?? '',
         $datos['correo'] ?? '',
         $datos['descripcion'] ?? null,
-        $datos['productosAOfrecer'] ?? null,
         null,
         (int)($datos['idProvincia'] ?? 0),
         (int)($datos['idCanton'] ?? 0),

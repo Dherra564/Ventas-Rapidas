@@ -33,7 +33,6 @@ try {
             'tipoLocal' => $tipo?->getNombre(),
             'nombreLocal' => $local->getNombreLocal(),
             'descripcion' => $local->getDescripcion(),
-            'productosAOfrecer' => $local->getProductosAOfrecer(),
             'telefono' => $local->getTelefono(),
             'correo' => $local->getCorreo()
         ],

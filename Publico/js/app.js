@@ -48,29 +48,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // REGISTRAR COMERCIANTE
-    const inputCedulaComerciante = document.getElementById('c-cedula');
-    const mensajeCedulaComerciante = document.getElementById('c-cedula-msg');
+    const inputIdentificacionComerciante = document.getElementById('c-numeroIdentificacion');
+    const mensajeIdentificacionComerciante = document.getElementById('c-identificacion-msg');
     const inputCorreoComerciante = document.getElementById('c-correo');
     const mensajeCorreoComerciante = document.getElementById('c-correo-msg');
 
-    const verificarCedulaComercianteDebounced = debounce(async () => {
-        const cedula = inputCedulaComerciante.value;
-        mensajeCedulaComerciante.textContent = '';
-        mensajeCedulaComerciante.className = 'ayuda';
-        if (cedula.length !== 9) return;
+    const verificarIdentificacionComercianteDebounced = debounce(async () => {
+        const numeroIdentificacion = inputIdentificacionComerciante.value.trim();
+        mensajeIdentificacionComerciante.textContent = '';
+        mensajeIdentificacionComerciante.className = 'ayuda';
+        if (numeroIdentificacion.length < 5) return;
 
         try {
-            const r = await fetch(`api/verificar_cedula.php?cedula=${cedula}`);
+            const r = await fetch(`api/verificar_identificacion.php?numeroIdentificacion=${encodeURIComponent(numeroIdentificacion)}`);
             const res = await r.json();
-            mensajeCedulaComerciante.textContent = res.existe ? 'Esta cédula ya está registrada' : 'Cédula disponible';
-            mensajeCedulaComerciante.className = res.existe ? 'ayuda error' : 'ayuda exito';
+            mensajeIdentificacionComerciante.textContent = res.existe ? 'Esta identificación ya está registrada' : 'Identificación disponible';
+            mensajeIdentificacionComerciante.className = res.existe ? 'ayuda error' : 'ayuda exito';
         } catch (e) {}
     }, 400);
 
-    inputCedulaComerciante.addEventListener('input', () => {
-        inputCedulaComerciante.value = soloDigitos(inputCedulaComerciante.value).slice(0, 9);
-        verificarCedulaComercianteDebounced();
-    });
+    inputIdentificacionComerciante.addEventListener('input', verificarIdentificacionComercianteDebounced);
 
     const verificarCorreoComercianteDebounced = debounce(async () => {
         const correo = inputCorreoComerciante.value.trim();
@@ -91,28 +88,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('form-comerciante').addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
-        const datos = {
-            nombre: document.getElementById('c-nombre').value,
-            alias: document.getElementById('c-alias').value,
-            cedula: inputCedulaComerciante.value,
-            correo: inputCorreoComerciante.value,
-            password: document.getElementById('c-password').value
-        };
+        const numeroIdentificacion = inputIdentificacionComerciante.value.trim();
+
+        const datos = new FormData();
+        datos.append('nombre', document.getElementById('c-nombre').value);
+        datos.append('alias', document.getElementById('c-alias').value);
+        datos.append('numeroIdentificacion', numeroIdentificacion);
+        datos.append('correo', inputCorreoComerciante.value);
+        datos.append('password', document.getElementById('c-password').value);
+
+        const archivoFoto = document.getElementById('c-fotoPerfil').files[0];
+        if (archivoFoto) {
+            datos.append('fotoPerfil', archivoFoto);
+        }
 
         try {
             const r = await fetch('api/registrar_comerciante.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
+                body: datos
             });
             const res = await r.json();
 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
 
             if (res.exito) {
-                sessionStorage.setItem('cedulaComercianteActual', datos.cedula);
+                sessionStorage.setItem('identificacionComercianteActual', numeroIdentificacion);
                 evento.target.reset();
-                mensajeCedulaComerciante.textContent = '';
+                mensajeIdentificacionComerciante.textContent = '';
                 mensajeCorreoComerciante.textContent = '';
             }
         } catch (e) {
@@ -120,8 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // AUTOCOMPLETADO DE TIPO DE LOCAL (reutilizable)
-    function activarAutocompletadoTipoLocal(inputEl, listaEl) {
+    // AUTOCOMPLETADO DE TIPO (reutilizable para tipo de local y tipo de producto)
+    function activarAutocompletadoTipo(inputEl, listaEl, endpoint) {
         const buscar = debounce(async () => {
             const texto = inputEl.value.trim();
             listaEl.innerHTML = '';
@@ -130,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (texto.length < 2) return;
 
             try {
-                const r = await fetch(`api/buscar_tipos_local.php?texto=${encodeURIComponent(texto)}`);
+                const r = await fetch(`${endpoint}?texto=${encodeURIComponent(texto)}`);
                 const res = await r.json();
 
                 if (!res.exito || res.tipos.length === 0) return;
@@ -159,99 +161,109 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    activarAutocompletadoTipoLocal(
+    activarAutocompletadoTipo(
         document.getElementById('l-tipoLocal'),
-        document.getElementById('l-tipo-sugerencias')
+        document.getElementById('l-tipo-sugerencias'),
+        'api/buscar_tipos_local.php'
     );
-    activarAutocompletadoTipoLocal(
+    activarAutocompletadoTipo(
         document.getElementById('e-tipoLocal'),
-        document.getElementById('e-tipo-sugerencias')
+        document.getElementById('e-tipo-sugerencias'),
+        'api/buscar_tipos_local.php'
     );
 
-    // SELECTS EN CASCADA: PROVINCIA -> CANTÓN -> DISTRITO
-    const selectProvincia = document.getElementById('l-provincia');
-    const selectCanton = document.getElementById('l-canton');
-    const selectDistrito = document.getElementById('l-distrito');
+    // SELECTS EN CASCADA (reutilizable): PROVINCIA -> CANTÓN -> DISTRITO
+    function activarCascadaUbicacion(selectProvincia, selectCanton, selectDistrito) {
+        async function cargarProvincias() {
+            try {
+                const r = await fetch('api/listar_provincias.php');
+                const res = await r.json();
+                if (!res.exito) return;
 
-    async function cargarProvincias() {
-        try {
-            const r = await fetch('api/listar_provincias.php');
-            const res = await r.json();
-            if (!res.exito) return;
-
-            res.provincias.forEach(p => {
-                const opcion = document.createElement('option');
-                opcion.value = p.idProvincia;
-                opcion.textContent = p.nombre;
-                selectProvincia.appendChild(opcion);
-            });
-        } catch (e) {}
-    }
-    cargarProvincias();
-
-    selectProvincia.addEventListener('change', async () => {
-        selectCanton.innerHTML = '<option value="">Cargando...</option>';
-        selectCanton.disabled = true;
-        selectDistrito.innerHTML = '<option value="">Primero elige cantón</option>';
-        selectDistrito.disabled = true;
-
-        if (!selectProvincia.value) {
-            selectCanton.innerHTML = '<option value="">Primero elige provincia</option>';
-            return;
+                res.provincias.forEach(p => {
+                    const opcion = document.createElement('option');
+                    opcion.value = p.idProvincia;
+                    opcion.textContent = p.nombre;
+                    selectProvincia.appendChild(opcion);
+                });
+            } catch (e) {}
         }
+        cargarProvincias();
 
-        try {
-            const r = await fetch(`api/listar_cantones.php?idProvincia=${selectProvincia.value}`);
-            const res = await r.json();
-
-            selectCanton.innerHTML = '<option value="">Seleccione...</option>';
-            res.cantones.forEach(c => {
-                const opcion = document.createElement('option');
-                opcion.value = c.idCanton;
-                opcion.textContent = c.nombre;
-                selectCanton.appendChild(opcion);
-            });
-            selectCanton.disabled = false;
-        } catch (e) {}
-    });
-
-    selectCanton.addEventListener('change', async () => {
-        selectDistrito.innerHTML = '<option value="">Cargando...</option>';
-        selectDistrito.disabled = true;
-
-        if (!selectCanton.value) {
+        selectProvincia.addEventListener('change', async () => {
+            selectCanton.innerHTML = '<option value="">Cargando...</option>';
+            selectCanton.disabled = true;
             selectDistrito.innerHTML = '<option value="">Primero elige cantón</option>';
-            return;
-        }
+            selectDistrito.disabled = true;
 
-        try {
-            const r = await fetch(`api/listar_distritos.php?idCanton=${selectCanton.value}`);
-            const res = await r.json();
+            if (!selectProvincia.value) {
+                selectCanton.innerHTML = '<option value="">Primero elige provincia</option>';
+                return;
+            }
 
-            selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
-            res.distritos.forEach(d => {
-                const opcion = document.createElement('option');
-                opcion.value = d.idDistrito;
-                opcion.textContent = d.nombre;
-                selectDistrito.appendChild(opcion);
-            });
-            selectDistrito.disabled = false;
-        } catch (e) {}
-    });
+            try {
+                const r = await fetch(`api/listar_cantones.php?idProvincia=${selectProvincia.value}`);
+                const res = await r.json();
 
-    // REGISTRAR LOCAL: identificar comerciante por cédula
-    const inputCedulaLocal = document.getElementById('l-cedula');
+                selectCanton.innerHTML = '<option value="">Seleccione...</option>';
+                res.cantones.forEach(c => {
+                    const opcion = document.createElement('option');
+                    opcion.value = c.idCanton;
+                    opcion.textContent = c.nombre;
+                    selectCanton.appendChild(opcion);
+                });
+                selectCanton.disabled = false;
+            } catch (e) {}
+        });
+
+        selectCanton.addEventListener('change', async () => {
+            selectDistrito.innerHTML = '<option value="">Cargando...</option>';
+            selectDistrito.disabled = true;
+
+            if (!selectCanton.value) {
+                selectDistrito.innerHTML = '<option value="">Primero elige cantón</option>';
+                return;
+            }
+
+            try {
+                const r = await fetch(`api/listar_distritos.php?idCanton=${selectCanton.value}`);
+                const res = await r.json();
+
+                selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
+                res.distritos.forEach(d => {
+                    const opcion = document.createElement('option');
+                    opcion.value = d.idDistrito;
+                    opcion.textContent = d.nombre;
+                    selectDistrito.appendChild(opcion);
+                });
+                selectDistrito.disabled = false;
+            } catch (e) {}
+        });
+    }
+
+    const selectProvinciaLocal = document.getElementById('l-provincia');
+    const selectCantonLocal = document.getElementById('l-canton');
+    const selectDistritoLocal = document.getElementById('l-distrito');
+    activarCascadaUbicacion(selectProvinciaLocal, selectCantonLocal, selectDistritoLocal);
+
+    const selectProvinciaCliente = document.getElementById('cl-provincia');
+    const selectCantonCliente = document.getElementById('cl-canton');
+    const selectDistritoCliente = document.getElementById('cl-distrito');
+    activarCascadaUbicacion(selectProvinciaCliente, selectCantonCliente, selectDistritoCliente);
+
+    // REGISTRAR LOCAL: identificar comerciante por número de identificación
+    const inputIdentificacionLocal = document.getElementById('l-numeroIdentificacion');
     const infoComerciante = document.getElementById('l-comerciante-info');
     const inputIdComerciante = document.getElementById('l-idComerciante');
 
     const buscarComercianteDebounced = debounce(async () => {
-        const cedula = inputCedulaLocal.value;
+        const numeroIdentificacion = inputIdentificacionLocal.value.trim();
         infoComerciante.textContent = '';
         infoComerciante.className = 'ayuda';
-        if (cedula.length !== 9) return;
+        if (numeroIdentificacion.length < 5) return;
 
         try {
-            const r = await fetch(`api/buscar_comerciante_por_cedula.php?cedula=${cedula}`);
+            const r = await fetch(`api/buscar_comerciante_por_identificacion.php?numeroIdentificacion=${encodeURIComponent(numeroIdentificacion)}`);
             const res = await r.json();
 
             if (res.encontrado) {
@@ -260,29 +272,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 infoComerciante.className = 'ayuda exito';
             } else {
                 inputIdComerciante.value = '';
-                infoComerciante.textContent = 'No existe un comerciante con esa cédula. Regístrate primero.';
+                infoComerciante.textContent = 'No existe un comerciante con esa identificación. Regístrate primero.';
                 infoComerciante.className = 'ayuda error';
             }
         } catch (e) {
-            infoComerciante.textContent = 'No se pudo verificar la cédula';
+            infoComerciante.textContent = 'No se pudo verificar la identificación';
             infoComerciante.className = 'ayuda error';
         }
     }, 400);
 
-    inputCedulaLocal.addEventListener('input', () => {
-        inputCedulaLocal.value = soloDigitos(inputCedulaLocal.value).slice(0, 9);
+    inputIdentificacionLocal.addEventListener('input', () => {
         inputIdComerciante.value = '';
         buscarComercianteDebounced();
     });
 
-    const cedulaGuardada = sessionStorage.getItem('cedulaComercianteActual');
-    if (cedulaGuardada) {
-        inputCedulaLocal.value = cedulaGuardada;
+    const identificacionGuardada = sessionStorage.getItem('identificacionComercianteActual');
+    if (identificacionGuardada) {
+        inputIdentificacionLocal.value = identificacionGuardada;
         buscarComercianteDebounced();
-        sessionStorage.removeItem('cedulaComercianteActual');
+        sessionStorage.removeItem('identificacionComercianteActual');
     }
 
-    // ombre del local: disponibilidad
+    // Nombre del local: disponibilidad
     const inputNombreLocal = document.getElementById('l-nombreLocal');
     const mensajeNombreLocal = document.getElementById('l-nombre-msg');
 
@@ -302,17 +313,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputNombreLocal.addEventListener('input', verificarNombreLocalDebounced);
 
+    // Correo del local: disponibilidad
+    const inputCorreoLocal = document.getElementById('l-correo');
+    const mensajeCorreoLocal = document.getElementById('l-correo-msg');
+
+    const verificarCorreoLocalDebounced = debounce(async () => {
+        const correo = inputCorreoLocal.value.trim();
+        mensajeCorreoLocal.textContent = '';
+        mensajeCorreoLocal.className = 'ayuda';
+        if (!correo.includes('@') || !correo.includes('.')) return;
+
+        try {
+            const r = await fetch(`api/verificar_correo_local.php?correo=${encodeURIComponent(correo)}`);
+            const res = await r.json();
+            mensajeCorreoLocal.textContent = res.existe ? 'Ese correo ya está registrado en otro local' : 'Correo disponible';
+            mensajeCorreoLocal.className = res.existe ? 'ayuda error' : 'ayuda exito';
+        } catch (e) {}
+    }, 500);
+
+    inputCorreoLocal.addEventListener('input', verificarCorreoLocalDebounced);
+
     formatearTelefono(document.getElementById('l-telefono'));
     formatearTelefono(document.getElementById('e-telefono'));
 
-    //Registrar Local
+    // Registrar Local
     const formLocal = document.getElementById('form-local');
 
     formLocal.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         if (!inputIdComerciante.value) {
-            mostrarMensaje('Ingresa una cédula de comerciante válida antes de continuar', 'error');
+            mostrarMensaje('Ingresa un número de identificación de comerciante válido antes de continuar', 'error');
             return;
         }
 
@@ -321,12 +352,11 @@ document.addEventListener('DOMContentLoaded', () => {
             nombreTipoLocal: document.getElementById('l-tipoLocal').value,
             nombreLocal: inputNombreLocal.value,
             descripcion: document.getElementById('l-descripcion').value,
-            productosAOfrecer: document.getElementById('l-productos').value,
             telefono: document.getElementById('l-telefono').value,
             correo: document.getElementById('l-correo').value,
-            idProvincia: selectProvincia.value,
-            idCanton: selectCanton.value,
-            idDistrito: selectDistrito.value,
+            idProvincia: selectProvinciaLocal.value,
+            idCanton: selectCantonLocal.value,
+            idDistrito: selectDistritoLocal.value,
             direccionExacta: document.getElementById('l-direccion').value,
             referencia: document.getElementById('l-referencia').value
         };
@@ -346,10 +376,90 @@ document.addEventListener('DOMContentLoaded', () => {
                 infoComerciante.textContent = '';
                 mensajeNombreLocal.textContent = '';
                 inputIdComerciante.value = '';
-                selectCanton.innerHTML = '<option value="">Primero elige provincia</option>';
-                selectCanton.disabled = true;
-                selectDistrito.innerHTML = '<option value="">Primero elige cantón</option>';
-                selectDistrito.disabled = true;
+                selectCantonLocal.innerHTML = '<option value="">Primero elige provincia</option>';
+                selectCantonLocal.disabled = true;
+                selectDistritoLocal.innerHTML = '<option value="">Primero elige cantón</option>';
+                selectDistritoLocal.disabled = true;
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    // REGISTRAR CLIENTE
+    const inputIdentificacionCliente = document.getElementById('cl-numeroIdentificacion');
+    const mensajeIdentificacionCliente = document.getElementById('cl-identificacion-msg');
+    const inputCorreoCliente = document.getElementById('cl-correo');
+    const mensajeCorreoCliente = document.getElementById('cl-correo-msg');
+
+    const verificarIdentificacionClienteDebounced = debounce(async () => {
+        const numeroIdentificacion = inputIdentificacionCliente.value.trim();
+        mensajeIdentificacionCliente.textContent = '';
+        mensajeIdentificacionCliente.className = 'ayuda';
+        if (numeroIdentificacion.length < 5) return;
+
+        try {
+            const r = await fetch(`api/verificar_identificacion_cliente.php?numeroIdentificacion=${encodeURIComponent(numeroIdentificacion)}`);
+            const res = await r.json();
+            mensajeIdentificacionCliente.textContent = res.existe ? 'Esta identificación ya está registrada' : 'Identificación disponible';
+            mensajeIdentificacionCliente.className = res.existe ? 'ayuda error' : 'ayuda exito';
+        } catch (e) {}
+    }, 400);
+
+    inputIdentificacionCliente.addEventListener('input', verificarIdentificacionClienteDebounced);
+
+    const verificarCorreoClienteDebounced = debounce(async () => {
+        const correo = inputCorreoCliente.value.trim();
+        mensajeCorreoCliente.textContent = '';
+        mensajeCorreoCliente.className = 'ayuda';
+        if (!correo.includes('@') || !correo.includes('.')) return;
+
+        try {
+            const r = await fetch(`api/verificar_correo_cliente.php?correo=${encodeURIComponent(correo)}`);
+            const res = await r.json();
+            mensajeCorreoCliente.textContent = res.existe ? 'Este correo ya está registrado' : 'Correo disponible';
+            mensajeCorreoCliente.className = res.existe ? 'ayuda error' : 'ayuda exito';
+        } catch (e) {}
+    }, 500);
+
+    inputCorreoCliente.addEventListener('input', verificarCorreoClienteDebounced);
+
+    document.getElementById('form-cliente').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const datos = new FormData();
+        datos.append('nombreCompleto', document.getElementById('cl-nombreCompleto').value);
+        datos.append('numeroIdentificacion', inputIdentificacionCliente.value.trim());
+        datos.append('correo', inputCorreoCliente.value);
+        datos.append('password', document.getElementById('cl-password').value);
+        datos.append('idProvincia', selectProvinciaCliente.value);
+        datos.append('idCanton', selectCantonCliente.value);
+        datos.append('idDistrito', selectDistritoCliente.value);
+        datos.append('direccionExacta', document.getElementById('cl-direccion').value);
+        datos.append('referencia', document.getElementById('cl-referencia').value);
+
+        const archivoFoto = document.getElementById('cl-fotoPerfil').files[0];
+        if (archivoFoto) {
+            datos.append('fotoPerfil', archivoFoto);
+        }
+
+        try {
+            const r = await fetch('api/registrar_cliente.php', {
+                method: 'POST',
+                body: datos
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                evento.target.reset();
+                mensajeIdentificacionCliente.textContent = '';
+                mensajeCorreoCliente.textContent = '';
+                selectCantonCliente.innerHTML = '<option value="">Primero elige provincia</option>';
+                selectCantonCliente.disabled = true;
+                selectDistritoCliente.innerHTML = '<option value="">Primero elige cantón</option>';
+                selectDistritoCliente.disabled = true;
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
@@ -397,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function abrirDetalleLocal(idLocal) {
+async function abrirDetalleLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
             const res = await r.json();
@@ -413,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('e-tipoLocal').value = local.tipoLocal ?? '';
             document.getElementById('e-nombreLocal').value = local.nombreLocal;
             document.getElementById('e-descripcion').value = local.descripcion ?? '';
-            document.getElementById('e-productos').value = local.productosAOfrecer ?? '';
             document.getElementById('e-telefono').value = local.telefono;
             document.getElementById('e-correo').value = local.correo;
 
@@ -423,8 +532,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
             panelLista.classList.add('oculto');
             panelDetalle.classList.remove('oculto');
+
+            cargarProductosDelLocal(idLocal);
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del local', 'error');
+        }
+    }
+
+    async function cargarProductosDelLocal(idLocal) {
+        const contenedor = document.getElementById('e-productos-lista');
+        contenedor.innerHTML = '<p>Cargando productos...</p>';
+
+        try {
+            const r = await fetch(`api/listar_productos_local.php?idLocal=${idLocal}`);
+            const res = await r.json();
+
+            if (!res.exito || res.productos.length === 0) {
+                contenedor.innerHTML = '<p>Este local todavía no tiene productos registrados.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.productos.forEach(producto => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta';
+
+                const precioHtml = producto.porcentajeDescuento
+                    ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
+                    : `₡${producto.precioOriginal}`;
+
+                tarjeta.innerHTML = `
+                    ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${producto.nombre}" class="imagen-producto">` : ''}
+                    <h4>${producto.nombre}</h4>
+                    <p>${producto.descripcion ?? ''}</p>
+                    <p>${precioHtml}</p>
+                    <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
+                    <button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>
+                `;
+                contenedor.appendChild(tarjeta);
+                tarjeta.querySelector('.btn-editar-producto').addEventListener('click', () => {
+                    abrirEditarProducto(producto.idProducto, idLocal);
+                });
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p>Error al cargar los productos.</p>';
         }
     }
 
@@ -438,7 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
             nombreTipoLocal: document.getElementById('e-tipoLocal').value,
             nombreLocal: document.getElementById('e-nombreLocal').value,
             descripcion: document.getElementById('e-descripcion').value,
-            productosAOfrecer: document.getElementById('e-productos').value,
             telefono: document.getElementById('e-telefono').value,
             correo: document.getElementById('e-correo').value
         };
@@ -456,6 +607,164 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.exito) {
                 mostrarListaLocales();
                 cargarLocales();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+    
+    // REGISTRAR PRODUCTO
+    const inputNombreLocalProducto = document.getElementById('p-nombreLocal');
+    const infoLocalProducto = document.getElementById('p-local-info');
+    const inputIdLocalProducto = document.getElementById('p-idLocal');
+
+    const buscarLocalDebounced = debounce(async () => {
+        const nombre = inputNombreLocalProducto.value.trim();
+        infoLocalProducto.textContent = '';
+        infoLocalProducto.className = 'ayuda';
+        if (nombre.length < 3) return;
+
+        try {
+            const r = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombre)}`);
+            const res = await r.json();
+
+            if (res.encontrado) {
+                inputIdLocalProducto.value = res.idLocal;
+                infoLocalProducto.textContent = 'Local encontrado';
+                infoLocalProducto.className = 'ayuda exito';
+            } else {
+                inputIdLocalProducto.value = '';
+                infoLocalProducto.textContent = 'No existe un local con ese nombre exacto';
+                infoLocalProducto.className = 'ayuda error';
+            }
+        } catch (e) {}
+    }, 400);
+
+    inputNombreLocalProducto.addEventListener('input', () => {
+        inputIdLocalProducto.value = '';
+        buscarLocalDebounced();
+    });
+
+    activarAutocompletadoTipo(
+        document.getElementById('p-tipoProducto'),
+        document.getElementById('p-tipo-sugerencias'),
+        'api/buscar_tipos_producto.php'
+    );
+
+    document.getElementById('form-producto').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        if (!inputIdLocalProducto.value) {
+            mostrarMensaje('Ingresa el nombre exacto de un local válido antes de continuar', 'error');
+            return;
+        }
+
+        const datos = new FormData();
+        datos.append('idLocal', inputIdLocalProducto.value);
+        datos.append('nombreTipoProducto', document.getElementById('p-tipoProducto').value);
+        datos.append('nombre', document.getElementById('p-nombre').value);
+        datos.append('precioOriginal', document.getElementById('p-precio').value);
+        datos.append('porcentajeDescuento', document.getElementById('p-descuento').value);
+        datos.append('descripcion', document.getElementById('p-descripcion').value);
+        datos.append('cantidadDisponible', document.getElementById('p-cantidad').value);
+
+        const archivoImagen = document.getElementById('p-imagen').files[0];
+        if (archivoImagen) {
+            datos.append('imagen', archivoImagen);
+        }
+
+        try {
+            const r = await fetch('api/registrar_producto.php', {
+                method: 'POST',
+                body: datos
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                evento.target.reset();
+                infoLocalProducto.textContent = '';
+                inputIdLocalProducto.value = '';
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    // EDITAR PRODUCTO
+    const panelEditarProducto = document.getElementById('panel-editar-producto');
+    let idLocalProductoEditando = null;
+
+    activarAutocompletadoTipo(
+        document.getElementById('ep-tipoProducto'),
+        document.getElementById('ep-tipo-sugerencias'),
+        'api/buscar_tipos_producto.php'
+    );
+
+    async function abrirEditarProducto(idProducto, idLocal) {
+        try {
+            const r = await fetch(`api/buscar_producto.php?id=${idProducto}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar el producto', 'error');
+                return;
+            }
+
+            const p = res.producto;
+            idLocalProductoEditando = idLocal;
+
+            document.getElementById('ep-idProducto').value = p.idProducto;
+            document.getElementById('ep-tipoProducto').value = p.tipoProducto ?? '';
+            document.getElementById('ep-nombre').value = p.nombre;
+            document.getElementById('ep-descripcion').value = p.descripcion ?? '';
+            document.getElementById('ep-precio').value = p.precioOriginal;
+            document.getElementById('ep-descuento').value = p.porcentajeDescuento ?? '';
+            document.getElementById('ep-cantidad').value = p.cantidadDisponible;
+
+            panelDetalle.classList.add('oculto');
+            panelEditarProducto.classList.remove('oculto');
+        } catch (e) {
+            mostrarMensaje('Error al cargar el producto', 'error');
+        }
+    }
+
+    document.getElementById('btn-cerrar-editar-producto').addEventListener('click', () => {
+        panelEditarProducto.classList.add('oculto');
+        panelDetalle.classList.remove('oculto');
+    });
+
+    document.getElementById('form-editar-producto').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const datos = new FormData();
+        datos.append('idProducto', document.getElementById('ep-idProducto').value);
+        datos.append('nombreTipoProducto', document.getElementById('ep-tipoProducto').value);
+        datos.append('nombre', document.getElementById('ep-nombre').value);
+        datos.append('precioOriginal', document.getElementById('ep-precio').value);
+        datos.append('porcentajeDescuento', document.getElementById('ep-descuento').value);
+        datos.append('descripcion', document.getElementById('ep-descripcion').value);
+        datos.append('cantidadDisponible', document.getElementById('ep-cantidad').value);
+
+        const archivoImagen = document.getElementById('ep-imagen').files[0];
+        if (archivoImagen) {
+            datos.append('imagen', archivoImagen);
+        }
+
+        try {
+            const r = await fetch('api/editar_producto.php', {
+                method: 'POST',
+                body: datos
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                panelEditarProducto.classList.add('oculto');
+                panelDetalle.classList.remove('oculto');
+                cargarProductosDelLocal(idLocalProductoEditando);
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');

@@ -1,15 +1,15 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../../Aplicacion/Controladoras/ComercianteController.php';
+require_once __DIR__ . '/../../Aplicacion/Controladoras/ClienteController.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
 
-class RegistrarComercianteHandler
+class RegistrarClienteHandler
 {
     use ManejadorImagenes;
 
     public function manejar(): array
     {
-        $controlador = new ComercianteController();
+        $controlador = new ClienteController();
 
         $numeroIdentificacion = trim($_POST['numeroIdentificacion'] ?? '');
         $correo = trim($_POST['correo'] ?? '');
@@ -22,31 +22,35 @@ class RegistrarComercianteHandler
             return ['exito' => false, 'mensaje' => 'Ese correo ya está registrado'];
         }
 
-        $nombreImagen = $this->subirImagenPerfil($_FILES['fotoPerfil'] ?? null, 'comerciante');
+        $nombreImagen = $this->subirImagenPerfil($_FILES['fotoPerfil'] ?? null, 'cliente');
 
-        $idComerciante = $controlador->registrar(
-            $_POST['nombre'] ?? '',
-            $_POST['alias'] ?? '',
+        $idCliente = $controlador->registrar(
+            $_POST['nombreCompleto'] ?? '',
             $numeroIdentificacion,
             $correo,
             $_POST['password'] ?? '',
-            $nombreImagen !== false ? $nombreImagen : ''
+            $nombreImagen !== false ? $nombreImagen : '',
+            (int) ($_POST['idProvincia'] ?? 0),
+            (int) ($_POST['idCanton'] ?? 0),
+            (int) ($_POST['idDistrito'] ?? 0),
+            $_POST['direccionExacta'] ?? '',
+            $_POST['referencia'] ?? null
         );
 
-        if ($idComerciante !== false) {
+        if ($idCliente !== false) {
             return [
                 'exito' => true,
-                'mensaje' => 'Comerciante registrado correctamente',
-                'idComerciante' => $idComerciante
+                'mensaje' => 'Cliente registrado correctamente',
+                'idCliente' => $idCliente
             ];
         }
 
-        return ['exito' => false, 'mensaje' => 'No se pudo registrar el comerciante'];
+        return ['exito' => false, 'mensaje' => 'No se pudo registrar el cliente'];
     }
 }
 
 try {
-    $handler = new RegistrarComercianteHandler();
+    $handler = new RegistrarClienteHandler();
     $respuesta = $handler->manejar();
 } catch (InvalidArgumentException $e) {
     $respuesta = ['exito' => false, 'mensaje' => $e->getMessage()];
