@@ -179,3 +179,63 @@ body {
 .boton-secundario:hover {
     text-decoration: underline;
 }
+
+select {
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: white;
+}
+
+select:disabled {
+    background: #f0f0f0;
+    color: #999;
+}
+
+.sugerencias {
+    position: relative;
+    z-index: 20;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    max-height: 180px;
+    overflow-y: auto;
+    margin-top: -0.4rem;
+}
+
+.sugerencia-item {
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.sugerencia-item:hover {
+    background: #e6f2ec;
+}
+
+.etiqueta-tipo {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1f6f50;
+    background: #e6f2ec;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    margin-bottom: 0.3rem;
+}
+
+.campo-lectura {
+    background: #f4f6f8;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.campo-lectura strong {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: #1f6f50;
+}

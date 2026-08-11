@@ -1,14 +1,12 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-
-require_once __DIR__ . '/../../Aplicacion/Controladoras/ProveedorController.php';
+require_once __DIR__ . '/../../Aplicacion/Controladoras/ComercianteController.php';
 
 $datos = json_decode(file_get_contents('php://input'), true);
-
 $respuesta = ['exito' => false, 'mensaje' => ''];
 
 try {
-    $controlador = new ProveedorController();
+    $controlador = new ComercianteController();
 
     $cedula = $datos['cedula'] ?? '';
     $correo = $datos['correo'] ?? '';
@@ -23,24 +21,20 @@ try {
         exit;
     }
 
-    $creado = $controlador->registrar(
+    $idComerciante = $controlador->registrar(
         $datos['nombre'] ?? '',
-        $datos['apellido'] ?? '',
+        $datos['alias'] ?? '',
         $cedula,
         $correo,
         $datos['password'] ?? ''
     );
 
-    if ($creado) {
-        $proveedor = $controlador->buscarPorCedula($cedula);
-
+    if ($idComerciante !== false) {
         $respuesta['exito'] = true;
-        $respuesta['mensaje'] = 'Proveedor registrado correctamente';
-        $respuesta['idProveedor'] = $proveedor?->getIdProveedor();
-        $respuesta['nombre'] = $proveedor?->getNombre();
-        $respuesta['apellido'] = $proveedor?->getApellido();
+        $respuesta['mensaje'] = 'Comerciante registrado correctamente';
+        $respuesta['idComerciante'] = $idComerciante;
     } else {
-        $respuesta['mensaje'] = 'No se pudo registrar el proveedor';
+        $respuesta['mensaje'] = 'No se pudo registrar el comerciante';
     }
 
 } catch (InvalidArgumentException $e) {

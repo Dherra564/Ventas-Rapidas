@@ -309,4 +309,13 @@ class LocalRepository
             : null
         );
     }
+
+    public function existeNombre(string $nombreLocal): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tblocal WHERE tblocalnombre = :nombre";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":nombre" => $nombreLocal]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+    
 }

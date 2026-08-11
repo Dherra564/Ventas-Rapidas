@@ -83,7 +83,7 @@ class LocalController
     {
         return $this->localRepository->eliminar($idLocal);
     }
-
+    
     public function buscarConFiltros(
         ?string $nombre = null,
         ?int $idTipoLocal = null,
@@ -95,7 +95,6 @@ class LocalController
         return $this->localRepository->buscar($nombre, $idTipoLocal, $idProvincia, $idCanton, $idDistrito, $activo);
     }
 
-    
     public function buscarTiposCoincidentes(string $textoParcial): array
     {
         if (trim($textoParcial) === "") {
@@ -124,4 +123,20 @@ class LocalController
 
         return $id;
     }
+
+    public function existeNombreLocal(string $nombreLocal): bool
+    {
+        return $this->localRepository->existeNombre($nombreLocal);
+    }
+
+    public function buscarTipoLocal(int $idTipoLocal): ?TipoLocal
+    {
+        return $this->tipoLocalRepository->obtenerPorId($idTipoLocal);
+    }
+
+    public function resolverTipoLocal(string $nombreTipoLocal): int
+    {
+        return $this->resolverOCrearTipoLocal($nombreTipoLocal);
+    }
+    
 }

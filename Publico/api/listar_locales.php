@@ -1,6 +1,5 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 
 try {
@@ -9,13 +8,15 @@ try {
 
     $datos = [];
     foreach ($locales as $local) {
+        $tipo = $controlador->buscarTipoLocal($local->getIdTipoLocal());
+
         $datos[] = [
-            'idLocal'     => $local->getIdLocal(),
+            'idLocal' => $local->getIdLocal(),
             'nombreLocal' => $local->getNombreLocal(),
             'descripcion' => $local->getDescripcion(),
-            'telefono'    => $local->getTelefono(),
-            'correo'      => $local->getCorreo(),
-            'imagen'      => $local->getImagen(),
+            'telefono' => $local->getTelefono(),
+            'correo' => $local->getCorreo(),
+            'tipoLocal' => $tipo?->getNombre()
         ];
     }
 

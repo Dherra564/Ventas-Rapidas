@@ -57,4 +57,20 @@ class ComercianteController
     {
         return $this->comercianteRepository->buscar($nombre, $alias, $activo);
     }
+
+    public function existeCedula(string $cedula): bool
+    {
+        return $this->comercianteRepository->existeCedula($cedula);
+    }
+
+    public function existeCorreo(string $correo): bool
+    {
+        return $this->comercianteRepository->existeCorreo($correo);
+    }
+
+    public function buscarPorCedula(string $cedula): ?Comerciante
+    {
+        return $this->comercianteRepository->obtenerPorCedula($cedula);
+    }
+    
 }

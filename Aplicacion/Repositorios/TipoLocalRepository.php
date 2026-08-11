@@ -88,4 +88,24 @@ class TipoLocalRepository
             (int) $fila["tblocaltipoid"]
         );
     }
+
+    public function obtenerPorId(int $idTipoLocal): ?TipoLocal
+    {
+        $sql = "SELECT * FROM tblocaltipo WHERE tblocaltipoid = :id";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":id" => $idTipoLocal]);
+
+        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        if (!$fila) {
+            return null;
+        }
+
+        return new TipoLocal(
+            $fila["tblocaltiponombre"],
+            (int) $fila["tblocaltipoid"]
+        );
+    }
+    
 }
