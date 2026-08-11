@@ -5,25 +5,26 @@ class Comerciante
     private int $idComerciante;
     private string $nombreCompleto;
     private string $alias;
-    public readonly string $cedula;
+    private readonly string $numeroIdentificacion;
+    private string $fotoPerfil;
     private string $correo;
-    private string $passwordHash
-    ;
+    private string $passwordHash;
     private ?DateTime $fechaRegistro;
     private bool $activo;
 
     public function __construct(
         string $nombreCompleto,
         string $alias,
-        string $cedula,
+        string $numeroIdentificacion,
         string $correo,
         string $passwordHash,
+        string $fotoPerfil = '',
         bool $activo = true,
         int $idComerciante = 0,
         ?DateTime $fechaRegistro = null
     ) {
         $this->idComerciante = $idComerciante;
-        $this->cedula = $cedula;
+        $this->numeroIdentificacion = $numeroIdentificacion;
         $this->activo = $activo;
         $this->passwordHash = $passwordHash;
         $this->fechaRegistro = $fechaRegistro;
@@ -31,6 +32,7 @@ class Comerciante
         $this->setNombreCompleto($nombreCompleto);
         $this->setAlias($alias);
         $this->setCorreo($correo);
+        $this->setFotoPerfil($fotoPerfil);
     }
 
     public function getIdComerciante(): int
@@ -45,9 +47,13 @@ class Comerciante
     {
         return $this->alias;
     }
-    public function getCedula(): string
+    public function getNumeroIdentificacion(): string
     {
-        return $this->cedula;
+        return $this->numeroIdentificacion;
+    }
+    public function getFotoPerfil(): string
+    {
+        return $this->fotoPerfil;
     }
     public function getCorreo(): string
     {
@@ -80,6 +86,11 @@ class Comerciante
             throw new InvalidArgumentException("El alias no puede estar vacío");
         }
         $this->alias = $alias;
+    }
+
+    public function setFotoPerfil(string $fotoPerfil): void
+    {
+        $this->fotoPerfil = $fotoPerfil;
     }
 
     public function setCorreo(string $correo): void
