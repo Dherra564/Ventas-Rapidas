@@ -1,0 +1,573 @@
+P|San José
+C|Central
+D|Carmen
+D|Merced
+D|Hospital
+D|Catedral
+D|Zapote
+D|San Francisco De Dos Rios
+D|Uruca
+D|Mata Redonda
+D|Pavas
+D|Hatillo
+D|San Sebastián
+C|Escazú
+D|Escazú
+D|San Antonio
+D|San Rafael
+C|Desamparados
+D|Desamparados
+D|San Miguel
+D|San Juan De Dios
+D|San Rafael Arriba
+D|San Rafael Abajo
+D|San Antonio
+D|Frailes
+D|Patarra
+D|San Cristobal
+D|Rosario
+D|Damas
+D|Gravilias
+D|Los Guido
+C|Puriscal
+D|Santiago
+D|Mercedes Sur
+D|Barbacoas
+D|Grifo Alto
+D|San Rafael
+D|Candelarita
+D|Desamparaditos
+D|San Antonio
+D|Chires
+C|Tarrazú
+D|San Marcos
+D|San Lorenzo
+D|San Carlos
+C|Aserrí
+D|Aserrí
+D|Tarbaca
+D|Vuelta De Jorco
+D|San Gabriel
+D|Legua
+D|Monterrey
+D|Salitrillos
+C|Mora
+D|Colón
+D|Guayabo
+D|Tabarcia
+D|Piedras Negras
+D|Picagres
+D|Jaris
+C|Goicoechea
+D|Guadalupe
+D|San Francisco
+D|Calle Blancos
+D|Mata De Platano
+D|Ipís
+D|Rancho Redondo
+D|Purral
+C|Santa Ana
+D|Santa Ana
+D|Salitral
+D|Pozos
+D|Uruca
+D|Piedades
+D|Brasil
+C|Alajuelita
+D|Alajuelita
+D|San Josecito
+D|San Antonio
+D|Concepción
+D|San Felipe
+C|Vázquez De Coronado
+D|San Isidro
+D|San Rafael
+D|Dulce Nombre De Jesus
+D|Patalillo
+D|Cascajal
+C|Acosta
+D|San Ignacio
+D|Guaitil
+D|Palmichal
+D|Cangrejal
+D|Sabanillas
+C|Tibás
+D|San Juan
+D|Cinco Esquinas
+D|Anselmo Llorente
+D|Leon Xiii
+D|Colima
+C|Moravia
+D|San Vicente
+D|San Jeronimo
+D|La Trinidad
+C|Montes De Oca
+D|San Pedro
+D|Sabanilla
+D|Mercedes
+D|San Rafael
+C|Turrubares
+D|San Pablo
+D|San Pedro
+D|San Juan De Mata
+D|San Luis
+D|Carara
+C|Dota
+D|Santa María
+D|Jardin
+D|Copey
+C|Curridabat
+D|Curridabat
+D|Granadilla
+D|Sanchez
+D|Tirrases
+C|Pérez Zeledón
+D|San Isidro De El General
+D|El General
+D|Daniel Flores
+D|Rivas
+D|San Pedro
+D|Platanares
+D|Pejibaye
+D|Cajon
+D|Baru
+D|Rio Nuevo
+D|Páramo
+C|León Cortés Castro
+D|San Pablo
+D|San Andres
+D|Llano Bonito
+D|San Isidro
+D|Santa Cruz
+D|San Antonio
+P|Alajuela
+C|Central
+D|Alajuela
+D|San José
+D|Carrizal
+D|San Antonio
+D|Guácima
+D|San Isidro
+D|Sabanilla
+D|San Rafael
+D|Rio Segundo
+D|Desamparados
+D|Turrucares
+D|Tambor
+D|Garita
+D|Sarapiquí
+C|San Ramón
+D|San Ramón
+D|Santiago
+D|San Juan
+D|Piedades Norte
+D|Piedades Sur
+D|San Rafael
+D|San Isidro
+D|Angeles
+D|Alfaro
+D|Volio
+D|Concepción
+D|Zapotal
+D|Peñas Blancas
+D|San Lorenzo
+C|Grecia
+D|Grecia
+D|San Isidro
+D|San José
+D|San Roque
+D|Tacares
+D|Rio Cuarto
+D|Puente De Piedra
+D|Bolivar
+C|San Mateo
+D|San Mateo
+D|Desmonte
+D|Jesús María
+D|Labrador
+C|Atenas
+D|Atenas
+D|Jesús
+D|Mercedes
+D|San Isidro
+D|Concepción
+D|San José
+D|Santa Eulalia
+D|Escobal
+C|Naranjo
+D|Naranjo
+D|San Juan
+D|San Miguel
+D|Palmitos
+D|El Rosario
+D|San José
+D|Cirrí Sur
+D|San Jerónimo
+C|Palmares
+D|Palmares
+D|Zaragoza
+D|Buenos Aires
+D|Santiago
+D|Candelaria
+D|Esquipulas
+D|La Granja
+C|Poás
+D|San Pedro
+D|San Juan
+D|San Rafael
+D|Carrillos
+D|Sabana Redonda
+C|Orotina
+D|Orotina
+D|El Mastate
+D|Hacienda Vieja
+D|Coyolar
+D|La Ceiba
+C|San Carlos
+D|Quesada
+D|Florencia
+D|Buenavista
+D|Aguas Zarcas
+D|Venecia
+D|Pital
+D|La Fortuna
+D|La Tigra
+D|La Palmera
+D|Venado
+D|Cutris
+D|Monterrey
+D|Pocosol
+C|Zarcero
+D|Zarcero
+D|Laguna
+D|Tapesco
+D|Guadalupe
+D|Palmira
+D|Zapote
+D|Brisas
+C|Sarchí
+D|Sarchí Norte
+D|Sarchí Sur
+D|Toro Amarillo
+D|San Pedro
+D|Rodriguez
+C|Upala
+D|Upala
+D|Aguas Claras
+D|San José o Pizote
+D|Bijagua
+D|Delicias
+D|Dos Rios
+D|Yolillal
+D|Canalete
+C|Los Chiles
+D|Los Chiles
+D|Caño Negro
+D|El Amparo
+D|San Jorge
+C|Guatuso
+D|San Rafael
+D|Buenavista
+D|Cote
+D|Katira
+C|Río Cuarto
+D|Río Cuarto
+D|Santa Rita
+D|Santa Isabel
+P|Cartago
+C|Central
+D|Oriental
+D|Occidental
+D|Carmen
+D|San Nicolás
+D|Aguacaliente o San Francisco
+D|Guadalupe o Arenilla
+D|Corralillo
+D|Tierra Blanca
+D|Dulce Nombre
+D|Llano Grande
+D|Quebradilla
+C|Paraíso
+D|Paraiso
+D|Santiago
+D|Orosi
+D|Cachí
+D|Llanos de Santa Lucía
+C|La Unión
+D|Tres Rios
+D|San Diego
+D|San Juan
+D|San Rafael
+D|Concepción
+D|Dulce Nombre
+D|San Ramón
+D|Rio Azul
+C|Jiménez
+D|Juan Viñas
+D|Tucurrique
+D|Pejibaye
+C|Turrialba
+D|Turrialba
+D|La Suiza
+D|Peralta
+D|Santa Cruz
+D|Santa Teresita
+D|Pavones
+D|Tuis
+D|Tayutic
+D|Santa Rosa
+D|Tres Equis
+D|La Isabel
+D|Chirripó
+C|Alvarado
+D|Pacayas
+D|Cervantes
+D|Capellades
+C|Oreamuno
+D|San Rafael
+D|Cot
+D|Potrero Cerrado
+D|Cipreses
+D|Santa Rosa
+C|El Guarco
+D|El Tejar
+D|San Isidro
+D|Tobosi
+D|Patio De Agua
+P|Heredia
+C|Central
+D|Heredia
+D|Mercedes
+D|San Francisco
+D|Ulloa
+D|Varablanca
+C|Barva
+D|Barva
+D|San Pedro
+D|San Pablo
+D|San Roque
+D|Santa Lucía
+D|San José de la Montaña
+C|Santo Domingo
+D|Santo Domingo
+D|San Vicente
+D|San Miguel
+D|Paracito
+D|Santo Tomás
+D|Santa Rosa
+D|Tures
+D|Para
+C|Santa Barbara
+D|Santa Bárbara
+D|San Pedro
+D|San Juan
+D|Jesús
+D|Santo Domingo
+D|Puraba
+C|San Rafael
+D|San Rafael
+D|San Josecito
+D|Santiago
+D|Los Ángeles
+D|Concepción
+C|San Isidro
+D|San Isidro
+D|San José
+D|Concepción
+D|San Francisco
+C|Belén
+D|San Antonio
+D|La Ribera
+D|La Asuncion
+C|Flores
+D|San Joaquín
+D|Barrantes
+D|Llorente
+C|San Pablo
+D|San Pablo
+D|Rincon De Sabanilla
+C|Sarapiquí
+D|Puerto Viejo
+D|La Virgen
+D|Las Horquetas
+D|Llanuras Del Gaspar
+D|Cureña
+P|Guanacaste
+C|Liberia
+D|Liberia
+D|Nacascolo
+D|Cañas Dulces
+D|Mayorga
+D|Curubande
+C|Nicoya
+D|Nicoya
+D|Mansión
+D|San Antonio
+D|Quebrada Honda
+D|Sámara
+D|Nosara
+D|Belén De Nosarita
+C|Santa Cruz
+D|Santa Cruz
+D|Bolson
+D|Veintisiete de Abril
+D|Tempate
+D|Cartagena
+D|Cuajiniquil
+D|Diria
+D|Cabo Velas
+D|Tamarindo
+C|Bagaces
+D|Bagaces
+D|La Fortuna
+D|Mogote
+D|Rio Naranjo
+C|Carrillo
+D|Filadelfia
+D|Palmira
+D|Sardinal
+D|Belen
+C|Cañas
+D|Cañas
+D|Palmira
+D|San Miguel
+D|Bebedero
+D|Porozal
+C|Abangares
+D|Las Juntas
+D|Sierra
+D|San Juan
+D|Colorado
+C|Tilarán
+D|Tilarán
+D|Quebrada Grande
+D|Tronadora
+D|Santa Rosa
+D|Líbano
+D|Tierras Morenas
+D|Arenal
+D|Cabeceras
+C|Nandayure
+D|Carmona
+D|Santa Rita
+D|Zapotal
+D|San Pablo
+D|Porvenir
+D|Bejuco
+C|La Cruz
+D|La Cruz
+D|Santa Cecilia
+D|La Garita
+D|Santa Elena
+C|Hojancha
+D|Hojancha
+D|Monte Romo
+D|Puerto Carrillo
+D|Huacas
+P|Puntarenas
+C|Central
+D|Puntarenas
+D|Pitahaya
+D|Chomes
+D|Lepanto
+D|Paquera
+D|Manzanillo
+D|Guacimal
+D|Barranca
+D|Monte Verde
+D|Isla Del Coco
+D|Cóbano
+D|Chacarita
+D|Chira
+D|Acapulco
+D|El Roble
+D|Arancibia
+C|Esparza
+D|Espíritu Santo
+D|San Juan Grande
+D|Macacona
+D|San Rafael
+D|San Jerónimo
+D|Caldera
+C|Buenos Aires
+D|Buenos Aires
+D|Volcán
+D|Potrero Grande
+D|Boruca
+D|Pilas
+D|Colinas
+D|Changuena
+D|Biolley
+D|Brunka
+C|Montes De Oro
+D|Miramar
+D|La Unión
+D|San Isidro
+C|Osa
+D|Puerto Cortés
+D|Palmar
+D|Sierpe
+D|Bahía Ballena
+D|Piedras Blancas
+D|Bahía Drake
+C|Quepos
+D|Quepos
+D|Savegre
+D|Naranjito
+C|Golfito
+D|Golfito
+D|Puerto Jiménez
+D|Guaycara
+D|Pavón
+C|Coto Brus
+D|San Vito
+D|Sabalito
+D|Aguabuena
+D|Limoncito
+D|Pittier
+C|Parrita
+D|Parrita
+C|Corredores
+D|Corredor
+D|La Cuesta
+D|Canoas
+D|Laurel
+C|Garabito
+D|Jacó
+D|Tárcoles
+P|Limón
+C|Central
+D|Limón
+D|Valle La Estrella
+D|Rio Blanco
+D|Matama
+C|Pococí
+D|Guapiles
+D|Jiménez
+D|Rita
+D|Roxana
+D|Cariari
+D|Colorado
+D|La Colonia
+C|Siquirres
+D|Siquirres
+D|Pacuarito
+D|Florida
+D|Germania
+D|El Cairo
+D|Alegría
+C|Talamanca
+D|Bratsi
+D|Sixaola
+D|Cahuita
+D|Telire
+C|Matina
+D|Matina
+D|Batán
+D|Carrandi
+C|Guácimo
+D|Guácimo
+D|Mercedes
+D|Pocora
+D|Rio Jiménez
+D|Duacari
