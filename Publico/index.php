@@ -96,7 +96,7 @@
         <!-- Vista: Registrar Local -->
         <section id="vista-local" class="vista oculto">
             <h2>Registro de Local</h2>
-            <form id="form-local" class="formulario">
+            <form id="form-local" class="formulario" enctype="multipart/form-data">
                 <label for="l-numeroIdentificacion">Comerciante (ingresa tu número de identificación)</label>
                 <input type="text" id="l-numeroIdentificacion" placeholder="Sin espacios ni guiones" required>
                 <span class="ayuda" id="l-comerciante-info"></span>
@@ -119,6 +119,9 @@
                 <label for="l-correo">Correo</label>
                 <input type="email" id="l-correo" placeholder="ejemplo@gmail.com" required>
                 <span class="ayuda" id="l-correo-msg"></span>
+
+                <label for="l-logo">Logo del local</label>
+                <input type="file" id="l-logo" accept="image/png, image/jpeg, image/webp">
 
                 <hr>
 
@@ -215,6 +218,10 @@
                 <h2>Detalle del Local</h2>
 
                 <div class="campo-lectura">
+                    <img id="e-logo-actual" src="" alt="Logo del local" class="imagen-producto oculto">
+                </div>
+
+                <div class="campo-lectura">
                     <strong>Ubicación registrada</strong>
                     <p id="e-ubicacion-texto"></p>
                 </div>
@@ -224,7 +231,7 @@
                     <div id="e-productos-lista" class="tarjetas"></div>
                 </div>
 
-                <form id="form-editar-local" class="formulario">
+                <form id="form-editar-local" class="formulario" enctype="multipart/form-data">
                     <input type="hidden" id="e-idLocal">
 
                     <label for="e-tipoLocal">Tipo de Local</label>
@@ -242,6 +249,9 @@
 
                     <label for="e-correo">Correo</label>
                     <input type="email" id="e-correo" placeholder="ejemplo@gmail.com" required>
+
+                    <label for="e-logo">Nuevo logo (opcional, deja vacío para mantener el actual)</label>
+                    <input type="file" id="e-logo" accept="image/png, image/jpeg, image/webp">
 
                     <button type="submit">Guardar Cambios</button>
                 </form>

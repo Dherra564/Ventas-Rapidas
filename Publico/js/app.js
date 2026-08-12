@@ -347,25 +347,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const datos = {
-            idComerciante: inputIdComerciante.value,
-            nombreTipoLocal: document.getElementById('l-tipoLocal').value,
-            nombreLocal: inputNombreLocal.value,
-            descripcion: document.getElementById('l-descripcion').value,
-            telefono: document.getElementById('l-telefono').value,
-            correo: document.getElementById('l-correo').value,
-            idProvincia: selectProvinciaLocal.value,
-            idCanton: selectCantonLocal.value,
-            idDistrito: selectDistritoLocal.value,
-            direccionExacta: document.getElementById('l-direccion').value,
-            referencia: document.getElementById('l-referencia').value
-        };
+        const datos = new FormData();
+        datos.append('idComerciante', inputIdComerciante.value);
+        datos.append('nombreTipoLocal', document.getElementById('l-tipoLocal').value);
+        datos.append('nombreLocal', inputNombreLocal.value);
+        datos.append('descripcion', document.getElementById('l-descripcion').value);
+        datos.append('telefono', document.getElementById('l-telefono').value);
+        datos.append('correo', document.getElementById('l-correo').value);
+        datos.append('idProvincia', selectProvinciaLocal.value);
+        datos.append('idCanton', selectCantonLocal.value);
+        datos.append('idDistrito', selectDistritoLocal.value);
+        datos.append('direccionExacta', document.getElementById('l-direccion').value);
+        datos.append('referencia', document.getElementById('l-referencia').value);
+
+        const archivoLogo = document.getElementById('l-logo').files[0];
+        if (archivoLogo) {
+            datos.append('logo', archivoLogo);
+        }
 
         try {
             const r = await fetch('api/registrar_local.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
+                body: datos
             });
             const res = await r.json();
 
@@ -494,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
                 tarjeta.innerHTML = `
+                    ${local.logo ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}" class="imagen-producto">` : ''}
                     <h3>${local.nombreLocal}</h3>
                     <p class="etiqueta-tipo">${local.tipoLocal ?? ''}</p>
                     <p>${local.descripcion ?? ''}</p>
@@ -507,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-async function abrirDetalleLocal(idLocal) {
+    async function abrirDetalleLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
             const res = await r.json();
@@ -525,6 +529,13 @@ async function abrirDetalleLocal(idLocal) {
             document.getElementById('e-descripcion').value = local.descripcion ?? '';
             document.getElementById('e-telefono').value = local.telefono;
             document.getElementById('e-correo').value = local.correo;
+            const imgLogo = document.getElementById('e-logo-actual');
+            if (local.logo) {
+                imgLogo.src = `imagenes/${local.logo}`;
+                imgLogo.classList.remove('oculto');
+            } else {
+                imgLogo.classList.add('oculto');
+            } 
 
             document.getElementById('e-ubicacion-texto').textContent =
                 `${ubicacion.provincia}, ${ubicacion.canton}, ${ubicacion.distrito} — ${ubicacion.direccionExacta}` +
@@ -585,20 +596,23 @@ async function abrirDetalleLocal(idLocal) {
     document.getElementById('form-editar-local').addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
-        const datos = {
-            idLocal: document.getElementById('e-idLocal').value,
-            nombreTipoLocal: document.getElementById('e-tipoLocal').value,
-            nombreLocal: document.getElementById('e-nombreLocal').value,
-            descripcion: document.getElementById('e-descripcion').value,
-            telefono: document.getElementById('e-telefono').value,
-            correo: document.getElementById('e-correo').value
-        };
+        const datos = new FormData();
+        datos.append('idLocal', document.getElementById('e-idLocal').value);
+        datos.append('nombreTipoLocal', document.getElementById('e-tipoLocal').value);
+        datos.append('nombreLocal', document.getElementById('e-nombreLocal').value);
+        datos.append('descripcion', document.getElementById('e-descripcion').value);
+        datos.append('telefono', document.getElementById('e-telefono').value);
+        datos.append('correo', document.getElementById('e-correo').value);
+
+        const archivoLogo = document.getElementById('e-logo').files[0];
+        if (archivoLogo) {
+            datos.append('logo', archivoLogo);
+        }
 
         try {
             const r = await fetch('api/editar_local.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
+                body: datos
             });
             const res = await r.json();
 
@@ -635,7 +649,7 @@ async function abrirDetalleLocal(idLocal) {
             } else {
                 inputIdLocalProducto.value = '';
                 infoLocalProducto.textContent = 'No existe un local con ese nombre exacto';
-                infoLocalProducto.className = 'ayuda error';
+                infoLocalProducto.className = 'ayuda error';    
             }
         } catch (e) {}
     }, 400);

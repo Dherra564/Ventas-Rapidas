@@ -34,7 +34,8 @@ try {
             'nombreLocal' => $local->getNombreLocal(),
             'descripcion' => $local->getDescripcion(),
             'telefono' => $local->getTelefono(),
-            'correo' => $local->getCorreo()
+            'correo' => $local->getCorreo(),
+            'logo' => $local->getLogo()
         ],
         'ubicacion' => [
             'provincia' => $provincia?->getNombre(),

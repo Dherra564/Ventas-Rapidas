@@ -22,9 +22,14 @@ class EditarProductoHandler
         $idTipoProducto = $controlador->resolverTipoProducto($_POST['nombreTipoProducto'] ?? '');
 
         $porcentajeDescuento = trim($_POST['porcentajeDescuento'] ?? '');
-
         $nombreImagenNueva = $this->subirImagenPerfil($_FILES['imagen'] ?? null, 'producto');
-        $imagenFinal = $nombreImagenNueva !== false ? $nombreImagenNueva : $productoActual->getImagen();
+
+        if ($nombreImagenNueva !== false) {
+            $this->eliminarImagen($productoActual->getImagen());
+            $imagenFinal = $nombreImagenNueva;
+        } else {
+            $imagenFinal = $productoActual->getImagen();
+        }
 
         $producto = new Producto(
             $productoActual->getIdLocal(),

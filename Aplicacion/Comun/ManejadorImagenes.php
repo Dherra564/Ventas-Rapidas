@@ -41,4 +41,18 @@ trait ManejadorImagenes
 
         return $nombreArchivo;
     }
+
+    protected function eliminarImagen(?string $nombreArchivo): void
+    {
+        if ($nombreArchivo === null || $nombreArchivo === '') {
+            return;
+        }
+
+        $rutaArchivo = __DIR__ . '/../../Publico/imagenes/' . $nombreArchivo;
+
+        if (is_file($rutaArchivo)) {
+            unlink($rutaArchivo);
+        }
+    }
+
 }

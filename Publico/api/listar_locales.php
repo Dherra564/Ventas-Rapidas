@@ -16,7 +16,8 @@ try {
             'descripcion' => $local->getDescripcion(),
             'telefono' => $local->getTelefono(),
             'correo' => $local->getCorreo(),
-            'tipoLocal' => $tipo?->getNombre()
+            'tipoLocal' => $tipo?->getNombre(),
+            'logo' => $local->getLogo()
         ];
     }
 

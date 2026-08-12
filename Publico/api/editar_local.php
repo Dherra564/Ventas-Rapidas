@@ -2,36 +2,61 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Modelos/Local.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
 
-$datos = json_decode(file_get_contents('php://input'), true);
-$respuesta = ['exito' => false, 'mensaje' => ''];
+class EditarLocalHandler
+{
+    use ManejadorImagenes;
+
+    public function manejar(): array
+    {
+        $controlador = new LocalController();
+
+        $idLocal = (int) ($_POST['idLocal'] ?? 0);
+        $localActual = $controlador->buscar($idLocal);
+
+        if ($localActual === null) {
+            return ['exito' => false, 'mensaje' => 'Local no encontrado'];
+        }
+
+        $idTipoLocal = $controlador->resolverTipoLocal($_POST['nombreTipoLocal'] ?? '');
+
+        $nombreLogoNuevo = $this->subirImagenPerfil($_FILES['logo'] ?? null, 'local');
+
+        if ($nombreLogoNuevo !== false) {
+            $this->eliminarImagen($localActual->getLogo());
+            $logoFinal = $nombreLogoNuevo;
+        } else {
+            $logoFinal = $localActual->getLogo();
+        }
+
+        $local = new Local(
+            $idTipoLocal,
+            $_POST['nombreLocal'] ?? '',
+            $_POST['telefono'] ?? '',
+            $_POST['correo'] ?? '',
+            $_POST['descripcion'] ?? null,
+            $logoFinal,
+            true,
+            $idLocal
+        );
+
+        $actualizado = $controlador->editar($local);
+
+        return [
+            'exito' => $actualizado,
+            'mensaje' => $actualizado ? 'Local actualizado correctamente' : 'No se pudo actualizar el local'
+        ];
+    }
+}
 
 try {
-    $controlador = new LocalController();
-
-    $idTipoLocal = $controlador->resolverTipoLocal($datos['nombreTipoLocal'] ?? '');
-
-    $local = new Local(
-        $idTipoLocal,
-        $datos['nombreLocal'] ?? '',
-        $datos['telefono'] ?? '',
-        $datos['correo'] ?? '',
-        $datos['descripcion'] ?? null,
-        $datos['productosAOfrecer'] ?? null,
-        null,
-        true,
-        (int)($datos['idLocal'] ?? 0)
-    );
-
-    $actualizado = $controlador->editar($local);
-
-    $respuesta['exito'] = $actualizado;
-    $respuesta['mensaje'] = $actualizado ? 'Local actualizado correctamente' : 'No se pudo actualizar el local';
-
+    $handler = new EditarLocalHandler();
+    $respuesta = $handler->manejar();
 } catch (InvalidArgumentException $e) {
-    $respuesta['mensaje'] = $e->getMessage();
+    $respuesta = ['exito' => false, 'mensaje' => $e->getMessage()];
 } catch (Exception $e) {
-    $respuesta['mensaje'] = 'Error del servidor: ' . $e->getMessage();
+    $respuesta = ['exito' => false, 'mensaje' => 'Error del servidor: ' . $e->getMessage()];
 }
 
 echo json_encode($respuesta);
