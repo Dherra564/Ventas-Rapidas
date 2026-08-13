@@ -442,10 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
         evento.preventDefault();
 
         const datos = new FormData();
-        datos.append('nombre', document.getElementById('c-nombre').value);
-        datos.append('alias', document.getElementById('c-alias').value);
-        datos.append('tipoIdentificacion', document.getElementById('c-tipoIdentificacion').value);
-        datos.append('numeroIdentificacion', numeroIdentificacion);
+        datos.append('nombreCompleto', document.getElementById('cl-nombreCompleto').value);
+        datos.append('tipoIdentificacion', document.getElementById('cl-tipoIdentificacion').value);
+        datos.append('numeroIdentificacion', inputIdentificacionCliente.value.trim());
         datos.append('correo', inputCorreoCliente.value);
         datos.append('password', document.getElementById('cl-password').value);
         datos.append('idProvincia', selectProvinciaCliente.value);
@@ -603,9 +602,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
                     : `₡${producto.precioOriginal}`;
 
-                tarjeta.innerHTML = `
+                    tarjeta.innerHTML = `
                     ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${producto.nombre}" class="imagen-producto">` : ''}
-                    <h4>${producto.nombre}</h4>
+                    <h4>${producto.nombre} ${producto.compartido ? '<span class="etiqueta-tipo">Compartido</span>' : ''}</h4>
                     <p>${producto.descripcion ?? ''}</p>
                     <p>${precioHtml}</p>
                     <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
@@ -769,6 +768,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             panelDetalle.classList.add('oculto');
             panelEditarProducto.classList.remove('oculto');
+
+            cargarOtrosLocalesDelProducto(p.idProducto);
         } catch (e) {
             mostrarMensaje('Error al cargar el producto', 'error');
         }
@@ -1075,6 +1076,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             panelListaClientes.classList.add('oculto');
             panelDetalleCliente.classList.remove('oculto');
+
+            cargarLocalesQueSigueCliente(c.idCliente);
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del cliente', 'error');
         }
@@ -1242,6 +1245,180 @@ document.addEventListener('DOMContentLoaded', () => {
         selectDistritoFiltro.innerHTML = '<option value="">Todos los distritos</option>';
         selectDistritoFiltro.disabled = true;
         cargarLocales();
+    });
+
+    // PRODUCTO EN VARIOS LOCALES (tbproductolocal)
+    async function cargarOtrosLocalesDelProducto(idProducto) {
+        const contenedor = document.getElementById('ep-otros-locales-lista');
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const r = await fetch(`api/listar_locales_producto.php?idProducto=${idProducto}`);
+            const res = await r.json();
+
+            if (!res.exito || res.locales.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">Por ahora solo se ofrece en su local original.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.locales.forEach(loc => {
+                const fila = document.createElement('div');
+                fila.className = 'fila-relacion';
+                fila.innerHTML = `
+                    <span>${loc.nombreLocal}</span>
+                    <button type="button" class="boton-peligro btn-quitar-local-producto" data-id="${loc.idProductoLocal}">Quitar</button>
+                `;
+                fila.querySelector('.btn-quitar-local-producto').addEventListener('click', async () => {
+                    try {
+                        const rq = await fetch('api/quitar_producto_local.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ idProductoLocal: loc.idProductoLocal })
+                        });
+                        const resq = await rq.json();
+                        if (resq.exito) {
+                            cargarOtrosLocalesDelProducto(idProducto);
+                        } else {
+                            mostrarMensaje('No se pudo quitar el local', 'error');
+                        }
+                    } catch (e) {
+                        mostrarMensaje('Error de conexión con el servidor', 'error');
+                    }
+                });
+                contenedor.appendChild(fila);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los locales.</p>';
+        }
+    }
+
+    document.getElementById('btn-agregar-local-producto').addEventListener('click', async () => {
+        const idProducto = document.getElementById('ep-idProducto').value;
+        const nombreLocal = document.getElementById('ep-agregar-local-nombre').value.trim();
+        const mensaje = document.getElementById('ep-agregar-local-msg');
+
+        if (!nombreLocal) return;
+
+        mensaje.textContent = 'Buscando local...';
+        mensaje.className = 'ayuda';
+
+        try {
+            const rBuscar = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombreLocal)}`);
+            const resBuscar = await rBuscar.json();
+
+            if (!resBuscar.encontrado) {
+                mensaje.textContent = 'No existe un local con ese nombre exacto';
+                mensaje.className = 'ayuda error';
+                return;
+            }
+
+            const rAgregar = await fetch('api/agregar_producto_local.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idProducto, idLocal: resBuscar.idLocal })
+            });
+            const resAgregar = await rAgregar.json();
+
+            mensaje.textContent = resAgregar.mensaje;
+            mensaje.className = resAgregar.exito ? 'ayuda exito' : 'ayuda error';
+
+            if (resAgregar.exito) {
+                document.getElementById('ep-agregar-local-nombre').value = '';
+                cargarOtrosLocalesDelProducto(idProducto);
+            }
+        } catch (e) {
+            mensaje.textContent = 'Error de conexión con el servidor';
+            mensaje.className = 'ayuda error';
+        }
+    });
+
+    // CLIENTE SIGUE LOCALES (tbclientelocal)
+    async function cargarLocalesQueSigueCliente(idCliente) {
+        const contenedor = document.getElementById('dcl-locales-lista');
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const r = await fetch(`api/listar_locales_cliente.php?idCliente=${idCliente}`);
+            const res = await r.json();
+
+            if (!res.exito || res.locales.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">Este cliente todavía no sigue ningún local.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.locales.forEach(loc => {
+                const fila = document.createElement('div');
+                fila.className = 'fila-relacion';
+                fila.innerHTML = `
+                    <span>${loc.nombreLocal}</span>
+                    <button type="button" class="boton-peligro btn-dejar-seguir-local" data-id="${loc.idClienteLocal}">Dejar de seguir</button>
+                `;
+                fila.querySelector('.btn-dejar-seguir-local').addEventListener('click', async () => {
+                    try {
+                        const rq = await fetch('api/dejar_seguir_local_cliente.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ idClienteLocal: loc.idClienteLocal })
+                        });
+                        const resq = await rq.json();
+                        if (resq.exito) {
+                            cargarLocalesQueSigueCliente(idCliente);
+                        } else {
+                            mostrarMensaje('No se pudo quitar el local', 'error');
+                        }
+                    } catch (e) {
+                        mostrarMensaje('Error de conexión con el servidor', 'error');
+                    }
+                });
+                contenedor.appendChild(fila);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los locales.</p>';
+        }
+    }
+
+    document.getElementById('btn-seguir-local').addEventListener('click', async () => {
+        const idCliente = document.getElementById('dcl-idCliente').value;
+        const nombreLocal = document.getElementById('dcl-agregar-local-nombre').value.trim();
+        const mensaje = document.getElementById('dcl-seguir-local-msg');
+
+        if (!nombreLocal) return;
+
+        mensaje.textContent = 'Buscando local...';
+        mensaje.className = 'ayuda';
+
+        try {
+            const rBuscar = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombreLocal)}`);
+            const resBuscar = await rBuscar.json();
+
+            if (!resBuscar.encontrado) {
+                mensaje.textContent = 'No existe un local con ese nombre exacto';
+                mensaje.className = 'ayuda error';
+                return;
+            }
+
+            const rSeguir = await fetch('api/seguir_local_cliente.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idCliente, idLocal: resBuscar.idLocal })
+            });
+            const resSeguir = await rSeguir.json();
+
+            mensaje.textContent = resSeguir.mensaje;
+            mensaje.className = resSeguir.exito ? 'ayuda exito' : 'ayuda error';
+
+            if (resSeguir.exito) {
+                document.getElementById('dcl-agregar-local-nombre').value = '';
+                cargarLocalesQueSigueCliente(idCliente);
+            }
+        } catch (e) {
+            mensaje.textContent = 'Error de conexión con el servidor';
+            mensaje.className = 'ayuda error';
+        }
     });
 
 });

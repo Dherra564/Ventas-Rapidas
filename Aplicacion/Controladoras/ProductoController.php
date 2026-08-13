@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . "/../Repositorios/ProductoRepository.php";
+require_once __DIR__ . "/../Repositorios/ProductoLocalRepository.php";
 require_once __DIR__ . "/../Repositorios/TipoProductoRepository.php";
 require_once __DIR__ . "/../Modelos/Producto.php";
 require_once __DIR__ . "/../Modelos/TipoProducto.php";
@@ -9,11 +10,13 @@ class ProductoController
 {
     private ProductoRepository $productoRepository;
     private TipoProductoRepository $tipoProductoRepository;
+    private ProductoLocalRepository $productoLocalRepository;
 
     public function __construct()
     {
         $this->productoRepository = new ProductoRepository();
         $this->tipoProductoRepository = new TipoProductoRepository();
+        $this->productoLocalRepository = new ProductoLocalRepository();
     }
 
     public function registrar(
@@ -55,7 +58,25 @@ class ProductoController
 
     public function listarPorLocal(int $idLocal): array
     {
-        return $this->productoRepository->obtenerPorLocal($idLocal);
+        $propios = $this->productoRepository->obtenerPorLocal($idLocal);
+
+        $idsCompartidos = $this->productoLocalRepository->obtenerProductosPorLocal($idLocal);
+
+        $idsYaIncluidos = array_map(fn($p) => $p->getIdProducto(), $propios);
+
+        foreach ($idsCompartidos as $idProductoCompartido) {
+            if (in_array((int) $idProductoCompartido, $idsYaIncluidos, true)) {
+                continue;
+            }
+
+            $producto = $this->productoRepository->obtenerPorId((int) $idProductoCompartido);
+
+            if ($producto !== null) {
+                $propios[] = $producto;
+            }
+        }
+
+        return $propios;
     }
 
     public function buscarConFiltros(

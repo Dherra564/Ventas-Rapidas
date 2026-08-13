@@ -276,6 +276,7 @@
 
                     <button type="submit">Guardar Cambios</button>
                 </form>
+
             </div>
 
             <div id="panel-editar-producto" class="oculto">
@@ -309,6 +310,21 @@
 
                     <button type="submit">Guardar Cambios del Producto</button>
                 </form>
+
+                <button type="submit">Guardar Cambios del Producto</button>
+                </form>
+
+                <div class="campo-lectura">
+                    <strong>Este producto también se ofrece en:</strong>
+                    <div id="ep-otros-locales-lista"></div>
+
+                    <div class="filtros-busqueda">
+                        <input type="text" id="ep-agregar-local-nombre" placeholder="Nombre exacto de otro local...">
+                        <button type="button" id="btn-agregar-local-producto" class="boton-secundario">Agregar local</button>
+                    </div>
+                    <span class="ayuda" id="ep-agregar-local-msg"></span>
+                </div>
+
             </div>
 
         </section>
@@ -367,7 +383,7 @@
                 <div id="lista-clientes" class="tarjetas"></div>
             </div>
 
-            <div id="panel-detalle-cliente" class="oculto">
+          <div id="panel-detalle-cliente" class="oculto">
                 <button type="button" id="btn-volver-clientes" class="boton-secundario">&larr; Volver al listado</button>
                 <h2>Detalle del Cliente</h2>
 
@@ -397,6 +413,17 @@
 
                 <button type="button" id="btn-desactivar-cliente" class="boton-peligro">Desactivar Cliente</button>
                 <button type="button" id="btn-activar-cliente" class="boton-secundario oculto">Reactivar Cliente</button>
+
+                <div class="campo-lectura">
+                    <strong>Locales que sigue este cliente:</strong>
+                <div id="dcl-locales-lista"></div>
+
+                <div class="filtros-busqueda">
+                    <input type="text" id="dcl-agregar-local-nombre" placeholder="Nombre exacto de un local...">
+                    <button type="button" id="btn-seguir-local" class="boton-secundario">Seguir local</button>
+                </div>
+                    <span class="ayuda" id="dcl-seguir-local-msg"></span>
+                </div>
             </div>
 
         </section>

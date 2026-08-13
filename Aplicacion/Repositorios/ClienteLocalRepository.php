@@ -65,6 +65,19 @@ class ClienteLocalRepository
         return $consulta->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    public function obtenerRelacionesPorCliente(int $idCliente): array
+    {
+        $sql = "SELECT tbclientelocalid, tblocalid
+                FROM tbclientelocal
+                WHERE tbclienteid = :idCliente
+                AND tbclientelocalactivo = 1";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":idCliente" => $idCliente]);
+
+        return $consulta->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function obtenerClientesPorLocal(int $idLocal): array
     {
         $sql = "SELECT tbclienteid

@@ -272,3 +272,17 @@ select:disabled {
 .filtros-busqueda button {
     flex: 0 0 auto;
 }
+
+.fila-relacion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.fila-relacion .boton-peligro {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    margin-top: 0;
+}
