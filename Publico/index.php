@@ -16,6 +16,8 @@
             <button class="menu-boton" data-vista="vista-producto">Registrar Producto</button>
             <button class="menu-boton" data-vista="vista-cliente">Registrar Cliente</button>
             <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
+            <button class="menu-boton" data-vista="vista-comerciantes">Ver Comerciantes</button>
+            <button class="menu-boton" data-vista="vista-clientes">Ver Clientes</button>
         </nav>
     </header>
 
@@ -210,6 +212,25 @@
 
             <div id="panel-lista-locales">
                 <h2>Locales Registrados</h2>
+
+                <div class="filtros-busqueda">
+                    <input type="text" id="f-nombre" placeholder="Buscar por nombre...">
+
+                    <select id="f-provincia">
+                        <option value="">Todas las provincias</option>
+                    </select>
+
+                    <select id="f-canton" disabled>
+                        <option value="">Todos los cantones</option>
+                    </select>
+
+                    <select id="f-distrito" disabled>
+                        <option value="">Todos los distritos</option>
+                    </select>
+
+                    <button type="button" id="btn-limpiar-filtros" class="boton-secundario">Limpiar filtros</button>
+                </div>
+
                 <div id="lista-locales" class="tarjetas"></div>
             </div>
 
@@ -288,6 +309,94 @@
 
                     <button type="submit">Guardar Cambios del Producto</button>
                 </form>
+            </div>
+
+        </section>
+
+        <!-- Vista: Listado de Comerciantes -->
+        <section id="vista-comerciantes" class="vista oculto">
+
+            <div id="panel-lista-comerciantes">
+                <h2>Comerciantes Registrados</h2>
+                <label class="ayuda"><input type="checkbox" id="chk-inactivos-comerciantes"> Mostrar también inactivos</label>
+                <div id="lista-comerciantes" class="tarjetas"></div>
+            </div>
+
+            <div id="panel-detalle-comerciante" class="oculto">
+                <button type="button" id="btn-volver-comerciantes" class="boton-secundario">&larr; Volver al listado</button>
+                <h2>Detalle del Comerciante</h2>
+
+                <div class="campo-lectura">
+                    <img id="dc-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                    <p><strong>Número de identificación:</strong> <span id="dc-identificacion"></span></p>
+                </div>
+
+                <form id="form-editar-comerciante" class="formulario" enctype="multipart/form-data">
+                    <input type="hidden" id="dc-idComerciante">
+
+                    <label for="dc-nombre">Nombre completo</label>
+                    <input type="text" id="dc-nombre" required>
+
+                    <label for="dc-alias">Alias</label>
+                    <input type="text" id="dc-alias" required>
+
+                    <label for="dc-correo">Correo</label>
+                    <input type="email" id="dc-correo" required>
+
+                    <label for="dc-password">Nueva contraseña (opcional, deja vacío para no cambiarla)</label>
+                    <input type="password" id="dc-password">
+
+                    <label for="dc-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la actual)</label>
+                    <input type="file" id="dc-fotoPerfil" accept="image/png, image/jpeg, image/webp">
+
+                    <button type="submit">Guardar Cambios</button>
+                </form>
+
+                <button type="button" id="btn-desactivar-comerciante" class="boton-peligro">Desactivar Comerciante</button>
+                <button type="button" id="btn-activar-comerciante" class="boton-secundario oculto">Reactivar Comerciante</button>
+            </div>
+
+        </section>
+
+        <!-- Vista: listado de Clientes -->
+        <section id="vista-clientes" class="vista oculto">
+
+            <div id="panel-lista-clientes">
+                <h2>Clientes Registrados</h2>
+                <label class="ayuda"><input type="checkbox" id="chk-inactivos-clientes"> Mostrar también inactivos</label>
+                <div id="lista-clientes" class="tarjetas"></div>
+            </div>
+
+            <div id="panel-detalle-cliente" class="oculto">
+                <button type="button" id="btn-volver-clientes" class="boton-secundario">&larr; Volver al listado</button>
+                <h2>Detalle del Cliente</h2>
+
+                <div class="campo-lectura">
+                    <img id="dcl-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                    <p><strong>Número de identificación:</strong> <span id="dcl-identificacion"></span></p>
+                    <p><strong>Dirección:</strong> <span id="dcl-direccion"></span></p>
+                </div>
+
+                <form id="form-editar-cliente" class="formulario" enctype="multipart/form-data">
+                    <input type="hidden" id="dcl-idCliente">
+
+                    <label for="dcl-nombreCompleto">Nombre completo</label>
+                    <input type="text" id="dcl-nombreCompleto" required>
+
+                    <label for="dcl-correo">Correo</label>
+                    <input type="email" id="dcl-correo" required>
+
+                    <label for="dcl-password">Nueva contraseña (opcional, deja vacío para no cambiarla)</label>
+                    <input type="password" id="dcl-password">
+
+                    <label for="dcl-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la actual)</label>
+                    <input type="file" id="dcl-fotoPerfil" accept="image/png, image/jpeg, image/webp">
+
+                    <button type="submit">Guardar Cambios</button>
+                </form>
+
+                <button type="button" id="btn-desactivar-cliente" class="boton-peligro">Desactivar Cliente</button>
+                <button type="button" id="btn-activar-cliente" class="boton-secundario oculto">Reactivar Cliente</button>
             </div>
 
         </section>

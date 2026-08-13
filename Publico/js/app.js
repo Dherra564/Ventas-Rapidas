@@ -17,6 +17,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 mostrarListaLocales();
                 cargarLocales();
             }
+
+            if (boton.dataset.vista === 'vista-comerciantes') {
+                mostrarListaComerciantes();
+                cargarComerciantes();
+            }
+
+            if (boton.dataset.vista === 'vista-clientes') {
+                mostrarListaClientes();
+                cargarClientes();
+            }
         });
     });
 
@@ -93,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const datos = new FormData();
         datos.append('nombre', document.getElementById('c-nombre').value);
         datos.append('alias', document.getElementById('c-alias').value);
+        datos.append('tipoIdentificacion', document.getElementById('c-tipoIdentificacion').value);
         datos.append('numeroIdentificacion', numeroIdentificacion);
         datos.append('correo', inputCorreoComerciante.value);
         datos.append('password', document.getElementById('c-password').value);
@@ -431,8 +442,10 @@ document.addEventListener('DOMContentLoaded', () => {
         evento.preventDefault();
 
         const datos = new FormData();
-        datos.append('nombreCompleto', document.getElementById('cl-nombreCompleto').value);
-        datos.append('numeroIdentificacion', inputIdentificacionCliente.value.trim());
+        datos.append('nombre', document.getElementById('c-nombre').value);
+        datos.append('alias', document.getElementById('c-alias').value);
+        datos.append('tipoIdentificacion', document.getElementById('c-tipoIdentificacion').value);
+        datos.append('numeroIdentificacion', numeroIdentificacion);
         datos.append('correo', inputCorreoCliente.value);
         datos.append('password', document.getElementById('cl-password').value);
         datos.append('idProvincia', selectProvinciaCliente.value);
@@ -482,12 +495,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const contenedor = document.getElementById('lista-locales');
         contenedor.innerHTML = '<p>Cargando...</p>';
 
+        const parametros = new URLSearchParams();
+
+        const nombre = document.getElementById('f-nombre').value.trim();
+        if (nombre) parametros.set('nombre', nombre);
+
+        const idProvincia = document.getElementById('f-provincia').value;
+        if (idProvincia) parametros.set('idProvincia', idProvincia);
+
+        const idCanton = document.getElementById('f-canton').value;
+        if (idCanton) parametros.set('idCanton', idCanton);
+
+        const idDistrito = document.getElementById('f-distrito').value;
+        if (idDistrito) parametros.set('idDistrito', idDistrito);
+
         try {
-            const r = await fetch('api/listar_locales.php');
+            const r = await fetch(`api/listar_locales.php?${parametros.toString()}`);
             const res = await r.json();
 
             if (!res.exito || res.locales.length === 0) {
-                contenedor.innerHTML = '<p>No hay locales registrados todavía.</p>';
+                const hayFiltros = parametros.toString() !== '';
+                contenedor.innerHTML = hayFiltros
+                    ? '<p>No se encontraron locales con esos filtros.</p>'
+                    : '<p>No hay locales registrados todavía.</p>';
                 return;
             }
 
@@ -783,6 +813,435 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
+    });
+
+    // VER / EDITAR / DESACTIVAR COMERCIANTES
+    const panelListaComerciantes = document.getElementById('panel-lista-comerciantes');
+    const panelDetalleComerciante = document.getElementById('panel-detalle-comerciante');
+
+    function mostrarListaComerciantes() {
+        panelDetalleComerciante.classList.add('oculto');
+        panelListaComerciantes.classList.remove('oculto');
+    }
+
+    async function cargarComerciantes() {
+        const contenedor = document.getElementById('lista-comerciantes');
+        contenedor.innerHTML = '<p>Cargando...</p>';
+
+        const soloActivos = !document.getElementById('chk-inactivos-comerciantes').checked;
+
+        try {
+            const r = await fetch(`api/listar_comerciantes.php?soloActivos=${soloActivos ? '1' : '0'}`);
+            const res = await r.json();
+
+            if (!res.exito || res.comerciantes.length === 0) {
+                contenedor.innerHTML = '<p>No hay comerciantes registrados todavía.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.comerciantes.forEach(c => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-clic';
+                tarjeta.innerHTML = `
+                    ${c.fotoPerfil ? `<img src="imagenes/${c.fotoPerfil}" alt="${c.nombre}" class="imagen-producto">` : ''}
+                    <h3>${c.nombre} ${!c.activo ? '<span class="ayuda error">(inactivo)</span>' : ''}</h3>
+                    <p class="etiqueta-tipo">${c.alias}</p>
+                    <p>✉️ ${c.correo}</p>
+                `;
+                tarjeta.addEventListener('click', () => abrirDetalleComerciante(c.idComerciante));
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p>Error al cargar los comerciantes.</p>';
+        }
+    }
+
+    document.getElementById('chk-inactivos-comerciantes').addEventListener('change', cargarComerciantes);
+
+    async function abrirDetalleComerciante(idComerciante) {
+        try {
+            const r = await fetch(`api/buscar_comerciante.php?id=${idComerciante}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar el comerciante', 'error');
+                return;
+            }
+
+            const c = res.comerciante;
+
+            document.getElementById('dc-idComerciante').value = c.idComerciante;
+            document.getElementById('dc-nombre').value = c.nombre;
+            document.getElementById('dc-alias').value = c.alias;
+            document.getElementById('dc-correo').value = c.correo;
+            document.getElementById('dc-identificacion').textContent = c.numeroIdentificacion;
+            document.getElementById('dc-password').value = '';
+
+            const imgFoto = document.getElementById('dc-foto-actual');
+            if (c.fotoPerfil) {
+                imgFoto.src = `imagenes/${c.fotoPerfil}`;
+                imgFoto.classList.remove('oculto');
+            } else {
+                imgFoto.classList.add('oculto');
+            }
+
+            const btnDesactivar = document.getElementById('btn-desactivar-comerciante');
+            const btnActivar = document.getElementById('btn-activar-comerciante');
+
+            if (c.activo) {
+                btnDesactivar.classList.remove('oculto');
+                btnActivar.classList.add('oculto');
+            } else {
+                btnDesactivar.classList.add('oculto');
+                btnActivar.classList.remove('oculto');
+            }
+
+            panelListaComerciantes.classList.add('oculto');
+            panelDetalleComerciante.classList.remove('oculto');
+        } catch (e) {
+            mostrarMensaje('Error al cargar el detalle del comerciante', 'error');
+        }
+    }
+
+    document.getElementById('btn-volver-comerciantes').addEventListener('click', mostrarListaComerciantes);
+
+    document.getElementById('form-editar-comerciante').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const datos = new FormData();
+        datos.append('idComerciante', document.getElementById('dc-idComerciante').value);
+        datos.append('nombre', document.getElementById('dc-nombre').value);
+        datos.append('alias', document.getElementById('dc-alias').value);
+        datos.append('correo', document.getElementById('dc-correo').value);
+        datos.append('password', document.getElementById('dc-password').value);
+
+        const archivoFoto = document.getElementById('dc-fotoPerfil').files[0];
+        if (archivoFoto) {
+            datos.append('fotoPerfil', archivoFoto);
+        }
+
+        try {
+            const r = await fetch('api/editar_comerciante.php', {
+                method: 'POST',
+                body: datos
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                mostrarListaComerciantes();
+                cargarComerciantes();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    document.getElementById('btn-desactivar-comerciante').addEventListener('click', async () => {
+        const idComerciante = document.getElementById('dc-idComerciante').value;
+        const nombre = document.getElementById('dc-nombre').value;
+
+        if (!confirm(`¿Seguro que querés desactivar a "${nombre}"? Sus locales seguirán existiendo, pero no podrá ingresar más.`)) {
+            return;
+        }
+
+        try {
+            const r = await fetch('api/eliminar_comerciante.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idComerciante })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                mostrarListaComerciantes();
+                cargarComerciantes();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    document.getElementById('btn-activar-comerciante').addEventListener('click', async () => {
+        const idComerciante = document.getElementById('dc-idComerciante').value;
+
+        try {
+            const r = await fetch('api/activar_comerciante.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idComerciante })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                mostrarListaComerciantes();
+                cargarComerciantes();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    // VER / EDITAR / DESACTIVAR CLIENTES
+    const panelListaClientes = document.getElementById('panel-lista-clientes');
+    const panelDetalleCliente = document.getElementById('panel-detalle-cliente');
+
+    function mostrarListaClientes() {
+        panelDetalleCliente.classList.add('oculto');
+        panelListaClientes.classList.remove('oculto');
+    }
+
+    async function cargarClientes() {
+        const contenedor = document.getElementById('lista-clientes');
+        contenedor.innerHTML = '<p>Cargando...</p>';
+
+        const soloActivos = !document.getElementById('chk-inactivos-clientes').checked;
+
+        try {
+            const r = await fetch(`api/listar_clientes.php?soloActivos=${soloActivos ? '1' : '0'}`);
+            const res = await r.json();
+
+            if (!res.exito || res.clientes.length === 0) {
+                contenedor.innerHTML = '<p>No hay clientes registrados todavía.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.clientes.forEach(c => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-clic';
+                tarjeta.innerHTML = `
+                    ${c.fotoPerfil ? `<img src="imagenes/${c.fotoPerfil}" alt="${c.nombreCompleto}" class="imagen-producto">` : ''}
+                    <h3>${c.nombreCompleto} ${!c.activo ? '<span class="ayuda error">(inactivo)</span>' : ''}</h3>
+                    <p>✉️ ${c.correo}</p>
+                `;
+                tarjeta.addEventListener('click', () => abrirDetalleCliente(c.idCliente));
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p>Error al cargar los clientes.</p>';
+        }
+    }
+
+    document.getElementById('chk-inactivos-clientes').addEventListener('change', cargarClientes);
+
+    async function abrirDetalleCliente(idCliente) {
+        try {
+            const r = await fetch(`api/buscar_cliente.php?id=${idCliente}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar el cliente', 'error');
+                return;
+            }
+
+            const c = res.cliente;
+            const u = res.ubicacion;
+
+            document.getElementById('dcl-idCliente').value = c.idCliente;
+            document.getElementById('dcl-nombreCompleto').value = c.nombreCompleto;
+            document.getElementById('dcl-correo').value = c.correo;
+            document.getElementById('dcl-identificacion').textContent = c.numeroIdentificacion;
+            document.getElementById('dcl-direccion').textContent =
+                u.direccionExacta + (u.referencia ? ` (${u.referencia})` : '');
+            document.getElementById('dcl-password').value = '';
+
+            const imgFoto = document.getElementById('dcl-foto-actual');
+            if (c.fotoPerfil) {
+                imgFoto.src = `imagenes/${c.fotoPerfil}`;
+                imgFoto.classList.remove('oculto');
+            } else {
+                imgFoto.classList.add('oculto');
+            }
+
+            const btnDesactivarCl = document.getElementById('btn-desactivar-cliente');
+            const btnActivarCl = document.getElementById('btn-activar-cliente');
+
+            if (c.activo) {
+                btnDesactivarCl.classList.remove('oculto');
+                btnActivarCl.classList.add('oculto');
+            } else {
+                btnDesactivarCl.classList.add('oculto');
+                btnActivarCl.classList.remove('oculto');
+            }
+
+            panelListaClientes.classList.add('oculto');
+            panelDetalleCliente.classList.remove('oculto');
+        } catch (e) {
+            mostrarMensaje('Error al cargar el detalle del cliente', 'error');
+        }
+    }
+
+    document.getElementById('btn-volver-clientes').addEventListener('click', mostrarListaClientes);
+
+    document.getElementById('form-editar-cliente').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const datos = new FormData();
+        datos.append('idCliente', document.getElementById('dcl-idCliente').value);
+        datos.append('nombreCompleto', document.getElementById('dcl-nombreCompleto').value);
+        datos.append('correo', document.getElementById('dcl-correo').value);
+        datos.append('password', document.getElementById('dcl-password').value);
+
+        const archivoFoto = document.getElementById('dcl-fotoPerfil').files[0];
+        if (archivoFoto) {
+            datos.append('fotoPerfil', archivoFoto);
+        }
+
+        try {
+            const r = await fetch('api/editar_cliente.php', {
+                method: 'POST',
+                body: datos
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                mostrarListaClientes();
+                cargarClientes();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    document.getElementById('btn-desactivar-cliente').addEventListener('click', async () => {
+        const idCliente = document.getElementById('dcl-idCliente').value;
+        const nombre = document.getElementById('dcl-nombreCompleto').value;
+
+        if (!confirm(`¿Seguro que querés desactivar a "${nombre}"?`)) {
+            return;
+        }
+
+        try {
+            const r = await fetch('api/eliminar_cliente.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idCliente })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                mostrarListaClientes();
+                cargarClientes();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    document.getElementById('btn-activar-cliente').addEventListener('click', async () => {
+        const idCliente = document.getElementById('dcl-idCliente').value;
+
+        try {
+            const r = await fetch('api/activar_cliente.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idCliente })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                mostrarListaClientes();
+                cargarClientes();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    // VALIDACIÓN DE IDENTIFICACIÓN SEGÚN TIPO (reutilizable)
+    const reglasIdentificacion = {
+        Cedula: { patron: /^\d{9}$/, maxlength: 9, placeholder: 'Ej: 118760512', ayuda: '9 dígitos numéricos' },
+        DIMEX: { patron: /^\d{11,12}$/, maxlength: 12, placeholder: 'Ej: 155812345678', ayuda: '11 o 12 dígitos numéricos' },
+        Pasaporte: { patron: /^[A-Za-z0-9]{6,15}$/, maxlength: 15, placeholder: 'Ej: AB1234567', ayuda: 'Entre 6 y 15 caracteres, letras y números' }
+    };
+
+    function activarValidacionIdentificacion(selectTipoEl, inputNumeroEl, mensajeFormatoEl) {
+        function aplicarReglasDelTipo() {
+            const regla = reglasIdentificacion[selectTipoEl.value];
+            if (!regla) return;
+
+            inputNumeroEl.maxLength = regla.maxlength;
+            inputNumeroEl.placeholder = regla.placeholder;
+            mensajeFormatoEl.textContent = regla.ayuda;
+            mensajeFormatoEl.className = 'ayuda';
+
+            if (selectTipoEl.value === 'Cedula' || selectTipoEl.value === 'DIMEX') {
+                inputNumeroEl.setAttribute('inputmode', 'numeric');
+            } else {
+                inputNumeroEl.removeAttribute('inputmode');
+            }
+        }
+
+        function validarFormato() {
+            const regla = reglasIdentificacion[selectTipoEl.value];
+            if (!regla || inputNumeroEl.value.trim() === '') return;
+
+            const valido = regla.patron.test(inputNumeroEl.value.trim());
+            if (!valido) {
+                mensajeFormatoEl.textContent = `Formato inválido: se espera ${regla.ayuda.toLowerCase()}`;
+                mensajeFormatoEl.className = 'ayuda error';
+            }
+        }
+
+        selectTipoEl.addEventListener('change', () => {
+            inputNumeroEl.value = '';
+            aplicarReglasDelTipo();
+        });
+
+        inputNumeroEl.addEventListener('blur', validarFormato);
+
+        aplicarReglasDelTipo();
+    }
+
+    activarValidacionIdentificacion(
+        document.getElementById('c-tipoIdentificacion'),
+        document.getElementById('c-numeroIdentificacion'),
+        document.getElementById('c-identificacion-msg')
+    );
+
+    activarValidacionIdentificacion(
+        document.getElementById('cl-tipoIdentificacion'),
+        document.getElementById('cl-numeroIdentificacion'),
+        document.getElementById('cl-identificacion-msg')
+    );
+
+    // BÚSQUEDA / FILTROS EN "VER LOCALES"
+    const selectProvinciaFiltro = document.getElementById('f-provincia');
+    const selectCantonFiltro = document.getElementById('f-canton');
+    const selectDistritoFiltro = document.getElementById('f-distrito');
+
+    activarCascadaUbicacion(selectProvinciaFiltro, selectCantonFiltro, selectDistritoFiltro);
+
+    const buscarLocalesDebounced = debounce(cargarLocales, 400);
+
+    document.getElementById('f-nombre').addEventListener('input', buscarLocalesDebounced);
+    selectProvinciaFiltro.addEventListener('change', cargarLocales);
+    selectCantonFiltro.addEventListener('change', cargarLocales);
+    selectDistritoFiltro.addEventListener('change', cargarLocales);
+
+    document.getElementById('btn-limpiar-filtros').addEventListener('click', () => {
+        document.getElementById('f-nombre').value = '';
+        selectProvinciaFiltro.value = '';
+        selectCantonFiltro.innerHTML = '<option value="">Todos los cantones</option>';
+        selectCantonFiltro.disabled = true;
+        selectDistritoFiltro.innerHTML = '<option value="">Todos los distritos</option>';
+        selectDistritoFiltro.disabled = true;
+        cargarLocales();
     });
 
 });
