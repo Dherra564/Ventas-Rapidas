@@ -71,6 +71,11 @@ class ClienteController
         return $this->clienteRepository->actualizar($cliente);
     }
 
+    public function activar(int $idCliente): bool
+    {
+        return $this->clienteRepository->activar($idCliente);
+    }
+
     public function eliminar(int $idCliente): bool
     {
         return $this->clienteRepository->eliminar($idCliente);

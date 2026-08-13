@@ -121,7 +121,7 @@ class ComercianteRepository
     {
         $sql = "UPDATE tbcomerciante
                 SET
-                    tbcomeriantenombre = :nombre,
+                    tbcomerciantenombre = :nombre,
                     tbcomerciantealias = :alias,
                     tbcomercianteimagenperfil = :fotoPerfil,
                     tbcomerciantecorreo = :correo,
@@ -140,6 +140,15 @@ class ComercianteRepository
             ":activo" => $comerciante->isActivo(),
             ":id" => $comerciante->getIdComerciante()
         ]);
+    }
+
+    public function activar(int $idComerciante): bool
+    {
+        $sql = "UPDATE tbcomerciante SET tbcomercianteactivo = 1 WHERE tbcomercianteid = :id";
+
+        $consulta = $this->conexion->prepare($sql);
+
+        return $consulta->execute([":id" => $idComerciante]);
     }
 
     public function eliminar(int $idComerciante): bool

@@ -19,9 +19,7 @@ class ClienteRepository
         $this->ubicacionRepository = new UbicacionRepository($this->conexion);
     }
 
-    /**
-     * Inserta el cliente junto con su ubicación, en una sola transacción.
-     */
+    //Inserta el cliente junto con su ubicación, en una sola transacción.
     public function insertarConUbicacion(Cliente $cliente, Ubicacion $ubicacion): int|false
     {
         try {
@@ -163,6 +161,15 @@ class ClienteRepository
             ":activo" => $cliente->isActivo(),
             ":id" => $cliente->getIdCliente()
         ]);
+    }
+
+    public function activar(int $idCliente): bool
+    {
+        $sql = "UPDATE tbcliente SET tbclienteactivo = 1 WHERE tbclienteid = :id";
+
+        $consulta = $this->conexion->prepare($sql);
+
+        return $consulta->execute([":id" => $idCliente]);
     }
 
     public function eliminar(int $idCliente): bool

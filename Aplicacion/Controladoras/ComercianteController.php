@@ -50,6 +50,11 @@ class ComercianteController
         return $this->comercianteRepository->actualizar($comerciante);
     }
 
+    public function activar(int $idComerciante): bool
+    {
+        return $this->comercianteRepository->activar($idComerciante);
+    }
+
     public function eliminar(int $idComerciante): bool
     {
         return $this->comercianteRepository->eliminar($idComerciante);
