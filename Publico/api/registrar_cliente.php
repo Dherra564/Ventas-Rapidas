@@ -30,10 +30,11 @@ class RegistrarClienteHandler
 
         $idCliente = $controlador->registrar(
             $_POST['nombreCompleto'] ?? '',
+            $tipoIdentificacion,
             $numeroIdentificacion,
             $correo,
             $_POST['password'] ?? '',
-            $nombreImagen !== false ? $nombreImagen : '',
+            $nombreImagen !== false ? $nombreImagen : null,
             (int) ($_POST['idProvincia'] ?? 0),
             (int) ($_POST['idCanton'] ?? 0),
             (int) ($_POST['idDistrito'] ?? 0),

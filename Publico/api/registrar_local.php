@@ -27,7 +27,7 @@ class RegistrarLocalHandler
             (int) ($_POST['idComerciante'] ?? 0),
             $_POST['nombreTipoLocal'] ?? '',
             $nombreLocal,
-            $_POST['telefono'] ?? '',
+            preg_replace('/\D/', '', $_POST['telefono'] ?? ''),
             $_POST['correo'] ?? '',
             $_POST['descripcion'] ?? null,
             $nombreLogo !== false ? $nombreLogo : null,

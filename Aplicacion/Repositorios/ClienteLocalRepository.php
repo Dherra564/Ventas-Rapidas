@@ -65,6 +65,24 @@ class ClienteLocalRepository
         return array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
     }
 
+    public function obtenerRelacionesPorCliente(int $idCliente): array
+    {
+        $sql = "SELECT tbclientelocalid, tblocalid
+                FROM tbclientelocal
+                WHERE tbclienteid = :idCliente AND tbclientelocalactivo = 1";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":idCliente" => $idCliente]);
+        return $consulta->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function eliminarPorId(int $idClienteLocal): bool
+    {
+        $sql = "UPDATE tbclientelocal SET tbclientelocalactivo = 0 WHERE tbclientelocalid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([":id" => $idClienteLocal]);
+    }
+
     public function eliminar(int $idCliente, int $idLocal): bool
     {
         $sql = "UPDATE tbclientelocal

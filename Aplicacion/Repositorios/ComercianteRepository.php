@@ -152,6 +152,13 @@ class ComercianteRepository
         return $consulta->execute([":perfilImagen" => $perfilImagen, ":id" => $idComerciante]);
     }
 
+    public function activar(int $idComerciante): bool
+    {
+        $sql = "UPDATE tbcomerciante SET tbcomercianteactivo = 1 WHERE tbcomercianteid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([":id" => $idComerciante]);
+    }
+
     public function eliminar(int $idComerciante): bool
     {
         $sql = "UPDATE tbcomerciante SET tbcomercianteactivo = 0 WHERE tbcomercianteid = :id";

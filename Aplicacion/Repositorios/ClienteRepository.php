@@ -2,17 +2,54 @@
 
 require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
 require_once __DIR__ . "/../Modelos/Cliente.php";
+require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
+require_once __DIR__ . "/UbicacionRepository.php";
 
 class ClienteRepository
 {
     use GeneradorId;
 
     private PDO $conexion;
+    private UbicacionRepository $ubicacionRepository;
 
     public function __construct(?PDO $conexion = null)
     {
         $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
+        $this->ubicacionRepository = new UbicacionRepository($this->conexion);
+    }
+
+    public function insertarConUbicacion(Cliente $cliente, Ubicacion $ubicacion): int|false
+    {
+        try {
+            $this->conexion->beginTransaction();
+
+            $idCliente = $this->insertar($cliente);
+            if ($idCliente === false) {
+                throw new Exception("No se pudo registrar el cliente");
+            }
+
+            $ubicacion->setIdCliente($idCliente);
+            $ubicacion->setIdLocal(null);
+
+            if (!$ubicacion->tieneDuenoValido()) {
+                throw new InvalidArgumentException("La ubicación del cliente no quedó asociada correctamente");
+            }
+
+            $idUbicacion = $this->ubicacionRepository->insertar($ubicacion);
+            if ($idUbicacion === false) {
+                throw new Exception("No se pudo registrar la ubicación del cliente");
+            }
+
+            $this->conexion->commit();
+            return $idCliente;
+        } catch (Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            error_log("Error al insertar cliente: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function insertar(Cliente $cliente): int|false
@@ -137,11 +174,46 @@ class ClienteRepository
         return $consulta->execute([":perfilImagen" => $perfilImagen, ":id" => $idCliente]);
     }
 
+    public function activar(int $idCliente): bool
+    {
+        try {
+            $this->conexion->beginTransaction();
+
+            $consulta = $this->conexion->prepare("UPDATE tbcliente SET tbclienteactivo = 1 WHERE tbclienteid = :id");
+            $consulta->execute([":id" => $idCliente]);
+
+            $consultaUbicacion = $this->conexion->prepare("UPDATE tbubicacion SET tbubicacionactivo = 1 WHERE tbclienteid = :id");
+            $consultaUbicacion->execute([":id" => $idCliente]);
+
+            $this->conexion->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return false;
+        }
+    }
+
     public function eliminar(int $idCliente): bool
     {
-        $sql = "UPDATE tbcliente SET tbclienteactivo = 0 WHERE tbclienteid = :id";
-        $consulta = $this->conexion->prepare($sql);
-        return $consulta->execute([":id" => $idCliente]);
+        try {
+            $this->conexion->beginTransaction();
+
+            $consulta = $this->conexion->prepare("UPDATE tbcliente SET tbclienteactivo = 0 WHERE tbclienteid = :id");
+            $consulta->execute([":id" => $idCliente]);
+
+            $consultaUbicacion = $this->conexion->prepare("UPDATE tbubicacion SET tbubicacionactivo = 0 WHERE tbclienteid = :id");
+            $consultaUbicacion->execute([":id" => $idCliente]);
+
+            $this->conexion->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return false;
+        }
     }
 
     public function existeIdentificacion(string $identificacion): bool
@@ -167,6 +239,21 @@ class ClienteRepository
         $consulta->execute([":identificacion" => $identificacion]);
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
         return $fila ? $this->mapearFila($fila) : null;
+    }
+
+    public function obtenerClienteConUbicacion(int $idCliente): ?array
+    {
+        $cliente = $this->obtenerPorId($idCliente);
+        if ($cliente === null) {
+            return null;
+        }
+
+        $ubicacion = $this->ubicacionRepository->obtenerPorCliente($idCliente);
+        if ($ubicacion === null) {
+            return null;
+        }
+
+        return ["cliente" => $cliente, "ubicacion" => $ubicacion];
     }
 
     private function mapearFilas(PDOStatement $consulta): array

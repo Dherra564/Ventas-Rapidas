@@ -18,6 +18,9 @@
             <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
             <button class="menu-boton" data-vista="vista-comerciantes">Ver Comerciantes</button>
             <button class="menu-boton" data-vista="vista-clientes">Ver Clientes</button>
+            <button class="menu-boton" data-vista="vista-compras">Compras</button>
+            <button class="menu-boton" data-vista="vista-resenas">Reseñas</button>
+            <button class="menu-boton" data-vista="vista-historiales">Historiales</button>
         </nav>
     </header>
 
@@ -311,9 +314,6 @@
                     <button type="submit">Guardar Cambios del Producto</button>
                 </form>
 
-                <button type="submit">Guardar Cambios del Producto</button>
-                </form>
-
                 <div class="campo-lectura">
                     <strong>Este producto también se ofrece en:</strong>
                     <div id="ep-otros-locales-lista"></div>
@@ -426,6 +426,161 @@
                 </div>
             </div>
 
+        </section>
+
+        <!-- Vista: Registro e historial de compras -->
+        <section id="vista-compras" class="vista oculto">
+            <h2>Registro e Historial de Compras</h2>
+
+            <div class="rejilla-dos">
+                <div>
+                    <h3>Registrar compra</h3>
+                    <form id="form-compra" class="formulario">
+                        <label for="compra-cliente">Cliente</label>
+                        <select id="compra-cliente" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+
+                        <label for="compra-local">Local</label>
+                        <select id="compra-local" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+
+                        <button type="submit">Registrar Compra</button>
+                    </form>
+                </div>
+
+                <div>
+                    <h3>Historial por cliente</h3>
+                    <div class="formulario">
+                        <label for="compras-historial-cliente">Cliente</label>
+                        <select id="compras-historial-cliente">
+                            <option value="">Seleccione...</option>
+                        </select>
+
+                        <label for="compras-fecha">Fecha (opcional)</label>
+                        <input type="date" id="compras-fecha">
+
+                        <button type="button" id="btn-buscar-compras">Consultar Compras</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="campo-lectura bloque-separado">
+                <strong>Compras encontradas</strong>
+                <div id="lista-compras" class="tarjetas"></div>
+            </div>
+
+            <div class="campo-lectura bloque-separado">
+                <strong>Locales con más compras</strong>
+                <div id="ranking-compras" class="tarjetas"></div>
+            </div>
+        </section>
+
+        <!-- Vista: Reseñas -->
+        <section id="vista-resenas" class="vista oculto">
+            <h2>Reseñas de Locales</h2>
+
+            <div class="rejilla-dos">
+                <div>
+                    <h3>Publicar reseña</h3>
+                    <form id="form-resena" class="formulario">
+                        <label for="resena-cliente">Cliente</label>
+                        <select id="resena-cliente" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+
+                        <label for="resena-local">Local</label>
+                        <select id="resena-local" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+
+                        <label for="resena-puntuacion">Puntuación</label>
+                        <select id="resena-puntuacion" required>
+                            <option value="5">5 - Excelente</option>
+                            <option value="4">4 - Muy bueno</option>
+                            <option value="3">3 - Bueno</option>
+                            <option value="2">2 - Regular</option>
+                            <option value="1">1 - Malo</option>
+                        </select>
+
+                        <label for="resena-comentario">Comentario</label>
+                        <textarea id="resena-comentario" rows="4" required></textarea>
+
+                        <button type="submit">Publicar Reseña</button>
+                    </form>
+                </div>
+
+                <div>
+                    <h3>Consultar reseñas</h3>
+                    <div class="formulario">
+                        <label for="resena-filtro-local">Local</label>
+                        <select id="resena-filtro-local">
+                            <option value="">Seleccione...</option>
+                        </select>
+                        <button type="button" id="btn-cargar-resenas">Ver Reseñas</button>
+                    </div>
+
+                    <div id="resena-resumen" class="resumen-resenas">
+                        Selecciona un local para ver su calificación.
+                    </div>
+                </div>
+            </div>
+
+            <div id="lista-resenas" class="tarjetas bloque-separado"></div>
+        </section>
+
+        <!-- Vista: Historiales de seguridad -->
+        <section id="vista-historiales" class="vista oculto">
+            <h2>Historiales de Seguridad</h2>
+            <p class="ayuda">Los historiales se generan automáticamente cuando un usuario cambia su foto o su contraseña.</p>
+
+            <div class="rejilla-dos bloque-separado">
+                <div>
+                    <h3>Consultar historial</h3>
+                    <div class="formulario">
+                        <label for="historial-tipo">Tipo de usuario</label>
+                        <select id="historial-tipo">
+                            <option value="Cliente">Cliente</option>
+                            <option value="Comerciante">Comerciante</option>
+                        </select>
+
+                        <label for="historial-usuario">Usuario</label>
+                        <select id="historial-usuario">
+                            <option value="">Seleccione...</option>
+                        </select>
+
+                        <button type="button" id="btn-ver-historial">Ver Historial</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3>Cambiar contraseña</h3>
+                    <form id="form-cambiar-password" class="formulario">
+                        <p class="ayuda">Usa el mismo usuario seleccionado a la izquierda.</p>
+
+                        <label for="historial-password-actual">Contraseña actual</label>
+                        <input type="password" id="historial-password-actual" required>
+
+                        <label for="historial-password-nueva">Nueva contraseña</label>
+                        <input type="password" id="historial-password-nueva" required>
+
+                        <button type="submit">Cambiar Contraseña</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="rejilla-dos bloque-separado">
+                <div class="campo-lectura">
+                    <strong>Historial de contraseñas</strong>
+                    <div id="historial-password-lista" class="tarjetas"></div>
+                </div>
+
+                <div class="campo-lectura">
+                    <strong>Historial de fotos de perfil</strong>
+                    <div id="historial-fotos-lista" class="tarjetas"></div>
+                </div>
+            </div>
         </section>
 
     </main>

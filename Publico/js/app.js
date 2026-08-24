@@ -27,6 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 mostrarListaClientes();
                 cargarClientes();
             }
+
+            if (boton.dataset.vista === 'vista-compras') {
+                cargarDatosCompras();
+            }
+
+            if (boton.dataset.vista === 'vista-resenas') {
+                cargarDatosResenas();
+            }
+
+            if (boton.dataset.vista === 'vista-historiales') {
+                cargarUsuariosHistorial();
+            }
         });
     });
 
@@ -1418,6 +1430,429 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             mensaje.textContent = 'Error de conexión con el servidor';
             mensaje.className = 'ayuda error';
+        }
+    });
+
+
+    // COMPRAS Y RESEÑAS: CLASES NUEVAS
+    function escaparHtml(texto) {
+        return String(texto ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function formatearFecha(fecha) {
+        if (!fecha) return 'Fecha no disponible';
+        const valor = new Date(fecha.replace(' ', 'T'));
+        return Number.isNaN(valor.getTime()) ? fecha : valor.toLocaleString('es-CR');
+    }
+
+    async function obtenerClientesActivos() {
+        const r = await fetch('api/listar_clientes.php?soloActivos=1');
+        const res = await r.json();
+        return res.exito ? res.clientes : [];
+    }
+
+    async function obtenerLocalesActivos() {
+        const r = await fetch('api/listar_locales.php');
+        const res = await r.json();
+        return res.exito ? res.locales : [];
+    }
+
+    function llenarSelect(select, elementos, valorKey, textoKey) {
+        const valorActual = select.value;
+        select.innerHTML = '<option value="">Seleccione...</option>';
+        elementos.forEach(elemento => {
+            const opcion = document.createElement('option');
+            opcion.value = elemento[valorKey];
+            opcion.textContent = elemento[textoKey];
+            select.appendChild(opcion);
+        });
+        if ([...select.options].some(o => o.value === valorActual)) {
+            select.value = valorActual;
+        }
+    }
+
+    async function cargarDatosCompras() {
+        try {
+            const [clientes, locales] = await Promise.all([
+                obtenerClientesActivos(),
+                obtenerLocalesActivos()
+            ]);
+
+            llenarSelect(document.getElementById('compra-cliente'), clientes, 'idCliente', 'nombreCompleto');
+            llenarSelect(document.getElementById('compras-historial-cliente'), clientes, 'idCliente', 'nombreCompleto');
+            llenarSelect(document.getElementById('compra-local'), locales, 'idLocal', 'nombreLocal');
+            cargarRankingCompras();
+        } catch (e) {
+            mostrarMensaje('No se pudieron cargar los datos de compras', 'error');
+        }
+    }
+
+    document.getElementById('form-compra').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const idCliente = document.getElementById('compra-cliente').value;
+        const idLocal = document.getElementById('compra-local').value;
+
+        try {
+            const r = await fetch('api/registrar_compra.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idCliente, idLocal })
+            });
+            const res = await r.json();
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                document.getElementById('compras-historial-cliente').value = idCliente;
+                await cargarHistorialCompras();
+                await cargarRankingCompras();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión al registrar la compra', 'error');
+        }
+    });
+
+    async function cargarHistorialCompras() {
+        const idCliente = document.getElementById('compras-historial-cliente').value;
+        const fecha = document.getElementById('compras-fecha').value;
+        const contenedor = document.getElementById('lista-compras');
+
+        if (!idCliente) {
+            contenedor.innerHTML = '<p class="ayuda">Selecciona un cliente.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const parametros = new URLSearchParams({ idCliente });
+            if (fecha) parametros.set('fecha', fecha);
+
+            const r = await fetch(`api/listar_compras_cliente.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron consultar las compras')}</p>`;
+                return;
+            }
+
+            if (res.compras.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">No hay compras registradas para esta consulta.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.compras.forEach(compra => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta';
+                tarjeta.innerHTML = `
+                    <h3>${escaparHtml(compra.nombreLocal)}</h3>
+                    <p><strong>Compra #${compra.idRegistroCompra}</strong></p>
+                    <p>${escaparHtml(formatearFecha(compra.fechaCompra))}</p>
+                `;
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al consultar las compras.</p>';
+        }
+    }
+
+    document.getElementById('btn-buscar-compras').addEventListener('click', cargarHistorialCompras);
+
+    async function cargarRankingCompras() {
+        const contenedor = document.getElementById('ranking-compras');
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const r = await fetch('api/locales_mas_comprados.php?limite=5');
+            const res = await r.json();
+
+            if (!res.exito || res.locales.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">Todavía no hay compras suficientes para mostrar un ranking.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.locales.forEach((local, indice) => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta';
+                tarjeta.innerHTML = `
+                    <h3>${indice + 1}. ${escaparHtml(local.nombreLocal)}</h3>
+                    <p>${local.totalCompras} compra${local.totalCompras === 1 ? '' : 's'} registrada${local.totalCompras === 1 ? '' : 's'}</p>
+                `;
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">No se pudo cargar el ranking.</p>';
+        }
+    }
+
+    async function cargarDatosResenas() {
+        try {
+            const [clientes, locales] = await Promise.all([
+                obtenerClientesActivos(),
+                obtenerLocalesActivos()
+            ]);
+
+            llenarSelect(document.getElementById('resena-cliente'), clientes, 'idCliente', 'nombreCompleto');
+            llenarSelect(document.getElementById('resena-local'), locales, 'idLocal', 'nombreLocal');
+            llenarSelect(document.getElementById('resena-filtro-local'), locales, 'idLocal', 'nombreLocal');
+        } catch (e) {
+            mostrarMensaje('No se pudieron cargar los datos de reseñas', 'error');
+        }
+    }
+
+    document.getElementById('form-resena').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const idCliente = document.getElementById('resena-cliente').value;
+        const idLocal = document.getElementById('resena-local').value;
+        const puntuacion = document.getElementById('resena-puntuacion').value;
+        const comentario = document.getElementById('resena-comentario').value.trim();
+
+        try {
+            const r = await fetch('api/registrar_resena.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idCliente, idLocal, puntuacion, comentario })
+            });
+            const res = await r.json();
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                document.getElementById('resena-comentario').value = '';
+                document.getElementById('resena-filtro-local').value = idLocal;
+                await cargarResenasLocal();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión al publicar la reseña', 'error');
+        }
+    });
+
+    async function cargarResenasLocal() {
+        const idLocal = document.getElementById('resena-filtro-local').value;
+        const contenedor = document.getElementById('lista-resenas');
+        const resumen = document.getElementById('resena-resumen');
+
+        if (!idLocal) {
+            resumen.textContent = 'Selecciona un local para ver su calificación.';
+            contenedor.innerHTML = '';
+            return;
+        }
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const r = await fetch(`api/listar_resenas_local.php?idLocal=${encodeURIComponent(idLocal)}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                resumen.textContent = 'No se pudo obtener la calificación.';
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'Error al cargar reseñas')}</p>`;
+                return;
+            }
+
+            const promedio = res.promedio === null ? 'Sin calificación' : `${Number(res.promedio).toFixed(1)} / 5`;
+            resumen.textContent = `Promedio: ${promedio} · ${res.total} reseña${res.total === 1 ? '' : 's'}`;
+
+            if (res.resenas.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">Este local todavía no tiene reseñas.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.resenas.forEach(resena => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta';
+                const estrellas = '★'.repeat(resena.puntuacion) + '☆'.repeat(5 - resena.puntuacion);
+                tarjeta.innerHTML = `
+                    <h3>${escaparHtml(resena.nombreCliente)}</h3>
+                    <p class="estrellas" aria-label="${resena.puntuacion} de 5">${estrellas}</p>
+                    <p>${escaparHtml(resena.comentario)}</p>
+                    <p class="ayuda">${escaparHtml(formatearFecha(resena.fechaResena))}</p>
+                    <div class="acciones-tarjeta">
+                        <button type="button" class="boton-pequeno boton-editar btn-editar-resena">Editar</button>
+                        <button type="button" class="boton-peligro btn-eliminar-resena">Eliminar</button>
+                    </div>
+                `;
+
+                tarjeta.querySelector('.btn-editar-resena').addEventListener('click', () => editarResenaDesdeLista(resena));
+                tarjeta.querySelector('.btn-eliminar-resena').addEventListener('click', () => eliminarResenaDesdeLista(resena.idResena));
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            resumen.textContent = 'No se pudo obtener la calificación.';
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar reseñas.</p>';
+        }
+    }
+
+    document.getElementById('btn-cargar-resenas').addEventListener('click', cargarResenasLocal);
+
+    async function editarResenaDesdeLista(resena) {
+        const comentario = prompt('Edita el comentario:', resena.comentario);
+        if (comentario === null) return;
+
+        const puntuacionTexto = prompt('Nueva puntuación del 1 al 5:', String(resena.puntuacion));
+        if (puntuacionTexto === null) return;
+
+        const puntuacion = Number(puntuacionTexto);
+        if (!Number.isInteger(puntuacion) || puntuacion < 1 || puntuacion > 5) {
+            mostrarMensaje('La puntuación debe ser un número entero del 1 al 5', 'error');
+            return;
+        }
+
+        try {
+            const r = await fetch('api/editar_resena.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idResena: resena.idResena, comentario, puntuacion })
+            });
+            const respuesta = await r.json();
+            mostrarMensaje(respuesta.mensaje, respuesta.exito ? 'exito' : 'error');
+            if (respuesta.exito) cargarResenasLocal();
+        } catch (e) {
+            mostrarMensaje('Error de conexión al editar la reseña', 'error');
+        }
+    }
+
+    async function eliminarResenaDesdeLista(idResena) {
+        if (!confirm('¿Seguro que querés eliminar esta reseña?')) return;
+
+        try {
+            const r = await fetch('api/eliminar_resena.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idResena })
+            });
+            const res = await r.json();
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+            if (res.exito) cargarResenasLocal();
+        } catch (e) {
+            mostrarMensaje('Error de conexión al eliminar la reseña', 'error');
+        }
+    }
+
+
+    // HISTORIALES DE SEGURIDAD
+    async function cargarUsuariosHistorial() {
+        const tipo = document.getElementById('historial-tipo').value;
+        const select = document.getElementById('historial-usuario');
+        select.innerHTML = '<option value="">Cargando...</option>';
+
+        try {
+            if (tipo === 'Cliente') {
+                const clientes = await obtenerClientesActivos();
+                llenarSelect(select, clientes, 'idCliente', 'nombreCompleto');
+            } else {
+                const r = await fetch('api/listar_comerciantes.php?soloActivos=1');
+                const res = await r.json();
+                llenarSelect(select, res.exito ? res.comerciantes : [], 'idComerciante', 'nombre');
+            }
+
+            document.getElementById('historial-password-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
+            document.getElementById('historial-fotos-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
+        } catch (e) {
+            select.innerHTML = '<option value="">No se pudieron cargar usuarios</option>';
+        }
+    }
+
+    document.getElementById('historial-tipo').addEventListener('change', cargarUsuariosHistorial);
+
+    async function consultarHistorialUsuario() {
+        const tipoUsuario = document.getElementById('historial-tipo').value;
+        const idUsuario = document.getElementById('historial-usuario').value;
+        const listaPassword = document.getElementById('historial-password-lista');
+        const listaFotos = document.getElementById('historial-fotos-lista');
+
+        if (!idUsuario) {
+            mostrarMensaje('Selecciona un usuario para consultar el historial', 'error');
+            return;
+        }
+
+        listaPassword.innerHTML = '<p class="ayuda">Cargando...</p>';
+        listaFotos.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const parametros = new URLSearchParams({ idUsuario, tipoUsuario });
+            const r = await fetch(`api/listar_historial_usuario.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                listaPassword.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
+                listaFotos.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
+                return;
+            }
+
+            if (res.passwords.length === 0) {
+                listaPassword.innerHTML = '<p class="ayuda">No hay cambios de contraseña registrados.</p>';
+            } else {
+                listaPassword.innerHTML = '';
+                res.passwords.forEach(item => {
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'tarjeta';
+                    tarjeta.innerHTML = `
+                        <h3>${item.exitoso ? 'Cambio exitoso' : 'Intento fallido'}</h3>
+                        <p>${escaparHtml(formatearFecha(item.fecha))}</p>
+                    `;
+                    listaPassword.appendChild(tarjeta);
+                });
+            }
+
+            if (res.fotos.length === 0) {
+                listaFotos.innerHTML = '<p class="ayuda">No hay cambios de foto registrados.</p>';
+            } else {
+                listaFotos.innerHTML = '';
+                res.fotos.forEach(item => {
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'tarjeta';
+                    tarjeta.innerHTML = `
+                        ${item.rutaNueva ? `<img src="imagenes/${encodeURIComponent(item.rutaNueva)}" alt="Nueva foto" class="imagen-producto">` : ''}
+                        <h3>Cambio de foto</h3>
+                        <p>${escaparHtml(formatearFecha(item.fecha))}</p>
+                    `;
+                    listaFotos.appendChild(tarjeta);
+                });
+            }
+        } catch (e) {
+            listaPassword.innerHTML = '<p class="ayuda error">Error de conexión.</p>';
+            listaFotos.innerHTML = '<p class="ayuda error">Error de conexión.</p>';
+        }
+    }
+
+    document.getElementById('btn-ver-historial').addEventListener('click', consultarHistorialUsuario);
+
+    document.getElementById('form-cambiar-password').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const tipoUsuario = document.getElementById('historial-tipo').value;
+        const idUsuario = document.getElementById('historial-usuario').value;
+        const passwordActual = document.getElementById('historial-password-actual').value;
+        const passwordNueva = document.getElementById('historial-password-nueva').value;
+
+        if (!idUsuario) {
+            mostrarMensaje('Selecciona un usuario antes de cambiar la contraseña', 'error');
+            return;
+        }
+
+        try {
+            const r = await fetch('api/cambiar_password_usuario.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idUsuario, tipoUsuario, passwordActual, passwordNueva })
+            });
+            const res = await r.json();
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            document.getElementById('historial-password-actual').value = '';
+            document.getElementById('historial-password-nueva').value = '';
+            await consultarHistorialUsuario();
+        } catch (e) {
+            mostrarMensaje('Error de conexión al cambiar la contraseña', 'error');
         }
     });
 

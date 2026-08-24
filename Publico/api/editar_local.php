@@ -33,7 +33,7 @@ class EditarLocalHandler
         $local = new Local(
             $idTipoLocal,
             $_POST['nombreLocal'] ?? '',
-            $_POST['telefono'] ?? '',
+            preg_replace('/\D/', '', $_POST['telefono'] ?? ''),
             $_POST['correo'] ?? '',
             $_POST['descripcion'] ?? null,
             $logoFinal,

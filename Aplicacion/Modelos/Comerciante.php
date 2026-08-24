@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/../Comun/ValidarTexto.php";
+
 class Comerciante
 {
     use ValidadorTexto;
@@ -40,9 +42,13 @@ class Comerciante
     public function getNombreCompleto(): string { return $this->nombreCompleto; }
     public function getAlias(): string { return $this->alias; }
     public function getCedula(): string { return $this->cedula; }
+    // Alias conservado para las APIs/vistas existentes.
+    public function getNumeroIdentificacion(): string { return $this->cedula; }
     public function getCorreo(): string { return $this->correo; }
     public function getPasswordHash(): string { return $this->passwordHash; }
     public function getPerfilImagen(): ?string { return $this->perfilImagen; }
+    // Alias conservado para las APIs/vistas existentes.
+    public function getFotoPerfil(): ?string { return $this->perfilImagen; }
     public function getFechaRegistro(): ?DateTime { return $this->fechaRegistro; }
     public function isActivo(): bool { return $this->activo; }
 

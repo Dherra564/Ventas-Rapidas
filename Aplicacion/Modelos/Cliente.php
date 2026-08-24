@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/../Comun/ValidarTexto.php";
+
 class Cliente
 {
      use ValidadorTexto;
@@ -33,9 +35,13 @@ class Cliente
     public function getIdCliente(): int { return $this->idCliente; }
     public function getNombreCompleto(): string { return $this->nombreCompleto; }
     public function getIdentificacion(): string { return $this->identificacion; }
+    // Alias conservado para las APIs/vistas existentes.
+    public function getNumeroIdentificacion(): string { return $this->identificacion; }
     public function getCorreo(): string { return $this->correo; }
     public function getPasswordHash(): string { return $this->passwordHash; }
     public function getPerfilImagen(): ?string { return $this->perfilImagen; }
+    // Alias conservado para las APIs/vistas existentes.
+    public function getFotoPerfil(): ?string { return $this->perfilImagen; }
     public function isActivo(): bool { return $this->activo; }
 
    public function setNombreCompleto(string $nombreCompleto): void

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/../Comun/ValidarTexto.php";
+
 class Local
 {
     use ValidadorTexto;

@@ -31,10 +31,11 @@ class RegistrarComercianteHandler
         $idComerciante = $controlador->registrar(
             $_POST['nombre'] ?? '',
             $_POST['alias'] ?? '',
+            $tipoIdentificacion,
             $numeroIdentificacion,
             $correo,
             $_POST['password'] ?? '',
-            $nombreImagen !== false ? $nombreImagen : ''
+            $nombreImagen !== false ? $nombreImagen : null
         );
 
         if ($idComerciante !== false) {
