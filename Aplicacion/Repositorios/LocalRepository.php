@@ -5,9 +5,10 @@ require_once __DIR__ . "/../Modelos/Local.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Modelos/ComercianteLocal.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
+require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
 require_once __DIR__ . "/UbicacionRepository.php";
 require_once __DIR__ . "/ComercianteLocalRepository.php";
-require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
+
 class LocalRepository
 {
     use GeneradorId, ValidadorReferencia;
@@ -75,11 +76,6 @@ class LocalRepository
             ]);
 
             $ubicacion->setIdLocal($idLocal);
-
-            if (!$ubicacion->tieneDuenoValido()) {
-                throw new InvalidArgumentException("La ubicación del local no quedó asociada correctamente");
-            }
-
             $this->ubicacionRepository->insertar($ubicacion);
 
             $comercianteLocal = new ComercianteLocal($idComerciante, $idLocal);
@@ -208,13 +204,13 @@ class LocalRepository
         $local = $this->mapearFila($fila);
 
         $ubicacion = new Ubicacion(
+            (int) $fila["tblocalid"],
             (int) $fila["tbprovinciaid"],
             (int) $fila["tbcantonid"],
             (int) $fila["tbdistritoid"],
             $fila["tbubicaciondireccionexacta"],
-            (int) $fila["tblocalid"],
-            (int) $fila["tbubicacionidcliente"],
             $fila["tbubicaciondereferencia"],
+            $fila["tbclienteid"] !== null ? (int) $fila["tbclienteid"] : null,
             (bool) $fila["tbubicacionactivo"],
             (int) $fila["tbubicacionid"]
         );
@@ -296,8 +292,8 @@ class LocalRepository
             $fila["tblocallogo"],
             (bool) $fila["tblocalactivo"],
             (int) $fila["tblocalid"],
-            $fila["tblocalfecharegistroportal"] != null
-            ? new DateTime($fila["tblocalfecharegistroportal"])
+            $fila["tblocalregistrofecha"] != null
+            ? new DateTime($fila["tblocalregistrofecha"])
             : null
         );
     }
@@ -309,13 +305,4 @@ class LocalRepository
         $consulta->execute([":nombre" => $nombreLocal]);
         return (int) $consulta->fetchColumn() > 0;
     }
-
-    public function existeCorreo(string $correo): bool
-    {
-        $sql = "SELECT COUNT(*) FROM tblocal WHERE tblocalcorreo = :correo";
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":correo" => $correo]);
-        return (int) $consulta->fetchColumn() > 0;
-    }
-
 }

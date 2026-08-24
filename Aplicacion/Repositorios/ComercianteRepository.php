@@ -22,10 +22,10 @@ class ComercianteRepository
         $sql = "INSERT INTO tbcomerciante
                 (
                     tbcomercianteid,
+                    tbcomercianteidentificacionnumero,
                     tbcomerciantenombre,
                     tbcomerciantealias,
-                    tbcomerciantenumerodeidentificacion,
-                    tbcomercianteimagenperfil,
+                    tbcomercianteperfilimagen,
                     tbcomerciantecorreo,
                     tbcomerciantepassword,
                     tbcomercianteactivo
@@ -33,10 +33,10 @@ class ComercianteRepository
                 VALUES
                 (
                     :id,
+                    :identificacion,
                     :nombre,
                     :alias,
-                    :numeroIdentificacion,
-                    :fotoPerfil,
+                    :perfilImagen,
                     :correo,
                     :password,
                     :activo
@@ -46,10 +46,10 @@ class ComercianteRepository
 
         $exito = $consulta->execute([
             ":id" => $id,
+            ":identificacion" => $comerciante->getCedula(),
             ":nombre" => $comerciante->getNombreCompleto(),
             ":alias" => $comerciante->getAlias(),
-            ":numeroIdentificacion" => $comerciante->getNumeroIdentificacion(),
-            ":fotoPerfil" => $comerciante->getFotoPerfil(),
+            ":perfilImagen" => $comerciante->getPerfilImagen(),
             ":correo" => $comerciante->getCorreo(),
             ":password" => $comerciante->getPasswordHash(),
             ":activo" => $comerciante->isActivo()
@@ -76,11 +76,7 @@ class ComercianteRepository
 
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
 
-        if (!$fila) {
-            return null;
-        }
-
-        return $this->mapearFila($fila);
+        return $fila ? $this->mapearFila($fila) : null;
     }
 
     public function buscar(?string $nombre = null, ?string $alias = null, ?bool $activo = null): array
@@ -123,7 +119,7 @@ class ComercianteRepository
                 SET
                     tbcomerciantenombre = :nombre,
                     tbcomerciantealias = :alias,
-                    tbcomercianteimagenperfil = :fotoPerfil,
+                    tbcomercianteperfilimagen = :perfilImagen,
                     tbcomerciantecorreo = :correo,
                     tbcomerciantepassword = :password,
                     tbcomercianteactivo = :activo
@@ -134,7 +130,7 @@ class ComercianteRepository
         return $consulta->execute([
             ":nombre" => $comerciante->getNombreCompleto(),
             ":alias" => $comerciante->getAlias(),
-            ":fotoPerfil" => $comerciante->getFotoPerfil(),
+            ":perfilImagen" => $comerciante->getPerfilImagen(),
             ":correo" => $comerciante->getCorreo(),
             ":password" => $comerciante->getPasswordHash(),
             ":activo" => $comerciante->isActivo(),
@@ -142,13 +138,18 @@ class ComercianteRepository
         ]);
     }
 
-    public function activar(int $idComerciante): bool
+    public function actualizarPasswordHash(int $idComerciante, string $passwordHash): bool
     {
-        $sql = "UPDATE tbcomerciante SET tbcomercianteactivo = 1 WHERE tbcomercianteid = :id";
-
+        $sql = "UPDATE tbcomerciante SET tbcomerciantepassword = :password WHERE tbcomercianteid = :id";
         $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([":password" => $passwordHash, ":id" => $idComerciante]);
+    }
 
-        return $consulta->execute([":id" => $idComerciante]);
+    public function actualizarPerfilImagen(int $idComerciante, ?string $perfilImagen): bool
+    {
+        $sql = "UPDATE tbcomerciante SET tbcomercianteperfilimagen = :perfilImagen WHERE tbcomercianteid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([":perfilImagen" => $perfilImagen, ":id" => $idComerciante]);
     }
 
     public function eliminar(int $idComerciante): bool
@@ -158,6 +159,32 @@ class ComercianteRepository
         $consulta = $this->conexion->prepare($sql);
 
         return $consulta->execute([":id" => $idComerciante]);
+    }
+
+    public function existeCedula(string $cedula): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomercianteidentificacionnumero = :cedula";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":cedula" => $cedula]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
+    public function existeCorreo(string $correo): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomerciantecorreo = :correo";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":correo" => $correo]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
+    public function obtenerPorCedula(string $cedula): ?Comerciante
+    {
+        $sql = "SELECT * FROM tbcomerciante WHERE tbcomercianteidentificacionnumero = :cedula";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":cedula" => $cedula]);
+        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        return $fila ? $this->mapearFila($fila) : null;
     }
 
     private function mapearFilas(PDOStatement $consulta): array
@@ -176,41 +203,15 @@ class ComercianteRepository
         return new Comerciante(
             $fila["tbcomerciantenombre"],
             $fila["tbcomerciantealias"],
-            $fila["tbcomerciantenumerodeidentificacion"],
+            $fila["tbcomercianteidentificacionnumero"],
             $fila["tbcomerciantecorreo"],
             $fila["tbcomerciantepassword"],
-            $fila["tbcomercianteimagenperfil"] ?? '',
+            $fila["tbcomercianteperfilimagen"],
             (bool) $fila["tbcomercianteactivo"],
             (int) $fila["tbcomercianteid"],
-            $fila["tbcomerciantefecharegistroportal"] != null
-            ? new DateTime($fila["tbcomerciantefecharegistroportal"])
-            : null
+            $fila["tbcomercianteregistrofecha"] != null
+                ? new DateTime($fila["tbcomercianteregistrofecha"])
+                : null
         );
-    }
-
-    public function existeIdentificacion(string $numeroIdentificacion): bool
-    {
-        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomerciantenumerodeidentificacion = :numeroIdentificacion";
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":numeroIdentificacion" => $numeroIdentificacion]);
-        return (int) $consulta->fetchColumn() > 0;
-    }
-
-    public function existeCorreo(string $correo): bool
-    {
-        $sql = "SELECT COUNT(*) FROM tbcomerciante WHERE tbcomerciantecorreo = :correo";
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":correo" => $correo]);
-        return (int) $consulta->fetchColumn() > 0;
-    }
-
-    public function obtenerPorIdentificacion(string $numeroIdentificacion): ?Comerciante
-    {
-        $sql = "SELECT * FROM tbcomerciante WHERE tbcomerciantenumerodeidentificacion = :numeroIdentificacion";
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":numeroIdentificacion" => $numeroIdentificacion]);
-        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
-
-        return $fila ? $this->mapearFila($fila) : null;
     }
 }

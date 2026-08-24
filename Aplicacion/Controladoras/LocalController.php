@@ -17,7 +17,7 @@ class LocalController
         $this->tipoLocalRepository = new TipoLocalRepository();
     }
 
-    public function registrar(
+       public function registrar(
         int $idComerciante,
         string $nombreTipoLocal,
         string $nombreLocal,
@@ -34,10 +34,6 @@ class LocalController
 
     ): int|false {
 
-        if ($this->localRepository->existeCorreo($correo)) {
-            throw new InvalidArgumentException("Ya existe un local registrado con ese correo");
-        }
-
         $idTipoLocal = $this->resolverOCrearTipoLocal($nombreTipoLocal);
 
         $local = new Local(
@@ -50,12 +46,11 @@ class LocalController
         );
 
         $ubicacion = new Ubicacion(
+            0,
             $idProvincia,
             $idCanton,
             $idDistrito,
             $direccionExacta,
-            0,
-            0,
             $referencia
         );
 

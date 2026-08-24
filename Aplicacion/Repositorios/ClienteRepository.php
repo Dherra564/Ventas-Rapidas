@@ -2,64 +2,29 @@
 
 require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
 require_once __DIR__ . "/../Modelos/Cliente.php";
-require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
-require_once __DIR__ . "/UbicacionRepository.php";
 
 class ClienteRepository
 {
     use GeneradorId;
 
     private PDO $conexion;
-    private UbicacionRepository $ubicacionRepository;
 
     public function __construct(?PDO $conexion = null)
     {
         $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
-        $this->ubicacionRepository = new UbicacionRepository($this->conexion);
     }
 
-    //Inserta el cliente junto con su ubicación, en una sola transacción.
-    public function insertarConUbicacion(Cliente $cliente, Ubicacion $ubicacion): int|false
-    {
-        try {
-            $this->conexion->beginTransaction();
-
-            $idCliente = $this->insertarClienteSinTransaccion($cliente);
-
-            if ($idCliente === false) {
-                throw new Exception("No se pudo registrar el cliente");
-            }
-
-            $ubicacion->setIdCliente($idCliente);
-
-            if (!$ubicacion->tieneDuenoValido()) {
-                throw new InvalidArgumentException("La ubicación del cliente no quedó asociada correctamente");
-            }
-
-            $this->ubicacionRepository->insertar($ubicacion);
-
-            $this->conexion->commit();
-
-            return $idCliente;
-
-        } catch (Exception $e) {
-            $this->conexion->rollBack();
-            error_log("Error al insertar cliente: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    private function insertarClienteSinTransaccion(Cliente $cliente): int|false
+    public function insertar(Cliente $cliente): int|false
     {
         $id = $this->generarSiguienteId($this->conexion, "tbcliente", "tbclienteid");
 
         $sql = "INSERT INTO tbcliente
                 (
                     tbclienteid,
+                    tbclienteidentificacionnumero,
                     tbclientenombrecompleto,
-                    tbclientenumerodeidentificacion,
-                    tbclienteimagenperfil,
+                    tbclienteperfilimagen,
                     tbclientecorreo,
                     tbclientepassword,
                     tbclienteactivo
@@ -67,9 +32,9 @@ class ClienteRepository
                 VALUES
                 (
                     :id,
+                    :identificacion,
                     :nombre,
-                    :numeroIdentificacion,
-                    :fotoPerfil,
+                    :perfilImagen,
                     :correo,
                     :password,
                     :activo
@@ -79,9 +44,9 @@ class ClienteRepository
 
         $exito = $consulta->execute([
             ":id" => $id,
+            ":identificacion" => $cliente->getIdentificacion(),
             ":nombre" => $cliente->getNombreCompleto(),
-            ":numeroIdentificacion" => $cliente->getNumeroIdentificacion(),
-            ":fotoPerfil" => $cliente->getFotoPerfil(),
+            ":perfilImagen" => $cliente->getPerfilImagen(),
             ":correo" => $cliente->getCorreo(),
             ":password" => $cliente->getPasswordHash(),
             ":activo" => $cliente->isActivo()
@@ -93,21 +58,16 @@ class ClienteRepository
     public function obtenerTodos(): array
     {
         $sql = "SELECT * FROM tbcliente ORDER BY tbclientenombrecompleto";
-
         $consulta = $this->conexion->query($sql);
-
         return $this->mapearFilas($consulta);
     }
 
     public function obtenerPorId(int $idCliente): ?Cliente
     {
         $sql = "SELECT * FROM tbcliente WHERE tbclienteid = :id";
-
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":id" => $idCliente]);
-
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
-
         return $fila ? $this->mapearFila($fila) : null;
     }
 
@@ -145,7 +105,7 @@ class ClienteRepository
         $sql = "UPDATE tbcliente
                 SET
                     tbclientenombrecompleto = :nombre,
-                    tbclienteimagenperfil = :fotoPerfil,
+                    tbclienteperfilimagen = :perfilImagen,
                     tbclientecorreo = :correo,
                     tbclientepassword = :password,
                     tbclienteactivo = :activo
@@ -155,7 +115,7 @@ class ClienteRepository
 
         return $consulta->execute([
             ":nombre" => $cliente->getNombreCompleto(),
-            ":fotoPerfil" => $cliente->getFotoPerfil(),
+            ":perfilImagen" => $cliente->getPerfilImagen(),
             ":correo" => $cliente->getCorreo(),
             ":password" => $cliente->getPasswordHash(),
             ":activo" => $cliente->isActivo(),
@@ -163,101 +123,32 @@ class ClienteRepository
         ]);
     }
 
-    public function activar(int $idCliente): bool
+    public function actualizarPasswordHash(int $idCliente, string $passwordHash): bool
     {
-        $sql = "UPDATE tbcliente SET tbclienteactivo = 1 WHERE tbclienteid = :id";
-
+        $sql = "UPDATE tbcliente SET tbclientepassword = :password WHERE tbclienteid = :id";
         $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([":password" => $passwordHash, ":id" => $idCliente]);
+    }
 
-        return $consulta->execute([":id" => $idCliente]);
+    public function actualizarPerfilImagen(int $idCliente, ?string $perfilImagen): bool
+    {
+        $sql = "UPDATE tbcliente SET tbclienteperfilimagen = :perfilImagen WHERE tbclienteid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([":perfilImagen" => $perfilImagen, ":id" => $idCliente]);
     }
 
     public function eliminar(int $idCliente): bool
     {
-        try {
-            $this->conexion->beginTransaction();
-
-            $sql = "UPDATE tbcliente SET tbclienteactivo = 0 WHERE tbclienteid = :id";
-            $consulta = $this->conexion->prepare($sql);
-            $consulta->execute([":id" => $idCliente]);
-
-            $sqlUbicacion = "UPDATE tbubicacion SET tbubicacionactivo = 0 WHERE tbubicacionidcliente = :id";
-            $consultaUbicacion = $this->conexion->prepare($sqlUbicacion);
-            $consultaUbicacion->execute([":id" => $idCliente]);
-
-            $this->conexion->commit();
-
-            return true;
-
-        } catch (Exception $e) {
-            $this->conexion->rollBack();
-            error_log("Error al eliminar cliente: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    public function obtenerClienteConUbicacion(int $idCliente): ?array
-    {
-        $sql = "SELECT *
-                FROM tbcliente c
-                INNER JOIN tbubicacion u ON c.tbclienteid = u.tbubicacionidcliente
-                WHERE c.tbclienteid = :id";
-
+        $sql = "UPDATE tbcliente SET tbclienteactivo = 0 WHERE tbclienteid = :id";
         $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":id" => $idCliente]);
-
-        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
-
-        if (!$fila) {
-            return null;
-        }
-
-        $cliente = $this->mapearFila($fila);
-
-        $ubicacion = new Ubicacion(
-            (int) $fila["tbprovinciaid"],
-            (int) $fila["tbcantonid"],
-            (int) $fila["tbdistritoid"],
-            $fila["tbubicaciondireccionexacta"],
-            (int) $fila["tblocalid"],
-            (int) $fila["tbubicacionidcliente"],
-            $fila["tbubicaciondereferencia"],
-            (bool) $fila["tbubicacionactivo"],
-            (int) $fila["tbubicacionid"]
-        );
-
-        return ["cliente" => $cliente, "ubicacion" => $ubicacion];
+        return $consulta->execute([":id" => $idCliente]);
     }
 
-    private function mapearFilas(PDOStatement $consulta): array
+    public function existeIdentificacion(string $identificacion): bool
     {
-        $clientes = [];
-
-        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
-            $clientes[] = $this->mapearFila($fila);
-        }
-
-        return $clientes;
-    }
-
-    private function mapearFila(array $fila): Cliente
-    {
-        return new Cliente(
-            $fila["tbclientenombrecompleto"],
-            $fila["tbclientenumerodeidentificacion"],
-            $fila["tbclientecorreo"],
-            $fila["tbclientepassword"],
-            $fila["tbclienteimagenperfil"] ?? '',
-            (bool) $fila["tbclienteactivo"],
-            (int) $fila["tbclienteid"]
-        );
-    }
-
-    public function existeIdentificacion(string $numeroIdentificacion): bool
-    {
-        $sql = "SELECT COUNT(*) FROM tbcliente WHERE tbclientenumerodeidentificacion = :numeroIdentificacion";
+        $sql = "SELECT COUNT(*) FROM tbcliente WHERE tbclienteidentificacionnumero = :identificacion";
         $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":numeroIdentificacion" => $numeroIdentificacion]);
+        $consulta->execute([":identificacion" => $identificacion]);
         return (int) $consulta->fetchColumn() > 0;
     }
 
@@ -269,13 +160,34 @@ class ClienteRepository
         return (int) $consulta->fetchColumn() > 0;
     }
 
-    public function obtenerPorIdentificacion(string $numeroIdentificacion): ?Cliente
+    public function obtenerPorIdentificacion(string $identificacion): ?Cliente
     {
-        $sql = "SELECT * FROM tbcliente WHERE tbclientenumerodeidentificacion = :numeroIdentificacion";
+        $sql = "SELECT * FROM tbcliente WHERE tbclienteidentificacionnumero = :identificacion";
         $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":numeroIdentificacion" => $numeroIdentificacion]);
+        $consulta->execute([":identificacion" => $identificacion]);
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
-
         return $fila ? $this->mapearFila($fila) : null;
+    }
+
+    private function mapearFilas(PDOStatement $consulta): array
+    {
+        $clientes = [];
+        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
+            $clientes[] = $this->mapearFila($fila);
+        }
+        return $clientes;
+    }
+
+    private function mapearFila(array $fila): Cliente
+    {
+        return new Cliente(
+            $fila["tbclientenombrecompleto"],
+            $fila["tbclienteidentificacionnumero"],
+            $fila["tbclientecorreo"],
+            $fila["tbclientepassword"],
+            $fila["tbclienteperfilimagen"],
+            (bool) $fila["tbclienteactivo"],
+            (int) $fila["tbclienteid"]
+        );
     }
 }

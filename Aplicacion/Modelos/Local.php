@@ -2,6 +2,7 @@
 
 class Local
 {
+    use ValidadorTexto;
     private int $idLocal;
     private int $idTipoLocal;
     private string $nombreLocal;
@@ -93,6 +94,7 @@ class Local
         if (trim($telefono) === '') {
             throw new InvalidArgumentException("El teléfono no puede estar vacío");
         }
+        $this->validarTelefono($telefono);
         $this->telefono = $telefono;
     }
 

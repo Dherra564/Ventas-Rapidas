@@ -1,32 +1,40 @@
 <?php
 
 require_once __DIR__ . "/../Repositorios/ClienteRepository.php";
+require_once __DIR__ . "/../Repositorios/HistorialPasswordRepository.php";
+require_once __DIR__ . "/../Repositorios/HistorialFotoPerfilRepository.php";
 require_once __DIR__ . "/../Modelos/Cliente.php";
-require_once __DIR__ . "/../Modelos/Ubicacion.php";
+require_once __DIR__ . "/../Modelos/HistorialPassword.php";
+require_once __DIR__ . "/../Modelos/HistorialFotoPerfil.php";
+require_once __DIR__ . "/../Comun/ValidadorPassword.php";
+require_once __DIR__ . "/../Comun/ManejadorImagenes.php";
+require_once __DIR__ . "/../Comun/ValidadorIdentificacion.php";
 
 class ClienteController
 {
+    use ValidadorPassword, ManejadorImagenes, ValidadorIdentificacion;
+
     private ClienteRepository $clienteRepository;
+    private HistorialPasswordRepository $historialPasswordRepository;
+    private HistorialFotoPerfilRepository $historialFotoPerfilRepository;
 
     public function __construct()
     {
         $this->clienteRepository = new ClienteRepository();
+        $this->historialPasswordRepository = new HistorialPasswordRepository();
+        $this->historialFotoPerfilRepository = new HistorialFotoPerfilRepository();
     }
 
     public function registrar(
         string $nombreCompleto,
+        string $tipoIdentificacion,
         string $numeroIdentificacion,
         string $correo,
-        string $password,
-        string $fotoPerfil,
-
-        int $idProvincia,
-        int $idCanton,
-        int $idDistrito,
-        string $direccionExacta,
-        ?string $referencia
-
+        string $password
     ): int|false {
+
+        $this->validarIdentificacion($tipoIdentificacion, $numeroIdentificacion);
+        $this->validarFormatoPassword($password);
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
@@ -34,21 +42,64 @@ class ClienteController
             $nombreCompleto,
             $numeroIdentificacion,
             $correo,
-            $passwordHash,
-            $fotoPerfil
+            $passwordHash
         );
 
-        $ubicacion = new Ubicacion(
-            $idProvincia,
-            $idCanton,
-            $idDistrito,
-            $direccionExacta,
-            0,
-            0,
-            $referencia
+        return $this->clienteRepository->insertar($cliente);
+    }
+
+    public function cambiarPassword(int $idCliente, string $passwordActual, string $passwordNueva): bool
+    {
+        $cliente = $this->clienteRepository->obtenerPorId($idCliente);
+
+        if ($cliente === null) {
+            throw new InvalidArgumentException("El cliente con ID {$idCliente} no existe");
+        }
+
+        if (!password_verify($passwordActual, $cliente->getPasswordHash())) {
+            $this->historialPasswordRepository->registrar(
+                new HistorialPassword($idCliente, HistorialPassword::TIPO_CLIENTE, false)
+            );
+            throw new InvalidArgumentException("La contraseña actual no es correcta");
+        }
+
+        $this->validarFormatoPassword($passwordNueva);
+        $this->validarPasswordDistinta($passwordNueva, $cliente->getPasswordHash());
+
+        $nuevoHash = password_hash($passwordNueva, PASSWORD_DEFAULT);
+        $exito = $this->clienteRepository->actualizarPasswordHash($idCliente, $nuevoHash);
+
+        $this->historialPasswordRepository->registrar(
+            new HistorialPassword($idCliente, HistorialPassword::TIPO_CLIENTE, $exito)
         );
 
-        return $this->clienteRepository->insertarConUbicacion($cliente, $ubicacion);
+        return $exito;
+    }
+
+    public function cambiarFotoPerfil(int $idCliente, ?array $archivo): string|false
+    {
+        $cliente = $this->clienteRepository->obtenerPorId($idCliente);
+
+        if ($cliente === null) {
+            throw new InvalidArgumentException("El cliente con ID {$idCliente} no existe");
+        }
+
+        $rutaAnterior = $cliente->getPerfilImagen();
+        $rutaNueva = $this->subirImagenPerfil($archivo, "cliente_{$idCliente}");
+
+        if ($rutaNueva === false) {
+            return false;
+        }
+
+        $exito = $this->clienteRepository->actualizarPerfilImagen($idCliente, $rutaNueva);
+
+        if ($exito) {
+            $this->historialFotoPerfilRepository->registrar(
+                new HistorialFotoPerfil($idCliente, HistorialFotoPerfil::TIPO_CLIENTE, $rutaNueva, $rutaAnterior)
+            );
+        }
+
+        return $exito ? $rutaNueva : false;
     }
 
     public function listar(): array
@@ -61,9 +112,9 @@ class ClienteController
         return $this->clienteRepository->obtenerPorId($idCliente);
     }
 
-    public function buscarConUbicacion(int $idCliente): ?array
+    public function buscarConFiltros(?string $nombre = null, ?bool $activo = null): array
     {
-        return $this->clienteRepository->obtenerClienteConUbicacion($idCliente);
+        return $this->clienteRepository->buscar($nombre, $activo);
     }
 
     public function editar(Cliente $cliente): bool
@@ -71,24 +122,14 @@ class ClienteController
         return $this->clienteRepository->actualizar($cliente);
     }
 
-    public function activar(int $idCliente): bool
-    {
-        return $this->clienteRepository->activar($idCliente);
-    }
-
     public function eliminar(int $idCliente): bool
     {
         return $this->clienteRepository->eliminar($idCliente);
     }
 
-    public function buscarConFiltros(?string $nombre = null, ?bool $activo = null): array
+    public function existeIdentificacion(string $identificacion): bool
     {
-        return $this->clienteRepository->buscar($nombre, $activo);
-    }
-
-    public function existeIdentificacion(string $numeroIdentificacion): bool
-    {
-        return $this->clienteRepository->existeIdentificacion($numeroIdentificacion);
+        return $this->clienteRepository->existeIdentificacion($identificacion);
     }
 
     public function existeCorreo(string $correo): bool
@@ -96,8 +137,8 @@ class ClienteController
         return $this->clienteRepository->existeCorreo($correo);
     }
 
-    public function buscarPorIdentificacion(string $numeroIdentificacion): ?Cliente
+    public function buscarPorIdentificacion(string $identificacion): ?Cliente
     {
-        return $this->clienteRepository->obtenerPorIdentificacion($numeroIdentificacion);
+        return $this->clienteRepository->obtenerPorIdentificacion($identificacion);
     }
 }

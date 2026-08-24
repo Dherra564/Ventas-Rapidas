@@ -14,7 +14,7 @@ class ProductoRepository
         $this->conexion = BaseDatos::obtenerConexion();
     }
 
-    public function insertar(Producto $producto): int|false
+        public function insertar(Producto $producto): int|false
     {
         $this->validarReferencia($this->conexion, "tblocal", "tblocalid", $producto->getIdLocal(), "El local con ID {$producto->getIdLocal()} no existe");
         $this->validarReferencia($this->conexion, "tbproductotipo", "tbproductotipoid", $producto->getIdTipoProducto(), "El tipo de producto con ID {$producto->getIdTipoProducto()} no existe");
@@ -30,7 +30,7 @@ class ProductoRepository
                     tbproductodescripcion,
                     tbproductocantidad,
                     tbproductoprecio,
-                    tbproductoporcentajedescuento,
+                    tbproductodescuentoporcentaje,
                     tbproductoimagen,
                     tbproductoactivo
                 )
@@ -184,7 +184,7 @@ class ProductoRepository
         return $productos;
     }
 
-    public function actualizar(Producto $producto): bool
+        public function actualizar(Producto $producto): bool
     {
         $this->validarReferencia(
             $this->conexion,
@@ -201,7 +201,7 @@ class ProductoRepository
                     tbproductodescripcion = :descripcion,
                     tbproductocantidad = :cantidad,
                     tbproductoprecio = :precio,
-                    tbproductoporcentajedescuento = :porcentajeDescuento,
+                    tbproductodescuentoporcentaje = :porcentajeDescuento,
                     tbproductoimagen = :imagen,
                     tbproductoactivo = :activo
                 WHERE tbproductoid = :id";
@@ -230,22 +230,22 @@ class ProductoRepository
         return $consulta->execute([":id" => $idProducto]);
     }
 
-    private function mapearFila(array $fila): Producto
+        private function mapearFila(array $fila): Producto
     {
         return new Producto(
             (int) $fila["tblocalid"],
             (int) $fila["tbproductotipoid"],
             $fila["tbproductonombre"],
             (float) $fila["tbproductoprecio"],
-            $fila["tbproductoporcentajedescuento"] !== null ? (float) $fila["tbproductoporcentajedescuento"] : null,
+            $fila["tbproductodescuentoporcentaje"] !== null ? (float) $fila["tbproductodescuentoporcentaje"] : null,
             $fila["tbproductodescripcion"],
             (int) $fila["tbproductocantidad"],
             $fila["tbproductoimagen"],
             (bool) $fila["tbproductoactivo"],
             (int) $fila["tbproductoid"],
-            $fila["tbproductofecharegistroportal"] != null
-            ? new DateTime($fila["tbproductofecharegistroportal"])
-            : null
+            $fila["tbproductoregistrofecha"] != null
+                ? new DateTime($fila["tbproductoregistrofecha"])
+                : null
         );
     }
 }

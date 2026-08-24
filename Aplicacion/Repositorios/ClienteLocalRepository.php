@@ -18,21 +18,12 @@ class ClienteLocalRepository
 
     public function insertar(ClienteLocal $clienteLocal): int|false
     {
-        $this->validarReferencia(
-            $this->conexion,
-            "tbcliente",
-            "tbclienteid",
-            $clienteLocal->getIdCliente(),
-            "El cliente con ID {$clienteLocal->getIdCliente()} no existe"
-        );
+        $this->validarReferencia($this->conexion, "tbcliente", "tbclienteid", $clienteLocal->getIdCliente(), "El cliente con ID {$clienteLocal->getIdCliente()} no existe");
+        $this->validarReferencia($this->conexion, "tblocal", "tblocalid", $clienteLocal->getIdLocal(), "El local con ID {$clienteLocal->getIdLocal()} no existe");
 
-        $this->validarReferencia(
-            $this->conexion,
-            "tblocal",
-            "tblocalid",
-            $clienteLocal->getIdLocal(),
-            "El local con ID {$clienteLocal->getIdLocal()} no existe"
-        );
+        if ($this->existeAsociacionActiva($clienteLocal->getIdCliente(), $clienteLocal->getIdLocal())) {
+            throw new InvalidArgumentException("Ese cliente ya tiene ese local guardado");
+        }
 
         $id = $this->generarSiguienteId($this->conexion, "tbclientelocal", "tbclientelocalid");
 
@@ -52,51 +43,36 @@ class ClienteLocalRepository
         return $exito ? $id : false;
     }
 
+    public function existeAsociacionActiva(int $idCliente, int $idLocal): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tbclientelocal
+                WHERE tbclienteid = :idCliente AND tblocalid = :idLocal AND tbclientelocalactivo = 1";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":idCliente" => $idCliente, ":idLocal" => $idLocal]);
+
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
     public function obtenerLocalesPorCliente(int $idCliente): array
     {
-        $sql = "SELECT tblocalid
-                FROM tbclientelocal
-                WHERE tbclienteid = :idCliente
-                AND tbclientelocalactivo = 1";
+        $sql = "SELECT tblocalid FROM tbclientelocal
+                WHERE tbclienteid = :idCliente AND tbclientelocalactivo = 1";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":idCliente" => $idCliente]);
 
-        return $consulta->fetchAll(PDO::FETCH_COLUMN);
+        return array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    public function obtenerRelacionesPorCliente(int $idCliente): array
+    public function eliminar(int $idCliente, int $idLocal): bool
     {
-        $sql = "SELECT tbclientelocalid, tblocalid
-                FROM tbclientelocal
-                WHERE tbclienteid = :idCliente
-                AND tbclientelocalactivo = 1";
-
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":idCliente" => $idCliente]);
-
-        return $consulta->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function obtenerClientesPorLocal(int $idLocal): array
-    {
-        $sql = "SELECT tbclienteid
-                FROM tbclientelocal
-                WHERE tblocalid = :idLocal
-                AND tbclientelocalactivo = 1";
-
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":idLocal" => $idLocal]);
-
-        return $consulta->fetchAll(PDO::FETCH_COLUMN);
-    }
-
-    public function eliminar(int $idClienteLocal): bool
-    {
-        $sql = "UPDATE tbclientelocal SET tbclientelocalactivo = 0 WHERE tbclientelocalid = :id";
+        $sql = "UPDATE tbclientelocal
+                SET tbclientelocalactivo = 0
+                WHERE tbclienteid = :idCliente AND tblocalid = :idLocal";
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([":id" => $idClienteLocal]);
+        return $consulta->execute([":idCliente" => $idCliente, ":idLocal" => $idLocal]);
     }
 }
