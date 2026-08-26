@@ -87,4 +87,17 @@ class ComercianteLocalRepository
 
         return $fila ? (int) $fila["tbcomercianteid"] : null;
     }
+
+    public function obtenerLocalesPorComerciante(int $idComerciante): array
+    {
+        $sql = "SELECT tblocalid
+                FROM tbcomerciantelocal
+                WHERE tbcomercianteid = :idComerciante
+                AND tbcomerciantelocalactivo = 1";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":idComerciante" => $idComerciante]);
+
+        return array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
+    }
 }

@@ -6,12 +6,13 @@ require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Modelos/ComercianteLocal.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
+require_once __DIR__ . "/../Comun/ComparadorTexto.php";
 require_once __DIR__ . "/UbicacionRepository.php";
 require_once __DIR__ . "/ComercianteLocalRepository.php";
 
 class LocalRepository
 {
-    use GeneradorId, ValidadorReferencia;
+    use GeneradorId, ValidadorReferencia, ComparadorTexto;
 
     private PDO $conexion;
     private UbicacionRepository $ubicacionRepository;
@@ -281,6 +282,77 @@ class LocalRepository
         }
     }
 
+    public function buscarSimilares(string $nombre, ?int $idLocalExcluir = null, float $umbralMinimo = 70.0): array
+    {
+        $sql = "SELECT
+                    l.tblocalid,
+                    l.tblocalnombre,
+                    lt.tblocaltiponombre AS tipoLocal,
+                    (
+                        SELECT COUNT(*) FROM tbproducto p
+                        WHERE p.tblocalid = l.tblocalid AND p.tbproductoactivo = 1
+                    ) AS totalProductos
+                FROM tblocal l
+                LEFT JOIN tblocaltipo lt ON lt.tblocaltipoid = l.tblocaltipoid
+                WHERE l.tblocalactivo = 1";
+
+        $params = [];
+        if ($idLocalExcluir !== null) {
+            $sql .= " AND l.tblocalid != :idExcluir";
+            $params[":idExcluir"] = $idLocalExcluir;
+        }
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute($params);
+        $candidatos = $consulta->fetchAll(PDO::FETCH_ASSOC);
+
+        $candidatos = array_map(fn($fila) => [
+            "idLocal" => (int) $fila["tblocalid"],
+            "nombre" => $fila["tblocalnombre"],
+            "tipoLocal" => $fila["tipoLocal"],
+            "totalProductos" => (int) $fila["totalProductos"]
+        ], $candidatos);
+
+        $ordenados = $this->ordenarPorSimilitud(
+            $candidatos,
+            $nombre,
+            fn($c) => $c["nombre"],
+            $umbralMinimo
+        );
+
+        return array_map(
+            fn($r) => array_merge(["similitud" => $r["similitud"]], $r["dato"]),
+            $ordenados
+        );
+    }
+
+    public function sincronizarActivoPorInactividad(int $dias = 7): int
+    {
+        $sql = "UPDATE tblocal l
+                SET l.tblocalactivo = 0
+                WHERE l.tblocalactivo = 1
+                  AND NOT EXISTS (
+                      SELECT 1 FROM tbhistorialactividadsesionlocal h
+                      WHERE h.tblocalid = l.tblocalid
+                        AND h.tbhistorialactividadsesionlocalfecha >= (NOW() - INTERVAL :dias DAY)
+                  )";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->bindValue(":dias", $dias, PDO::PARAM_INT);
+        $consulta->execute();
+
+        return $consulta->rowCount();
+    }
+
+    public function reactivar(int $idLocal): bool
+    {
+        $sql = "UPDATE tblocal SET tblocalactivo = 1 WHERE tblocalid = :id";
+
+        $consulta = $this->conexion->prepare($sql);
+
+        return $consulta->execute([":id" => $idLocal]);
+    }
+
     private function mapearFila(array $fila): Local
     {
         return new Local(
@@ -303,6 +375,14 @@ class LocalRepository
         $sql = "SELECT COUNT(*) FROM tblocal WHERE tblocalnombre = :nombre";
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":nombre" => $nombreLocal]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
+    public function existeCorreo(string $correo): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tblocal WHERE tblocalcorreo = :correo";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":correo" => $correo]);
         return (int) $consulta->fetchColumn() > 0;
     }
 }
