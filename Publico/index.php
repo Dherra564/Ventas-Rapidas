@@ -10,7 +10,7 @@
 
     <header class="cabecera">
         <h1>Ventas Rápidas</h1>
-        <nav class="menu">
+        <nav class="menu" id="menu-principal">
             <button class="menu-boton activo" data-vista="vista-login">Iniciar Sesión</button>
             <button class="menu-boton" data-vista="vista-local">Registrar Local</button>
             <button class="menu-boton" data-vista="vista-producto">Registrar Producto</button>
@@ -110,6 +110,7 @@
 
                 <button type="submit">Registrar Comerciante</button>
             </form>
+            <button type="button" id="btn-volver-login-comerciante" class="boton-secundario">&larr; Volver al login</button>
         </section>
 
         <!-- Vista: Registrar Producto -->
@@ -262,6 +263,7 @@
 
                 <button type="submit">Registrar Cliente</button>
             </form>
+            <button type="button" id="btn-volver-login-cliente" class="boton-secundario">&larr; Volver al login</button>
         </section>
 
         <!-- Vista: Selector de perfiles de local (estilo Netflix) -->

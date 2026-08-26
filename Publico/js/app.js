@@ -1873,15 +1873,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión al cambiar la contraseña', 'error');
         }
     });
-
-    // ================================================================
-    // LOGIN / SESIÓN / CREAR CUENTA
-    // Todo lo de aquí para abajo es nuevo (backend). No se modificó
-    // nada de lo que ya había arriba en este archivo.
-    // ================================================================
-
-    // Devuelve { lat, lng } o rechaza con un Error si el navegador no
-    // soporta geolocalización o el usuario niega el permiso.
+    
     function obtenerCoordenadasGPS() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
@@ -1991,9 +1983,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         // El cliente no dio permiso de ubicación o su navegador no la soporta;
                         // no es un error fatal, simplemente no podrá usar la búsqueda por cercanía.
                     }
-                }
 
-                mostrarVistaLogin('vista-listado');
+                    mostrarVistaLogin('vista-listado');
+                } else {
+                    await mostrarSelectorPerfilesLocal();
+                }
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
@@ -2044,5 +2038,69 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-elegir-comerciante')?.addEventListener('click', () => {
         mostrarVistaLogin('vista-comerciante');
     });
+
+    async function mostrarSelectorPerfilesLocal() {
+        mostrarVistaLogin('vista-seleccionar-local');
+
+        const contenedor = document.getElementById('grid-perfiles-local');
+        contenedor.innerHTML = '<p class="ayuda">Cargando tus locales...</p>';
+
+        try {
+            const r = await fetch('api/listar_locales_comerciante.php');
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${res.mensaje || 'No se pudieron cargar tus locales'}</p>`;
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.locales.forEach(local => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta-perfil';
+                tarjeta.innerHTML = `
+                    ${local.logo
+                        ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}">`
+                        : `<div class="icono-perfil">🏪</div>`}
+                    <span class="nombre-perfil">${local.nombreLocal}</span>
+                    ${!local.activo ? '<span class="etiqueta-inactivo">Inactivo por falta de uso</span>' : ''}
+                `;
+                tarjeta.addEventListener('click', () => entrarPerfilLocal(local.idLocal));
+                contenedor.appendChild(tarjeta);
+            });
+
+            const tarjetaNueva = document.createElement('div');
+            tarjetaNueva.className = 'tarjeta-perfil crear-nuevo';
+            tarjetaNueva.textContent = '+ Crear nuevo local';
+            tarjetaNueva.addEventListener('click', () => mostrarVistaLogin('vista-local'));
+            contenedor.appendChild(tarjetaNueva);
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar tus locales.</p>';
+        }
+    }
+
+    async function entrarPerfilLocal(idLocal) {
+        try {
+            const r = await fetch('api/entrar_perfil_local.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idLocal })
+            });
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo entrar a ese local', 'error');
+                return;
+            }
+
+            mostrarVistaLogin('vista-listado');
+            if (typeof abrirDetalleLocal === 'function') {
+                abrirDetalleLocal(idLocal);
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    }
 
 });
