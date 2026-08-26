@@ -3,6 +3,7 @@
 require_once __DIR__ . "/../Repositorios/ComercianteRepository.php";
 require_once __DIR__ . "/../Repositorios/HistorialPasswordRepository.php";
 require_once __DIR__ . "/../Repositorios/HistorialFotoPerfilRepository.php";
+require_once __DIR__ . "/../Repositorios/HistorialActividadSesionLocalRepository.php";
 require_once __DIR__ . "/../Modelos/Comerciante.php";
 require_once __DIR__ . "/../Modelos/HistorialPassword.php";
 require_once __DIR__ . "/../Modelos/HistorialFotoPerfil.php";
@@ -17,12 +18,14 @@ class ComercianteController
     private ComercianteRepository $comercianteRepository;
     private HistorialPasswordRepository $historialPasswordRepository;
     private HistorialFotoPerfilRepository $historialFotoPerfilRepository;
+    private HistorialActividadSesionLocalRepository $historialActividadRepository;
 
     public function __construct()
     {
         $this->comercianteRepository = new ComercianteRepository();
         $this->historialPasswordRepository = new HistorialPasswordRepository();
         $this->historialFotoPerfilRepository = new HistorialFotoPerfilRepository();
+        $this->historialActividadRepository = new HistorialActividadSesionLocalRepository();
     }
 
     public function registrar(
@@ -49,6 +52,26 @@ class ComercianteController
         );
 
         return $this->comercianteRepository->insertar($comerciante);
+    }
+
+    public function login(string $correo, string $password): Comerciante
+    {
+        $comerciante = $this->comercianteRepository->obtenerPorCorreo($correo);
+
+        if ($comerciante === null || !password_verify($password, $comerciante->getPasswordHash())) {
+            throw new InvalidArgumentException("Correo o contraseña incorrectos");
+        }
+
+        if (!$comerciante->isActivo()) {
+            throw new InvalidArgumentException("Esta cuenta de comerciante está desactivada");
+        }
+
+        try {
+            $this->historialActividadRepository->registrarLogin($comerciante->getIdComerciante(), 'Comerciante');
+        } catch (Exception $e) {
+        }
+
+        return $comerciante;
     }
 
     public function cambiarPassword(int $idComerciante, string $passwordActual, string $passwordNueva): bool
@@ -117,19 +140,4 @@ class ComercianteController
     public function existeCorreo(string $correo): bool { return $this->comercianteRepository->existeCorreo($correo); }
     public function buscarPorCedula(string $cedula): ?Comerciante { return $this->comercianteRepository->obtenerPorCedula($cedula); }
     public function buscarPorIdentificacion(string $identificacion): ?Comerciante { return $this->buscarPorCedula($identificacion); }
-
-    public function login(string $correo, string $password): Comerciante
-    {
-    $comerciante = $this->comercianteRepository->obtenerPorCorreo($correo);
-
-    if ($comerciante === null || !password_verify($password, $comerciante->getPasswordHash())) {
-        throw new InvalidArgumentException("Correo o contraseña incorrectos");
-    }
-
-    if (!$comerciante->isActivo()) {
-        throw new InvalidArgumentException("Esta cuenta de comerciante está desactivada");
-    }
-
-    return $comerciante;
-    }
 }

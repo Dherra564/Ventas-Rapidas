@@ -19,26 +19,33 @@ try {
     } else {
         $conexion->exec("
             CREATE TABLE tbhistorialactividadsesionlocal (
-                tbhistorialactividadsesionlocalid    INT NOT NULL PRIMARY KEY,
-                tblocalid                      INT NOT NULL,
-                tbhistorialactividadsesionlocaltipo  VARCHAR(50) NOT NULL,
-                tbhistorialactividadsesionlocalfecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                tbhistorialactividadsesionlocalid          INT NOT NULL PRIMARY KEY,
+                tbhistorialactividadsesionlocalusuarioid   INT NOT NULL,
+                tbhistorialactividadsesionlocalusuariotipo VARCHAR(20) NOT NULL,
+                tblocalid                                  INT NULL,
+                tbhistorialactividadsesionlocaltipo        VARCHAR(50) NOT NULL,
+                tbhistorialactividadsesionlocalfecha       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT fk_historialactividadsesion_local FOREIGN KEY (tblocalid) REFERENCES tblocal(tblocalid)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
         echo "Listo: se creó la tabla tbhistorialactividadsesionlocal.\n";
 
         $conexion->exec("
-            INSERT INTO tbhistorialactividadsesionlocal (tbhistorialactividadsesionlocalid, tblocalid, tbhistorialactividadsesionlocaltipo, tbhistorialactividadsesionlocalfecha)
+            INSERT INTO tbhistorialactividadsesionlocal
+                (tbhistorialactividadsesionlocalid, tbhistorialactividadsesionlocalusuarioid, tbhistorialactividadsesionlocalusuariotipo, tblocalid, tbhistorialactividadsesionlocaltipo, tbhistorialactividadsesionlocalfecha)
             SELECT
                 (@fila := @fila + 1) AS id,
-                tblocalid,
-                'Registro',
+                cl.tbcomercianteid,
+                'Comerciante',
+                cl.tblocalid,
+                'EntradaPerfil',
                 NOW()
-            FROM tblocal, (SELECT @fila := 0) AS inicializador
-            WHERE tblocalactivo = 1
+            FROM tbcomerciantelocal cl
+            INNER JOIN tblocal l ON l.tblocalid = cl.tblocalid
+            JOIN (SELECT @fila := 0) AS inicializador
+            WHERE l.tblocalactivo = 1 AND cl.tbcomerciantelocalactivo = 1
         ");
-        echo "Se sembró un evento inicial de actividad para los locales ya existentes.\n";
+        echo "Se sembró un evento inicial de EntradaPerfil para los locales ya existentes.\n";
     }
 } catch (PDOException $e) {
     echo "Error al migrar: " . $e->getMessage() . "\n";

@@ -14,6 +14,8 @@ try {
 
     $datos = array_map(fn($h) => [
         'idHistorialActividadSesionLocal' => $h->getIdHistorialActividadSesionLocal(),
+        'idUsuario' => $h->getIdUsuario(),
+        'tipoUsuario' => $h->getTipoUsuario(),
         'tipo' => $h->getTipo(),
         'fecha' => $h->getFecha()?->format('Y-m-d H:i:s')
     ], $historial);

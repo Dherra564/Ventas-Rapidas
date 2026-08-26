@@ -2,37 +2,33 @@
 
 class HistorialActividadSesionLocal
 {
-    public const TIPO_REGISTRO = 'Registro';
-    public const TIPO_EDICION = 'Edicion';
-    public const TIPO_PRODUCTO_AGREGADO = 'ProductoAgregado';
-    public const TIPO_PRODUCTO_EDITADO = 'ProductoEditado';
-    public const TIPO_VISTA = 'Vista';
+    public const TIPO_LOGIN = 'Login';
     public const TIPO_ENTRADA_PERFIL = 'EntradaPerfil';
 
-    private const TIPOS_VALIDOS = [
-        self::TIPO_REGISTRO,
-        self::TIPO_EDICION,
-        self::TIPO_PRODUCTO_AGREGADO,
-        self::TIPO_PRODUCTO_EDITADO,
-        self::TIPO_VISTA,
-        self::TIPO_ENTRADA_PERFIL
-    ];
+    private const TIPOS_VALIDOS = [self::TIPO_LOGIN, self::TIPO_ENTRADA_PERFIL];
+    private const TIPOS_USUARIO_VALIDOS = ['Comerciante', 'Cliente'];
 
     private int $idHistorialActividadSesionLocal;
-    private int $idLocal;
+    private int $idUsuario;
+    private string $tipoUsuario;
+    private ?int $idLocal;
     private string $tipo;
     private ?DateTime $fecha;
 
     public function __construct(
-        int $idLocal,
+        int $idUsuario,
+        string $tipoUsuario,
         string $tipo,
+        ?int $idLocal = null,
         int $idHistorialActividadSesionLocal = 0,
         ?DateTime $fecha = null
     ) {
         $this->idHistorialActividadSesionLocal = $idHistorialActividadSesionLocal;
+        $this->idLocal = $idLocal;
         $this->fecha = $fecha;
 
-        $this->setIdLocal($idLocal);
+        $this->setIdUsuario($idUsuario);
+        $this->setTipoUsuario($tipoUsuario);
         $this->setTipo($tipo);
     }
 
@@ -41,7 +37,17 @@ class HistorialActividadSesionLocal
         return $this->idHistorialActividadSesionLocal;
     }
 
-    public function getIdLocal(): int
+    public function getIdUsuario(): int
+    {
+        return $this->idUsuario;
+    }
+
+    public function getTipoUsuario(): string
+    {
+        return $this->tipoUsuario;
+    }
+
+    public function getIdLocal(): ?int
     {
         return $this->idLocal;
     }
@@ -56,12 +62,20 @@ class HistorialActividadSesionLocal
         return $this->fecha;
     }
 
-    public function setIdLocal(int $idLocal): void
+    public function setIdUsuario(int $idUsuario): void
     {
-        if ($idLocal <= 0) {
-            throw new InvalidArgumentException("El ID de local debe ser mayor a cero");
+        if ($idUsuario <= 0) {
+            throw new InvalidArgumentException("El ID de usuario debe ser mayor a cero");
         }
-        $this->idLocal = $idLocal;
+        $this->idUsuario = $idUsuario;
+    }
+
+    public function setTipoUsuario(string $tipoUsuario): void
+    {
+        if (!in_array($tipoUsuario, self::TIPOS_USUARIO_VALIDOS, true)) {
+            throw new InvalidArgumentException("Tipo de usuario inválido: $tipoUsuario");
+        }
+        $this->tipoUsuario = $tipoUsuario;
     }
 
     public function setTipo(string $tipo): void
