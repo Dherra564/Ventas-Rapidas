@@ -4,8 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const vistas = document.querySelectorAll('.vista');
     const cajaMensaje = document.getElementById('mensaje');
 
+    let usuarioSesionActual = null;
+
     botonesMenu.forEach(boton => {
         boton.addEventListener('click', () => {
+            if (boton.dataset.vista === 'vista-login' && usuarioSesionActual) {
+                return;
+            }
+
             botonesMenu.forEach(b => b.classList.remove('activo'));
             boton.classList.add('activo');
 
@@ -1844,7 +1850,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const r = await fetch('api/sesion_actual.php');
             const res = await r.json();
-            actualizarIndicadorSesion(res.autenticado ? res.usuario : null);
+
+            if (res.autenticado) {
+                actualizarIndicadorSesion(res.usuario);
+                if (res.usuario.tipo === 'Cliente') {
+                    mostrarVistaLogin('vista-listado');
+                } else {
+                    await mostrarSelectorPerfilesLocal();
+                }
+            } else {
+                actualizarIndicadorSesion(null);
+            }
         } catch (e) {
             actualizarIndicadorSesion(null);
         }
@@ -1862,10 +1878,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function actualizarIndicadorSesion(usuario) {
+        usuarioSesionActual = usuario;
+
         const indicador = document.getElementById('sesion-indicador');
         const texto = document.getElementById('sesion-texto');
 
         actualizarMenuPorRol(usuario ? usuario.tipo : null);
+
+        const botonLogin = document.querySelector('.menu-boton[data-vista="vista-login"]');
+        if (botonLogin) {
+            botonLogin.classList.toggle('oculto', !!usuario);
+        }
 
         if (!indicador || !texto) return;
 
