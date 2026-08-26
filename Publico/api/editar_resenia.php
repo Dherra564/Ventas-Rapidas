@@ -1,30 +1,30 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../../Aplicacion/Controladoras/ResenaController.php';
-require_once __DIR__ . '/../../Aplicacion/Modelos/Resena.php';
+require_once __DIR__ . '/../../Aplicacion/Controladoras/ReseniaController.php';
+require_once __DIR__ . '/../../Aplicacion/Modelos/Resenia.php';
 
 $datos = json_decode(file_get_contents('php://input'), true) ?? [];
 
 try {
-    $idResena = (int) ($datos['idResena'] ?? 0);
-    $controlador = new ResenaController();
-    $actual = $controlador->buscar($idResena);
+    $idResenia = (int) ($datos['idResenia'] ?? 0);
+    $controlador = new ReseniaController();
+    $actual = $controlador->buscar($idResenia);
 
     if ($actual === null) {
         throw new InvalidArgumentException('Reseña no encontrada');
     }
 
-    $resena = new Resena(
+    $resenia = new Resenia(
         $actual->getIdCliente(),
         $actual->getIdLocal(),
         trim($datos['comentario'] ?? ''),
         (int) ($datos['puntuacion'] ?? 0),
         true,
-        $idResena,
-        $actual->getFechaResena()
+        $idResenia,
+        $actual->getFechaResenia()
     );
 
-    $exito = $controlador->editar($resena);
+    $exito = $controlador->editar($resenia);
     echo json_encode([
         'exito' => $exito,
         'mensaje' => $exito ? 'Reseña actualizada correctamente' : 'No se pudo actualizar la reseña'

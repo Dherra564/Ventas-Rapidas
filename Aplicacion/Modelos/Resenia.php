@@ -1,16 +1,16 @@
 <?php
 
-class Resena
+class Resenia
 {
     private const PUNTUACION_MINIMA = 1;
     private const PUNTUACION_MAXIMA = 5;
 
-    private int $idResena;
+    private int $idResenia;
     private int $idCliente;
     private int $idLocal;
     private string $comentario;
     private int $puntuacion;
-    private ?DateTime $fechaResena;
+    private ?DateTime $fechaResenia;
     private bool $activo;
 
     public function __construct(
@@ -19,12 +19,12 @@ class Resena
         string $comentario,
         int $puntuacion,
         bool $activo = true,
-        int $idResena = 0,
-        ?DateTime $fechaResena = null
+        int $idResenia = 0,
+        ?DateTime $fechaResenia = null
     ) {
-        $this->idResena = $idResena;
+        $this->idResenia = $idResenia;
         $this->activo = $activo;
-        $this->fechaResena = $fechaResena;
+        $this->fechaResenia = $fechaResenia;
 
         $this->setIdCliente($idCliente);
         $this->setIdLocal($idLocal);
@@ -32,9 +32,9 @@ class Resena
         $this->setPuntuacion($puntuacion);
     }
 
-    public function getIdResena(): int
+    public function getIdResenia(): int
     {
-        return $this->idResena;
+        return $this->idResenia;
     }
 
     public function getIdCliente(): int
@@ -57,9 +57,9 @@ class Resena
         return $this->puntuacion;
     }
 
-    public function getFechaResena(): ?DateTime
+    public function getFechaResenia(): ?DateTime
     {
-        return $this->fechaResena;
+        return $this->fechaResenia;
     }
 
     public function isActivo(): bool
