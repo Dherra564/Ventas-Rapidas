@@ -17,16 +17,16 @@ class HistorialFotoPerfilRepository
 
     public function registrar(HistorialFotoPerfil $historial): int|false
     {
-        $id = $this->generarSiguienteId($this->conexion, "tbhistorialfotoperfil", "tbhistorialfotoperfilid");
+        $id = $this->generarSiguienteId($this->conexion, "tbhistorialperfilfoto", "tbhistorialperfilfotoid");
 
-        $sql = "INSERT INTO tbhistorialfotoperfil
+        $sql = "INSERT INTO tbhistorialperfilfoto
                 (
-                    tbhistorialfotoperfilid,
-                    tbhistorialfotoperfilusuarioid,
-                    tbhistorialfotoperfilusuariotipo,
-                    tbhistorialfotoperfilrutaanterior,
-                    tbhistorialfotoperfilrutanueva,
-                    tbhistorialfotoperfilactivo
+                    tbhistorialperfilfotoid,
+                    tbhistorialperfilfotousuarioid,
+                    tbhistorialperfilfotousuariotipo,
+                    tbhistorialperfilfotorutaanterior,
+                    tbhistorialperfilfotorutanueva,
+                    tbhistorialperfilfotoactivo
                 )
                 VALUES
                 (
@@ -54,10 +54,10 @@ class HistorialFotoPerfilRepository
 
     public function obtenerPorUsuario(int $idUsuario, string $tipoUsuario): array
     {
-        $sql = "SELECT * FROM tbhistorialfotoperfil
-                WHERE tbhistorialfotoperfilusuarioid = :idUsuario
-                  AND tbhistorialfotoperfilusuariotipo = :tipoUsuario
-                ORDER BY tbhistorialfotoperfilfecha DESC";
+        $sql = "SELECT * FROM tbhistorialperfilfoto
+                WHERE tbhistorialperfilfotousuarioid = :idUsuario
+                  AND tbhistorialperfilfotousuariotipo = :tipoUsuario
+                ORDER BY tbhistorialperfilfotofecha DESC";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([
@@ -70,10 +70,10 @@ class HistorialFotoPerfilRepository
 
     public function obtenerUltimoCambio(int $idUsuario, string $tipoUsuario): ?HistorialFotoPerfil
     {
-        $sql = "SELECT * FROM tbhistorialfotoperfil
-                WHERE tbhistorialfotoperfilusuarioid = :idUsuario
-                  AND tbhistorialfotoperfilusuariotipo = :tipoUsuario
-                ORDER BY tbhistorialfotoperfilfecha DESC
+        $sql = "SELECT * FROM tbhistorialperfilfoto
+                WHERE tbhistorialperfilfotousuarioid = :idUsuario
+                  AND tbhistorialperfilfotousuariotipo = :tipoUsuario
+                ORDER BY tbhistorialperfilfotofecha DESC
                 LIMIT 1";
 
         $consulta = $this->conexion->prepare($sql);
@@ -89,10 +89,10 @@ class HistorialFotoPerfilRepository
 
     public function contarCambiosRecientes(int $idUsuario, string $tipoUsuario, int $horas): int
     {
-        $sql = "SELECT COUNT(*) FROM tbhistorialfotoperfil
-                WHERE tbhistorialfotoperfilusuarioid = :idUsuario
-                  AND tbhistorialfotoperfilusuariotipo = :tipoUsuario
-                  AND tbhistorialfotoperfilfecha >= (NOW() - INTERVAL :horas HOUR)";
+        $sql = "SELECT COUNT(*) FROM tbhistorialperfilfoto
+                WHERE tbhistorialperfilfotousuarioid = :idUsuario
+                  AND tbhistorialperfilfotousuariotipo = :tipoUsuario
+                  AND tbhistorialperfilfotofecha >= (NOW() - INTERVAL :horas HOUR)";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->bindValue(":idUsuario", $idUsuario, PDO::PARAM_INT);
@@ -117,13 +117,13 @@ class HistorialFotoPerfilRepository
     private function mapearFila(array $fila): HistorialFotoPerfil
     {
         return new HistorialFotoPerfil(
-            (int) $fila["tbhistorialfotoperfilusuarioid"],
-            $fila["tbhistorialfotoperfilusuariotipo"],
-            $fila["tbhistorialfotoperfilrutanueva"],
-            $fila["tbhistorialfotoperfilrutaanterior"],
-            (bool) $fila["tbhistorialfotoperfilactivo"],
-            (int) $fila["tbhistorialfotoperfilid"],
-            new DateTime($fila["tbhistorialfotoperfilfecha"])
+            (int) $fila["tbhistorialperfilfotousuarioid"],
+            $fila["tbhistorialperfilfotousuariotipo"],
+            $fila["tbhistorialperfilfotorutanueva"],
+            $fila["tbhistorialperfilfotorutaanterior"],
+            (bool) $fila["tbhistorialperfilfotoactivo"],
+            (int) $fila["tbhistorialperfilfotoid"],
+            new DateTime($fila["tbhistorialperfilfotofecha"])
         );
     }
 }

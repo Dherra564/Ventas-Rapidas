@@ -11,6 +11,8 @@ class Ubicacion
     private string $direccionExacta;
     private ?string $referencia;
     private bool $activo;
+    private ?float $latitud;
+    private ?float $longitud;
 
     public function __construct(
         ?int $idLocal,
@@ -21,7 +23,9 @@ class Ubicacion
         ?string $referencia = null,
         ?int $idCliente = null,
         bool $activo = true,
-        int $idUbicacion = 0
+        int $idUbicacion = 0,
+        ?float $latitud = null,
+        ?float $longitud = null
     ) {
         $this->idUbicacion = $idUbicacion;
         $this->idLocal = $idLocal;
@@ -33,6 +37,8 @@ class Ubicacion
         $this->setDireccionExacta($direccionExacta);
         $this->setReferencia($referencia);
         $this->setActivo($activo);
+        $this->setLatitud($latitud);
+        $this->setLongitud($longitud);
     }
 
     public function getIdUbicacion(): int { return $this->idUbicacion; }
@@ -44,6 +50,13 @@ class Ubicacion
     public function getDireccionExacta(): string { return $this->direccionExacta; }
     public function getReferencia(): ?string { return $this->referencia; }
     public function isActivo(): bool { return $this->activo; }
+    public function getLatitud(): ?float { return $this->latitud; }
+    public function getLongitud(): ?float { return $this->longitud; }
+
+    public function tieneCoordenadas(): bool
+    {
+        return $this->latitud !== null && $this->longitud !== null;
+    }
 
     public function setIdLocal(?int $idLocal): void { $this->idLocal = $idLocal; }
     public function setIdCliente(?int $idCliente): void { $this->idCliente = $idCliente; }
@@ -70,4 +83,20 @@ class Ubicacion
     }
 
     public function setActivo(bool $activo): void { $this->activo = $activo; }
+
+    public function setLatitud(?float $latitud): void
+    {
+        if ($latitud !== null && ($latitud < -90 || $latitud > 90)) {
+            throw new InvalidArgumentException("La latitud debe estar entre -90 y 90");
+        }
+        $this->latitud = $latitud;
+    }
+
+    public function setLongitud(?float $longitud): void
+    {
+        if ($longitud !== null && ($longitud < -180 || $longitud > 180)) {
+            throw new InvalidArgumentException("La longitud debe estar entre -180 y 180");
+        }
+        $this->longitud = $longitud;
+    }
 }

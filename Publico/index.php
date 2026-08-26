@@ -264,6 +264,13 @@
             </form>
         </section>
 
+        <!-- Vista: Selector de perfiles de local (estilo Netflix) -->
+        <section id="vista-seleccionar-local" class="vista oculto">
+            <h2>¿Qué local vas a administrar?</h2>
+            <p class="ayuda">Si no entras al perfil de un local por 7 días, se marca como inactivo automáticamente.</p>
+            <div id="grid-perfiles-local" class="rejilla-perfiles"></div>
+        </section>
+
         <!-- Vista: Listado de locales -->
         <section id="vista-listado" class="vista oculto">
 

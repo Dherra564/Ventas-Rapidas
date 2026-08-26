@@ -35,7 +35,9 @@ class RegistrarLocalHandler
             (int) ($_POST['idCanton'] ?? 0),
             (int) ($_POST['idDistrito'] ?? 0),
             $_POST['direccionExacta'] ?? '',
-            $_POST['referencia'] ?? null
+            $_POST['referencia'] ?? null,
+            isset($_POST['latitud']) && $_POST['latitud'] !== '' ? (float) $_POST['latitud'] : null,
+            isset($_POST['longitud']) && $_POST['longitud'] !== '' ? (float) $_POST['longitud'] : null
         );
 
         if ($idLocal !== false) {
