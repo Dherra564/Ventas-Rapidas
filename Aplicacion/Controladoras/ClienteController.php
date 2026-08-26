@@ -126,4 +126,24 @@ class ClienteController
     public function existeIdentificacion(string $identificacion): bool { return $this->clienteRepository->existeIdentificacion($identificacion); }
     public function existeCorreo(string $correo): bool { return $this->clienteRepository->existeCorreo($correo); }
     public function buscarPorIdentificacion(string $identificacion): ?Cliente { return $this->clienteRepository->obtenerPorIdentificacion($identificacion); }
+
+    public function login(string $correo, string $password): Cliente
+    {
+    $cliente = $this->clienteRepository->obtenerPorCorreo($correo);
+
+    if ($cliente === null || !password_verify($password, $cliente->getPasswordHash())) {
+        throw new InvalidArgumentException("Correo o contraseña incorrectos");
+    }
+
+    if (!$cliente->isActivo()) {
+        throw new InvalidArgumentException("Esta cuenta de cliente está desactivada");
+    }
+
+    return $cliente;
+    }
+
+    public function actualizarUbicacionGPS(int $idCliente, float $latitud, float $longitud): bool
+    {
+    return $this->ubicacionRepository->actualizarCoordenadasCliente($idCliente, $latitud, $longitud);
+    }
 }

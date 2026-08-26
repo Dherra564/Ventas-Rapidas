@@ -168,4 +168,18 @@ class UbicacionRepository
             (int) $fila["tbubicacionid"]
         );
     }
+
+    public function actualizarCoordenadasCliente(int $idCliente, float $latitud, float $longitud): bool
+    {
+    $sql = "UPDATE tbubicacion
+            SET tbubicacionlatitud = :latitud, tbubicacionlongitud = :longitud
+            WHERE tbclienteid = :idCliente";
+
+    $consulta = $this->conexion->prepare($sql);
+    return $consulta->execute([
+        ":latitud" => $latitud,
+        ":longitud" => $longitud,
+        ":idCliente" => $idCliente
+    ]);
+    }
 }

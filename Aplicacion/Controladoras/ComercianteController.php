@@ -117,4 +117,19 @@ class ComercianteController
     public function existeCorreo(string $correo): bool { return $this->comercianteRepository->existeCorreo($correo); }
     public function buscarPorCedula(string $cedula): ?Comerciante { return $this->comercianteRepository->obtenerPorCedula($cedula); }
     public function buscarPorIdentificacion(string $identificacion): ?Comerciante { return $this->buscarPorCedula($identificacion); }
+
+    public function login(string $correo, string $password): Comerciante
+    {
+    $comerciante = $this->comercianteRepository->obtenerPorCorreo($correo);
+
+    if ($comerciante === null || !password_verify($password, $comerciante->getPasswordHash())) {
+        throw new InvalidArgumentException("Correo o contraseña incorrectos");
+    }
+
+    if (!$comerciante->isActivo()) {
+        throw new InvalidArgumentException("Esta cuenta de comerciante está desactivada");
+    }
+
+    return $comerciante;
+    }
 }

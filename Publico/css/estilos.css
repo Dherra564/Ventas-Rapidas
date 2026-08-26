@@ -286,3 +286,46 @@ select:disabled {
     font-size: 0.85rem;
     margin-top: 0;
 }
+
+.sesion-indicador {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+    font-size: 0.9rem;
+}
+
+.sesion-indicador .boton-secundario {
+    padding: 0.3rem 0.8rem;
+}
+
+.rejilla-dos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .rejilla-dos {
+        grid-template-columns: 1fr;
+    }
+}
+
+.boton-eleccion {
+    background: white;
+    border: 2px solid #d7dde1;
+    border-radius: 10px;
+    padding: 1.5rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f6f50;
+    text-align: center;
+    line-height: 1.8;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.boton-eleccion:hover {
+    border-color: #1f6f50;
+    transform: translateY(-2px);
+}

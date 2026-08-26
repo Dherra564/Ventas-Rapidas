@@ -1856,4 +1856,175 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ================================================================
+    // LOGIN / SESIÓN / CREAR CUENTA
+    // Todo lo de aquí para abajo es nuevo (backend). No se modificó
+    // nada de lo que ya había arriba en este archivo.
+    // ================================================================
+
+    // Devuelve { lat, lng } o rechaza con un Error si el navegador no
+    // soporta geolocalización o el usuario niega el permiso.
+    function obtenerCoordenadasGPS() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Tu navegador no soporta geolocalización'));
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (posicion) => resolve({
+                    lat: posicion.coords.latitude,
+                    lng: posicion.coords.longitude
+                }),
+                (error) => reject(error),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+    }
+
+    // Cambia de vista sin tocar el manejador de clics del menú de arriba.
+    // Reutiliza "vistas" y "botonesMenu", que ya estaban declarados al
+    // inicio de este archivo.
+    function mostrarVistaLogin(idVista) {
+        vistas.forEach(v => v.classList.add('oculto'));
+        const destino = document.getElementById(idVista);
+        if (destino) destino.classList.remove('oculto');
+
+        botonesMenu.forEach(b => b.classList.remove('activo'));
+        const boton = document.querySelector(`.menu-boton[data-vista="${idVista}"]`);
+        if (boton) boton.classList.add('activo');
+
+        // "Ver Locales" normalmente carga sus datos solo cuando se entra
+        // por el menú de arriba; si entramos aquí por login, hay que
+        // dispararlo a mano (reutiliza las funciones que ya existen).
+        if (idVista === 'vista-listado' && typeof mostrarListaLocales === 'function') {
+            mostrarListaLocales();
+            cargarLocales();
+        }
+    }
+
+    async function verificarSesionActual() {
+        try {
+            const r = await fetch('api/sesion_actual.php');
+            const res = await r.json();
+            actualizarIndicadorSesion(res.autenticado ? res.usuario : null);
+        } catch (e) {
+            actualizarIndicadorSesion(null);
+        }
+    }
+
+    function actualizarIndicadorSesion(usuario) {
+        const indicador = document.getElementById('sesion-indicador');
+        const texto = document.getElementById('sesion-texto');
+        if (!indicador || !texto) return;
+
+        if (usuario) {
+            texto.textContent = `Sesión: ${usuario.nombre} (${usuario.tipo})`;
+            indicador.classList.remove('oculto');
+        } else {
+            indicador.classList.add('oculto');
+        }
+    }
+
+    document.getElementById('form-login')?.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const tipo = document.getElementById('login-tipo').value;
+        const correo = document.getElementById('login-correo').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        // Validación en el cliente: mismos mensajes visibles que usa el resto
+        // de la app (banner rojo), en vez de dejar solo el aviso nativo del navegador.
+        if (correo === '' || password === '') {
+            mostrarMensaje('Ingresa tu correo y tu contraseña', 'error');
+            return;
+        }
+
+        const formatoCorreoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+        if (!formatoCorreoValido) {
+            mostrarMensaje('El correo no tiene un formato válido', 'error');
+            return;
+        }
+
+        const endpoint = tipo === 'cliente' ? 'api/login_cliente.php' : 'api/login_comerciante.php';
+
+        const datos = new FormData();
+        datos.append('correo', correo);
+        datos.append('password', password);
+
+        try {
+            const r = await fetch(endpoint, { method: 'POST', body: datos });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                actualizarIndicadorSesion(res.usuario);
+                evento.target.reset();
+
+                if (res.usuario.tipo === 'Cliente') {
+                    try {
+                        const coords = await obtenerCoordenadasGPS();
+                        await fetch('api/actualizar_ubicacion_cliente.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
+                        });
+                    } catch (e) {
+                        // El cliente no dio permiso de ubicación o su navegador no la soporta;
+                        // no es un error fatal, simplemente no podrá usar la búsqueda por cercanía.
+                    }
+                }
+
+                mostrarVistaLogin('vista-listado');
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+    document.getElementById('btn-cerrar-sesion')?.addEventListener('click', async () => {
+        try {
+            await fetch('api/cerrar_sesion.php', { method: 'POST' });
+        } catch (e) {}
+        actualizarIndicadorSesion(null);
+        mostrarMensaje('Sesión cerrada', 'exito');
+        mostrarPanelEntrar();
+        mostrarVistaLogin('vista-login');
+    });
+
+    verificarSesionActual();
+
+    // ===== CREAR CUENTA: elegir Cliente o Comerciante =====
+
+    const panelEntrar = document.getElementById('login-panel-entrar');
+    const panelElegirTipo = document.getElementById('login-panel-elegir-tipo');
+
+    function mostrarPanelEntrar() {
+        panelElegirTipo?.classList.add('oculto');
+        panelEntrar?.classList.remove('oculto');
+    }
+
+    function mostrarPanelElegirTipo() {
+        panelEntrar?.classList.add('oculto');
+        panelElegirTipo?.classList.remove('oculto');
+    }
+
+    document.getElementById('link-crear-cuenta')?.addEventListener('click', (evento) => {
+        evento.preventDefault();
+        mostrarPanelElegirTipo();
+    });
+
+    document.getElementById('link-volver-login')?.addEventListener('click', (evento) => {
+        evento.preventDefault();
+        mostrarPanelEntrar();
+    });
+
+    document.getElementById('btn-elegir-cliente')?.addEventListener('click', () => {
+        mostrarVistaLogin('vista-cliente');
+    });
+
+    document.getElementById('btn-elegir-comerciante')?.addEventListener('click', () => {
+        mostrarVistaLogin('vista-comerciante');
+    });
+
 });

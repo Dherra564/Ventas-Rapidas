@@ -277,4 +277,13 @@ class ClienteRepository
             (int) $fila["tbclienteid"]
         );
     }
+
+    public function obtenerPorCorreo(string $correo): ?Cliente
+    {
+    $sql = "SELECT * FROM tbcliente WHERE tbclientecorreo = :correo";
+    $consulta = $this->conexion->prepare($sql);
+    $consulta->execute([":correo" => $correo]);
+    $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+    return $fila ? $this->mapearFila($fila) : null;
+    }
 }

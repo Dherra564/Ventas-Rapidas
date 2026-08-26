@@ -221,4 +221,14 @@ class ComercianteRepository
                 : null
         );
     }
+
+    public function obtenerPorCorreo(string $correo): ?Comerciante
+    {
+    $sql = "SELECT * FROM tbcomerciante WHERE tbcomerciantecorreo = :correo";
+    $consulta = $this->conexion->prepare($sql);
+    $consulta->execute([":correo" => $correo]);
+    $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+
+    return $fila ? $this->mapearFila($fila) : null;
+    }
 }

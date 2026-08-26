@@ -11,10 +11,9 @@
     <header class="cabecera">
         <h1>Ventas Rápidas</h1>
         <nav class="menu">
-            <button class="menu-boton activo" data-vista="vista-comerciante">Registrar Comerciante</button>
+            <button class="menu-boton activo" data-vista="vista-login">Iniciar Sesión</button>
             <button class="menu-boton" data-vista="vista-local">Registrar Local</button>
             <button class="menu-boton" data-vista="vista-producto">Registrar Producto</button>
-            <button class="menu-boton" data-vista="vista-cliente">Registrar Cliente</button>
             <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
             <button class="menu-boton" data-vista="vista-comerciantes">Ver Comerciantes</button>
             <button class="menu-boton" data-vista="vista-clientes">Ver Clientes</button>
@@ -22,14 +21,64 @@
             <button class="menu-boton" data-vista="vista-resenas">Reseñas</button>
             <button class="menu-boton" data-vista="vista-historiales">Historiales</button>
         </nav>
+        <div id="sesion-indicador" class="sesion-indicador oculto">
+            <span id="sesion-texto"></span>
+            <button type="button" id="btn-cerrar-sesion" class="boton-secundario">Cerrar sesión</button>
+        </div>
     </header>
 
     <main class="contenedor">
 
         <div id="mensaje" class="mensaje oculto"></div>
 
+        <!-- Vista: Iniciar Sesión / Crear cuenta -->
+        <section id="vista-login" class="vista">
+
+            <div id="login-panel-entrar">
+                <h2>Iniciar Sesión</h2>
+
+                <div class="formulario" style="max-width: 320px;">
+                    <label for="login-tipo">Ingresar como</label>
+                    <select id="login-tipo">
+                        <option value="cliente">Cliente</option>
+                        <option value="comerciante">Comerciante</option>
+                    </select>
+                </div>
+
+                <form id="form-login" class="formulario" novalidate>
+                    <label for="login-correo">Correo</label>
+                    <input type="email" id="login-correo" required>
+
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" required>
+
+                    <button type="submit">Ingresar</button>
+                </form>
+
+                <p class="ayuda">
+                    ¿No tienes cuenta?
+                    <a href="#" id="link-crear-cuenta">Crear cuenta</a>
+                </p>
+            </div>
+
+            <div id="login-panel-elegir-tipo" class="oculto">
+                <h2>Crear cuenta</h2>
+                <p class="ayuda">¿Cómo quieres registrarte?</p>
+
+                <div class="rejilla-dos" style="max-width: 500px;">
+                    <button type="button" class="boton-eleccion" id="btn-elegir-cliente">🧍<br>Soy Cliente</button>
+                    <button type="button" class="boton-eleccion" id="btn-elegir-comerciante">🏪<br>Soy Comerciante</button>
+                </div>
+
+                <p class="ayuda">
+                    <a href="#" id="link-volver-login">&larr; Volver a iniciar sesión</a>
+                </p>
+            </div>
+
+        </section>
+
         <!-- Vista: Registrar Comerciante -->
-        <section id="vista-comerciante" class="vista">
+        <section id="vista-comerciante" class="vista oculto">
             <h2>Registro de Comerciante</h2>
             <form id="form-comerciante" class="formulario" enctype="multipart/form-data">
                 <label for="c-nombre">Nombre completo</label>
@@ -150,6 +199,11 @@
 
                 <label for="l-referencia">Punto de referencia</label>
                 <input type="text" id="l-referencia">
+
+                <button type="button" id="btn-gps-local" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                <span class="ayuda" id="l-gps-msg"></span>
+                <input type="hidden" id="l-latitud">
+                <input type="hidden" id="l-longitud">
 
                 <button type="submit">Registrar Local</button>
             </form>
