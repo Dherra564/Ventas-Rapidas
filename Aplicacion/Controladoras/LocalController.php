@@ -95,6 +95,11 @@ class LocalController
         return $this->localRepository->obtenerLocalConUbicacion($idLocal);
     }
 
+    public function perteneceAComerciante(int $idLocal, int $idComerciante): bool
+    {
+        return $this->comercianteLocalRepository->obtenerComerciantePorLocal($idLocal) === $idComerciante;
+    }
+
     public function entrarPerfil(int $idLocal, int $idComerciante): bool
     {
         $duenoReal = $this->comercianteLocalRepository->obtenerComerciantePorLocal($idLocal);

@@ -12,14 +12,14 @@
         <h1>Ventas Rápidas</h1>
         <nav class="menu" id="menu-principal">
             <button class="menu-boton activo" data-vista="vista-login">Iniciar Sesión</button>
-            <button class="menu-boton" data-vista="vista-local">Registrar Local</button>
-            <button class="menu-boton" data-vista="vista-producto">Registrar Producto</button>
-            <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
-            <button class="menu-boton" data-vista="vista-comerciantes">Ver Comerciantes</button>
-            <button class="menu-boton" data-vista="vista-clientes">Ver Clientes</button>
-            <button class="menu-boton" data-vista="vista-compras">Compras</button>
-            <button class="menu-boton" data-vista="vista-resenas">Reseñas</button>
-            <button class="menu-boton" data-vista="vista-historiales">Historiales</button>
+            <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
+            <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar Producto</button>
+            <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
+            <button class="menu-boton" data-vista="vista-comerciantes" data-rol="Admin">Ver Comerciantes</button>
+            <button class="menu-boton" data-vista="vista-clientes" data-rol="Admin">Ver Clientes</button>
+            <button class="menu-boton" data-vista="vista-compras" data-rol="Cliente">Compras</button>
+            <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
+            <button class="menu-boton" data-vista="vista-historiales" data-rol="Admin">Historiales</button>
         </nav>
         <div id="sesion-indicador" class="sesion-indicador oculto">
             <span id="sesion-texto"></span>
@@ -152,11 +152,6 @@
         <section id="vista-local" class="vista oculto">
             <h2>Registro de Local</h2>
             <form id="form-local" class="formulario" enctype="multipart/form-data">
-                <label for="l-numeroIdentificacion">Comerciante (ingresa tu número de identificación)</label>
-                <input type="text" id="l-numeroIdentificacion" placeholder="Sin espacios ni guiones" required>
-                <span class="ayuda" id="l-comerciante-info"></span>
-                <input type="hidden" id="l-idComerciante">
-
                 <label for="l-tipoLocal">Tipo de Local</label>
                 <input type="text" id="l-tipoLocal" autocomplete="off" placeholder="Ej: Soda, Feria, Repostería..." required>
                 <div class="sugerencias oculto" id="l-tipo-sugerencias"></div>

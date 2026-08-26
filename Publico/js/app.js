@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const vistas = document.querySelectorAll('.vista');
     const cajaMensaje = document.getElementById('mensaje');
 
-    // Navegación por pestañas
     botonesMenu.forEach(boton => {
         boton.addEventListener('click', () => {
             botonesMenu.forEach(b => b.classList.remove('activo'));
@@ -69,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // REGISTRAR COMERCIANTE
     const inputIdentificacionComerciante = document.getElementById('c-numeroIdentificacion');
     const mensajeIdentificacionComerciante = document.getElementById('c-identificacion-msg');
     const inputCorreoComerciante = document.getElementById('c-correo');
@@ -135,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
 
             if (res.exito) {
-                sessionStorage.setItem('identificacionComercianteActual', numeroIdentificacion);
                 evento.target.reset();
                 mensajeIdentificacionComerciante.textContent = '';
                 mensajeCorreoComerciante.textContent = '';
@@ -145,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // AUTOCOMPLETADO DE TIPO (reutilizable para tipo de local y tipo de producto)
     function activarAutocompletadoTipo(inputEl, listaEl, endpoint) {
         const buscar = debounce(async () => {
             const texto = inputEl.value.trim();
@@ -195,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'api/buscar_tipos_local.php'
     );
 
-    // SELECTS EN CASCADA (reutilizable): PROVINCIA -> CANTÓN -> DISTRITO
     function activarCascadaUbicacion(selectProvincia, selectCanton, selectDistrito) {
         async function cargarProvincias() {
             try {
@@ -274,49 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectDistritoCliente = document.getElementById('cl-distrito');
     activarCascadaUbicacion(selectProvinciaCliente, selectCantonCliente, selectDistritoCliente);
 
-    // REGISTRAR LOCAL: identificar comerciante por número de identificación
-    const inputIdentificacionLocal = document.getElementById('l-numeroIdentificacion');
-    const infoComerciante = document.getElementById('l-comerciante-info');
-    const inputIdComerciante = document.getElementById('l-idComerciante');
-
-    const buscarComercianteDebounced = debounce(async () => {
-        const numeroIdentificacion = inputIdentificacionLocal.value.trim();
-        infoComerciante.textContent = '';
-        infoComerciante.className = 'ayuda';
-        if (numeroIdentificacion.length < 5) return;
-
-        try {
-            const r = await fetch(`api/buscar_comerciante_por_identificacion.php?numeroIdentificacion=${encodeURIComponent(numeroIdentificacion)}`);
-            const res = await r.json();
-
-            if (res.encontrado) {
-                inputIdComerciante.value = res.idComerciante;
-                infoComerciante.textContent = `Comerciante: ${res.nombre} (${res.alias})`;
-                infoComerciante.className = 'ayuda exito';
-            } else {
-                inputIdComerciante.value = '';
-                infoComerciante.textContent = 'No existe un comerciante con esa identificación. Regístrate primero.';
-                infoComerciante.className = 'ayuda error';
-            }
-        } catch (e) {
-            infoComerciante.textContent = 'No se pudo verificar la identificación';
-            infoComerciante.className = 'ayuda error';
-        }
-    }, 400);
-
-    inputIdentificacionLocal.addEventListener('input', () => {
-        inputIdComerciante.value = '';
-        buscarComercianteDebounced();
-    });
-
-    const identificacionGuardada = sessionStorage.getItem('identificacionComercianteActual');
-    if (identificacionGuardada) {
-        inputIdentificacionLocal.value = identificacionGuardada;
-        buscarComercianteDebounced();
-        sessionStorage.removeItem('identificacionComercianteActual');
-    }
-
-    // Nombre del local: disponibilidad
     const inputNombreLocal = document.getElementById('l-nombreLocal');
     const mensajeNombreLocal = document.getElementById('l-nombre-msg');
 
@@ -336,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputNombreLocal.addEventListener('input', verificarNombreLocalDebounced);
 
-    // Correo del local: disponibilidad
     const inputCorreoLocal = document.getElementById('l-correo');
     const mensajeCorreoLocal = document.getElementById('l-correo-msg');
 
@@ -359,7 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
     formatearTelefono(document.getElementById('l-telefono'));
     formatearTelefono(document.getElementById('e-telefono'));
 
-    // Registrar Local
     const formLocal = document.getElementById('form-local');
     const inputLatitudLocal = document.getElementById('l-latitud');
     const inputLongitudLocal = document.getElementById('l-longitud');
@@ -380,13 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formLocal.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
-        if (!inputIdComerciante.value) {
-            mostrarMensaje('Ingresa un número de identificación de comerciante válido antes de continuar', 'error');
-            return;
-        }
-
         const datos = new FormData();
-        datos.append('idComerciante', inputIdComerciante.value);
         datos.append('nombreTipoLocal', document.getElementById('l-tipoLocal').value);
         datos.append('nombreLocal', inputNombreLocal.value);
         datos.append('descripcion', document.getElementById('l-descripcion').value);
@@ -416,10 +360,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.exito) {
                 formLocal.reset();
-                infoComerciante.textContent = '';
                 mensajeNombreLocal.textContent = '';
                 if (mensajeGpsLocal) mensajeGpsLocal.textContent = '';
-                inputIdComerciante.value = '';
                 selectCantonLocal.innerHTML = '<option value="">Primero elige provincia</option>';
                 selectCantonLocal.disabled = true;
                 selectDistritoLocal.innerHTML = '<option value="">Primero elige cantón</option>';
@@ -430,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // REGISTRAR CLIENTE
     const inputIdentificacionCliente = document.getElementById('cl-numeroIdentificacion');
     const mensajeIdentificacionCliente = document.getElementById('cl-identificacion-msg');
     const inputCorreoCliente = document.getElementById('cl-correo');
@@ -511,7 +452,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // VER LOCALES
     const panelLista = document.getElementById('panel-lista-locales');
     const panelDetalle = document.getElementById('panel-detalle-local');
 
@@ -686,7 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // REGISTRAR PRODUCTO
     const inputNombreLocalProducto = document.getElementById('p-nombreLocal');
     const infoLocalProducto = document.getElementById('p-local-info');
     const inputIdLocalProducto = document.getElementById('p-idLocal');
@@ -765,7 +704,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // EDITAR PRODUCTO
     const panelEditarProducto = document.getElementById('panel-editar-producto');
     let idLocalProductoEditando = null;
 
@@ -846,7 +784,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // VER / EDITAR / DESACTIVAR COMERCIANTES
     const panelListaComerciantes = document.getElementById('panel-lista-comerciantes');
     const panelDetalleComerciante = document.getElementById('panel-detalle-comerciante');
 
@@ -1020,7 +957,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // VER / EDITAR / DESACTIVAR CLIENTES
     const panelListaClientes = document.getElementById('panel-lista-clientes');
     const panelDetalleCliente = document.getElementById('panel-detalle-cliente');
 
@@ -1196,7 +1132,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // VALIDACIÓN DE IDENTIFICACIÓN SEGÚN TIPO (reutilizable)
     const reglasIdentificacion = {
         Cedula: { patron: /^\d{9}$/, maxlength: 9, placeholder: 'Ej: 118760512', ayuda: '9 dígitos numéricos' },
         DIMEX: { patron: /^\d{11,12}$/, maxlength: 12, placeholder: 'Ej: 155812345678', ayuda: '11 o 12 dígitos numéricos' },
@@ -1253,7 +1188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cl-identificacion-msg')
     );
 
-    // BÚSQUEDA / FILTROS EN "VER LOCALES"
     const selectProvinciaFiltro = document.getElementById('f-provincia');
     const selectCantonFiltro = document.getElementById('f-canton');
     const selectDistritoFiltro = document.getElementById('f-distrito');
@@ -1277,7 +1211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cargarLocales();
     });
 
-    // PRODUCTO EN VARIOS LOCALES (tbproductolocal)
     async function cargarOtrosLocalesDelProducto(idProducto) {
         const contenedor = document.getElementById('ep-otros-locales-lista');
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
@@ -1364,7 +1297,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // CLIENTE SIGUE LOCALES (tbclientelocal)
     async function cargarLocalesQueSigueCliente(idCliente) {
         const contenedor = document.getElementById('dcl-locales-lista');
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
@@ -1451,8 +1383,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
-    // COMPRAS Y RESEÑAS: CLASES NUEVAS
     function escaparHtml(texto) {
         return String(texto ?? '')
             .replaceAll('&', '&amp;')
@@ -1634,10 +1564,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const comentario = document.getElementById('resena-comentario').value.trim();
 
         try {
-            const r = await fetch('api/registrar_resena.php', {
+            const r = await fetch('api/registrar_resenia.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idCliente, idLocal, puntuacion, comentario })
+                body: JSON.stringify({ idLocal, puntuacion, comentario })
             });
             const res = await r.json();
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
@@ -1666,7 +1596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         try {
-            const r = await fetch(`api/listar_resenas_local.php?idLocal=${encodeURIComponent(idLocal)}`);
+            const r = await fetch(`api/listar_resenias_local.php?idLocal=${encodeURIComponent(idLocal)}`);
             const res = await r.json();
 
             if (!res.exito) {
@@ -1678,29 +1608,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const promedio = res.promedio === null ? 'Sin calificación' : `${Number(res.promedio).toFixed(1)} / 5`;
             resumen.textContent = `Promedio: ${promedio} · ${res.total} reseña${res.total === 1 ? '' : 's'}`;
 
-            if (res.resenas.length === 0) {
+            if (res.resenias.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">Este local todavía no tiene reseñas.</p>';
                 return;
             }
 
             contenedor.innerHTML = '';
-            res.resenas.forEach(resena => {
+            res.resenias.forEach(resenia => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta';
-                const estrellas = '★'.repeat(resena.puntuacion) + '☆'.repeat(5 - resena.puntuacion);
+                const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
                 tarjeta.innerHTML = `
-                    <h3>${escaparHtml(resena.nombreCliente)}</h3>
-                    <p class="estrellas" aria-label="${resena.puntuacion} de 5">${estrellas}</p>
-                    <p>${escaparHtml(resena.comentario)}</p>
-                    <p class="ayuda">${escaparHtml(formatearFecha(resena.fechaResena))}</p>
+                    <h3>${escaparHtml(resenia.nombreCliente)}</h3>
+                    <p class="estrellas" aria-label="${resenia.puntuacion} de 5">${estrellas}</p>
+                    <p>${escaparHtml(resenia.comentario)}</p>
+                    <p class="ayuda">${escaparHtml(formatearFecha(resenia.fechaResenia))}</p>
                     <div class="acciones-tarjeta">
                         <button type="button" class="boton-pequeno boton-editar btn-editar-resena">Editar</button>
                         <button type="button" class="boton-peligro btn-eliminar-resena">Eliminar</button>
                     </div>
                 `;
 
-                tarjeta.querySelector('.btn-editar-resena').addEventListener('click', () => editarResenaDesdeLista(resena));
-                tarjeta.querySelector('.btn-eliminar-resena').addEventListener('click', () => eliminarResenaDesdeLista(resena.idResena));
+                tarjeta.querySelector('.btn-editar-resena').addEventListener('click', () => editarResenaDesdeLista(resenia));
+                tarjeta.querySelector('.btn-eliminar-resena').addEventListener('click', () => eliminarResenaDesdeLista(resenia.idResenia));
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
@@ -1711,11 +1641,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-cargar-resenas').addEventListener('click', cargarResenasLocal);
 
-    async function editarResenaDesdeLista(resena) {
-        const comentario = prompt('Edita el comentario:', resena.comentario);
+    async function editarResenaDesdeLista(resenia) {
+        const comentario = prompt('Edita el comentario:', resenia.comentario);
         if (comentario === null) return;
 
-        const puntuacionTexto = prompt('Nueva puntuación del 1 al 5:', String(resena.puntuacion));
+        const puntuacionTexto = prompt('Nueva puntuación del 1 al 5:', String(resenia.puntuacion));
         if (puntuacionTexto === null) return;
 
         const puntuacion = Number(puntuacionTexto);
@@ -1725,10 +1655,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const r = await fetch('api/editar_resena.php', {
+            const r = await fetch('api/editar_resenia.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idResena: resena.idResena, comentario, puntuacion })
+                body: JSON.stringify({ idResenia: resenia.idResenia, comentario, puntuacion })
             });
             const respuesta = await r.json();
             mostrarMensaje(respuesta.mensaje, respuesta.exito ? 'exito' : 'error');
@@ -1738,14 +1668,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function eliminarResenaDesdeLista(idResena) {
+    async function eliminarResenaDesdeLista(idResenia) {
         if (!confirm('¿Seguro que querés eliminar esta reseña?')) return;
 
         try {
-            const r = await fetch('api/eliminar_resena.php', {
+            const r = await fetch('api/eliminar_resenia.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idResena })
+                body: JSON.stringify({ idResenia })
             });
             const res = await r.json();
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
@@ -1755,8 +1685,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-    // HISTORIALES DE SEGURIDAD
     async function cargarUsuariosHistorial() {
         const tipo = document.getElementById('historial-tipo').value;
         const select = document.getElementById('historial-usuario');
@@ -1873,7 +1801,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión al cambiar la contraseña', 'error');
         }
     });
-    
+
     function obtenerCoordenadasGPS() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
@@ -1891,9 +1819,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cambia de vista sin tocar el manejador de clics del menú de arriba.
-    // Reutiliza "vistas" y "botonesMenu", que ya estaban declarados al
-    // inicio de este archivo.
     function mostrarVistaLogin(idVista) {
         vistas.forEach(v => v.classList.add('oculto'));
         const destino = document.getElementById(idVista);
@@ -1903,9 +1828,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const boton = document.querySelector(`.menu-boton[data-vista="${idVista}"]`);
         if (boton) boton.classList.add('activo');
 
-        // "Ver Locales" normalmente carga sus datos solo cuando se entra
-        // por el menú de arriba; si entramos aquí por login, hay que
-        // dispararlo a mano (reutiliza las funciones que ya existen).
+        const menuPrincipal = document.getElementById('menu-principal');
+        if (menuPrincipal) {
+            const esRegistro = idVista === 'vista-comerciante' || idVista === 'vista-cliente';
+            menuPrincipal.classList.toggle('oculto', esRegistro);
+        }
+
         if (idVista === 'vista-listado' && typeof mostrarListaLocales === 'function') {
             mostrarListaLocales();
             cargarLocales();
@@ -1922,9 +1850,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function actualizarMenuPorRol(tipoUsuario) {
+        botonesMenu.forEach(boton => {
+            const rol = boton.dataset.rol;
+            if (!rol) {
+                boton.classList.remove('oculto');
+                return;
+            }
+            boton.classList.toggle('oculto', rol !== tipoUsuario);
+        });
+    }
+
     function actualizarIndicadorSesion(usuario) {
         const indicador = document.getElementById('sesion-indicador');
         const texto = document.getElementById('sesion-texto');
+
+        actualizarMenuPorRol(usuario ? usuario.tipo : null);
+
         if (!indicador || !texto) return;
 
         if (usuario) {
@@ -1942,8 +1884,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const correo = document.getElementById('login-correo').value.trim();
         const password = document.getElementById('login-password').value;
 
-        // Validación en el cliente: mismos mensajes visibles que usa el resto
-        // de la app (banner rojo), en vez de dejar solo el aviso nativo del navegador.
         if (correo === '' || password === '') {
             mostrarMensaje('Ingresa tu correo y tu contraseña', 'error');
             return;
@@ -1980,8 +1920,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
                         });
                     } catch (e) {
-                        // El cliente no dio permiso de ubicación o su navegador no la soporta;
-                        // no es un error fatal, simplemente no podrá usar la búsqueda por cercanía.
                     }
 
                     mostrarVistaLogin('vista-listado');
@@ -2005,8 +1943,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     verificarSesionActual();
-
-    // ===== CREAR CUENTA: elegir Cliente o Comerciante =====
 
     const panelEntrar = document.getElementById('login-panel-entrar');
     const panelElegirTipo = document.getElementById('login-panel-elegir-tipo');
@@ -2037,6 +1973,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-elegir-comerciante')?.addEventListener('click', () => {
         mostrarVistaLogin('vista-comerciante');
+    });
+
+    document.getElementById('btn-volver-login-comerciante')?.addEventListener('click', () => {
+        mostrarPanelEntrar();
+        mostrarVistaLogin('vista-login');
+    });
+
+    document.getElementById('btn-volver-login-cliente')?.addEventListener('click', () => {
+        mostrarPanelEntrar();
+        mostrarVistaLogin('vista-login');
     });
 
     async function mostrarSelectorPerfilesLocal() {

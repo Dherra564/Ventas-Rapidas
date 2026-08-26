@@ -1,17 +1,19 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ReseniaController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion(Sesion::TIPO_CLIENTE);
 
 $datos = json_decode(file_get_contents('php://input'), true) ?? [];
 
 try {
-    $idCliente = (int) ($datos['idCliente'] ?? 0);
     $idLocal = (int) ($datos['idLocal'] ?? 0);
     $comentario = trim($datos['comentario'] ?? '');
     $puntuacion = (int) ($datos['puntuacion'] ?? 0);
 
     $controlador = new ReseniaController();
-    $id = $controlador->registrar($idCliente, $idLocal, $comentario, $puntuacion);
+    $id = $controlador->registrar($usuario['id'], $idLocal, $comentario, $puntuacion);
 
     echo json_encode([
         'exito' => $id !== false,

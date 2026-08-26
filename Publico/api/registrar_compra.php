@@ -1,19 +1,21 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/RegistroCompraController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion(Sesion::TIPO_CLIENTE);
 
 $datos = json_decode(file_get_contents('php://input'), true) ?? [];
 
 try {
-    $idCliente = (int) ($datos['idCliente'] ?? 0);
     $idLocal = (int) ($datos['idLocal'] ?? 0);
 
-    if ($idCliente <= 0 || $idLocal <= 0) {
-        throw new InvalidArgumentException('Selecciona un cliente y un local válidos');
+    if ($idLocal <= 0) {
+        throw new InvalidArgumentException('Selecciona un local válido');
     }
 
     $controlador = new RegistroCompraController();
-    $id = $controlador->registrar($idCliente, $idLocal);
+    $id = $controlador->registrar($usuario['id'], $idLocal);
 
     echo json_encode([
         'exito' => $id !== false,

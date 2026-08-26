@@ -1,9 +1,13 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion();
 
 try {
     $controlador = new LocalController();
+    $controlador->sincronizarActividad();
 
     $nombre = isset($_GET['nombre']) && $_GET['nombre'] !== '' ? $_GET['nombre'] : null;
     $idTipoLocal = isset($_GET['idTipoLocal']) && $_GET['idTipoLocal'] !== '' ? (int) $_GET['idTipoLocal'] : null;
@@ -12,6 +16,13 @@ try {
     $idDistrito = isset($_GET['idDistrito']) && $_GET['idDistrito'] !== '' ? (int) $_GET['idDistrito'] : null;
 
     $locales = $controlador->buscarConFiltros($nombre, $idTipoLocal, $idProvincia, $idCanton, $idDistrito, true);
+
+    if ($usuario['tipo'] === Sesion::TIPO_COMERCIANTE) {
+        $locales = array_values(array_filter(
+            $locales,
+            fn($l) => $controlador->perteneceAComerciante($l->getIdLocal(), $usuario['id'])
+        ));
+    }
 
     $datos = [];
     foreach ($locales as $local) {
