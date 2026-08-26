@@ -361,6 +361,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Registrar Local
     const formLocal = document.getElementById('form-local');
+    const inputLatitudLocal = document.getElementById('l-latitud');
+    const inputLongitudLocal = document.getElementById('l-longitud');
+    const mensajeGpsLocal = document.getElementById('l-gps-msg');
+
+    document.getElementById('btn-gps-local')?.addEventListener('click', async () => {
+        if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'Obteniendo ubicación...';
+        try {
+            const coords = await obtenerCoordenadasGPS();
+            if (inputLatitudLocal) inputLatitudLocal.value = coords.lat;
+            if (inputLongitudLocal) inputLongitudLocal.value = coords.lng;
+            if (mensajeGpsLocal) mensajeGpsLocal.textContent = `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`;
+        } catch (e) {
+            if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'No se pudo obtener tu ubicación. Puedes registrar el local sin GPS.';
+        }
+    });
 
     formLocal.addEventListener('submit', async (evento) => {
         evento.preventDefault();
@@ -382,6 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('idDistrito', selectDistritoLocal.value);
         datos.append('direccionExacta', document.getElementById('l-direccion').value);
         datos.append('referencia', document.getElementById('l-referencia').value);
+        datos.append('latitud', inputLatitudLocal ? inputLatitudLocal.value : '');
+        datos.append('longitud', inputLongitudLocal ? inputLongitudLocal.value : '');
 
         const archivoLogo = document.getElementById('l-logo').files[0];
         if (archivoLogo) {
@@ -401,6 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formLocal.reset();
                 infoComerciante.textContent = '';
                 mensajeNombreLocal.textContent = '';
+                if (mensajeGpsLocal) mensajeGpsLocal.textContent = '';
                 inputIdComerciante.value = '';
                 selectCantonLocal.innerHTML = '<option value="">Primero elige provincia</option>';
                 selectCantonLocal.disabled = true;
