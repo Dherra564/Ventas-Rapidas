@@ -321,13 +321,95 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputLongitudLocal = document.getElementById('l-longitud');
     const mensajeGpsLocal = document.getElementById('l-gps-msg');
 
+    function normalizarTextoUbicacion(texto) {
+        return String(texto ?? '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
+    function seleccionarOpcionPorTexto(selectEl, texto) {
+        if (!texto) return false;
+        const objetivo = normalizarTextoUbicacion(texto);
+        const opcion = [...selectEl.options].find(o => {
+            const t = normalizarTextoUbicacion(o.textContent);
+            return t !== '' && (t === objetivo || t.includes(objetivo) || objetivo.includes(t));
+        });
+        if (opcion) {
+            selectEl.value = opcion.value;
+            return true;
+        }
+        return false;
+    }
+
+    async function autocompletarUbicacionPorGPS(lat, lng, selectProvincia, selectCanton, selectDistrito) {
+        try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1&accept-language=es`);
+            const datos = await r.json();
+            const direccion = datos.address || {};
+
+            const nombreProvincia = direccion.state;
+            const nombreCanton = direccion.county || direccion.city || direccion.town;
+            const nombreDistrito = direccion.suburb || direccion.city_district || direccion.neighbourhood || direccion.village;
+
+            if (!nombreProvincia || !seleccionarOpcionPorTexto(selectProvincia, nombreProvincia)) {
+                return false;
+            }
+
+            selectCanton.innerHTML = '<option value="">Cargando...</option>';
+            selectCanton.disabled = true;
+            const rc = await fetch(`api/listar_cantones.php?idProvincia=${selectProvincia.value}`);
+            const resc = await rc.json();
+            selectCanton.innerHTML = '<option value="">Seleccione...</option>';
+            (resc.cantones || []).forEach(c => {
+                const opcion = document.createElement('option');
+                opcion.value = c.idCanton;
+                opcion.textContent = c.nombre;
+                selectCanton.appendChild(opcion);
+            });
+            selectCanton.disabled = false;
+
+            if (!nombreCanton || !seleccionarOpcionPorTexto(selectCanton, nombreCanton)) {
+                return false;
+            }
+
+            selectDistrito.innerHTML = '<option value="">Cargando...</option>';
+            selectDistrito.disabled = true;
+            const rd = await fetch(`api/listar_distritos.php?idCanton=${selectCanton.value}`);
+            const resd = await rd.json();
+            selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
+            (resd.distritos || []).forEach(d => {
+                const opcion = document.createElement('option');
+                opcion.value = d.idDistrito;
+                opcion.textContent = d.nombre;
+                selectDistrito.appendChild(opcion);
+            });
+            selectDistrito.disabled = false;
+
+            seleccionarOpcionPorTexto(selectDistrito, nombreDistrito);
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     document.getElementById('btn-gps-local')?.addEventListener('click', async () => {
         if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'Obteniendo ubicación...';
         try {
             const coords = await obtenerCoordenadasGPS();
             if (inputLatitudLocal) inputLatitudLocal.value = coords.lat;
             if (inputLongitudLocal) inputLongitudLocal.value = coords.lng;
-            if (mensajeGpsLocal) mensajeGpsLocal.textContent = `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`;
+            if (mensajeGpsLocal) mensajeGpsLocal.textContent = `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). Buscando provincia, cantón y distrito...`;
+
+            const completado = await autocompletarUbicacionPorGPS(coords.lat, coords.lng, selectProvinciaLocal, selectCantonLocal, selectDistritoLocal);
+
+            if (mensajeGpsLocal) {
+                mensajeGpsLocal.textContent = completado
+                    ? `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). Provincia, cantón y distrito rellenados automáticamente — revísalos antes de guardar.`
+                    : `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). No se pudo identificar provincia/cantón/distrito automáticamente, selecciónalos a mano.`;
+            }
         } catch (e) {
             if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'No se pudo obtener tu ubicación. Puedes registrar el local sin GPS.';
         }
