@@ -2016,17 +2016,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 actualizarIndicadorSesion(res.usuario);
                 evento.target.reset();
 
-                if (res.usuario.tipo === 'Cliente') {
-                    try {
-                        const coords = await obtenerCoordenadasGPS();
-                        await fetch('api/actualizar_ubicacion_cliente.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
-                        });
-                    } catch (e) {
-                    }
+                try {
+                    const coords = await obtenerCoordenadasGPS();
+                    await fetch('api/registrar_ubicacion_login.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
+                    });
+                } catch (e) {
+                }
 
+                if (res.usuario.tipo === 'Cliente') {
                     mostrarVistaLogin('vista-listado');
                 } else {
                     await mostrarSelectorPerfilesLocal();
