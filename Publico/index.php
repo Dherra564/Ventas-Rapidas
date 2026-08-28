@@ -66,8 +66,8 @@
                 <p class="ayuda">¿Cómo quieres registrarte?</p>
 
                 <div class="rejilla-dos" style="max-width: 500px;">
-                    <button type="button" class="boton-eleccion" id="btn-elegir-cliente">🧍<br>Soy Cliente</button>
-                    <button type="button" class="boton-eleccion" id="btn-elegir-comerciante">🏪<br>Soy Comerciante</button>
+                    <button type="button" class="boton-eleccion" id="btn-elegir-cliente"><br>Soy Cliente</button>
+                    <button type="button" class="boton-eleccion" id="btn-elegir-comerciante"><br>Soy Comerciante</button>
                 </div>
 
                 <p class="ayuda">
