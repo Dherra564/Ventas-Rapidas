@@ -197,6 +197,39 @@ document.addEventListener('DOMContentLoaded', () => {
         'api/buscar_tipos_local.php'
     );
 
+    function activarAlertaSimilares(inputEl, contenedorEl, endpoint, formatearItem) {
+        const buscar = debounce(async () => {
+            const texto = inputEl.value.trim();
+            contenedorEl.innerHTML = '';
+            contenedorEl.classList.add('oculto');
+
+            if (texto.length < 3) return;
+
+            try {
+                const r = await fetch(`${endpoint}?nombre=${encodeURIComponent(texto)}`);
+                const res = await r.json();
+
+                if (!res.exito || res.similares.length === 0) return;
+
+                const titulo = document.createElement('p');
+                titulo.className = 'similares-titulo';
+                titulo.textContent = '¿Quisiste decir...?';
+                contenedorEl.appendChild(titulo);
+
+                res.similares.slice(0, 5).forEach(item => {
+                    const fila = document.createElement('div');
+                    fila.className = 'similar-item';
+                    fila.textContent = formatearItem(item);
+                    contenedorEl.appendChild(fila);
+                });
+
+                contenedorEl.classList.remove('oculto');
+            } catch (e) {}
+        }, 400);
+
+        inputEl.addEventListener('input', buscar);
+    }
+
     function activarCascadaUbicacion(selectProvincia, selectCanton, selectDistrito) {
         async function cargarProvincias() {
             try {
@@ -293,6 +326,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 400);
 
     inputNombreLocal.addEventListener('input', verificarNombreLocalDebounced);
+
+    activarAlertaSimilares(
+        inputNombreLocal,
+        document.getElementById('l-similares'),
+        'api/buscar_locales_similares.php',
+        (item) => `${item.nombre} — ${Math.round(item.similitud)}% (${item.tipoLocal ?? 'Sin tipo'}, ${item.totalProductos} producto${item.totalProductos === 1 ? '' : 's'})`
+    );
 
     const inputCorreoLocal = document.getElementById('l-correo');
     const mensajeCorreoLocal = document.getElementById('l-correo-msg');
@@ -571,10 +611,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await r.json();
 
             if (!res.exito || res.locales.length === 0) {
-                const hayFiltros = parametros.toString() !== '';
-                contenedor.innerHTML = hayFiltros
-                    ? '<p>No se encontraron locales con esos filtros.</p>'
-                    : '<p>No hay locales registrados todavía.</p>';
+                if (nombre) {
+                    await mostrarSugerenciasBusqueda(nombre, contenedor);
+                } else {
+                    const hayFiltros = parametros.toString() !== '';
+                    contenedor.innerHTML = hayFiltros
+                        ? '<p>No se encontraron locales con esos filtros.</p>'
+                        : '<p>No hay locales registrados todavía.</p>';
+                }
                 return;
             }
 
@@ -598,6 +642,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function mostrarSugerenciasBusqueda(nombre, contenedor) {
+        contenedor.innerHTML = '<p>Buscando algo parecido...</p>';
+
+        try {
+            const [rLocales, rProductos] = await Promise.all([
+                fetch(`api/buscar_locales_similares.php?nombre=${encodeURIComponent(nombre)}`),
+                fetch(`api/buscar_productos_similares.php?nombre=${encodeURIComponent(nombre)}`)
+            ]);
+            const resLocales = await rLocales.json();
+            const resProductos = await rProductos.json();
+
+            const localesSimilares = resLocales.exito ? resLocales.similares : [];
+            const productosSimilares = resProductos.exito ? resProductos.similares : [];
+
+            if (localesSimilares.length === 0 && productosSimilares.length === 0) {
+                contenedor.innerHTML = '<p>No se encontró ningún local ni producto parecido a tu búsqueda.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            const titulo = document.createElement('p');
+            titulo.className = 'similares-titulo';
+            titulo.textContent = '¿Quisiste decir...?';
+            contenedor.appendChild(titulo);
+
+            localesSimilares.slice(0, 5).forEach(item => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-clic';
+                tarjeta.innerHTML = `
+                    <h3>${item.nombre} <span class="etiqueta-tipo">${Math.round(item.similitud)}% parecido</span></h3>
+                    <p class="etiqueta-tipo">${item.tipoLocal ?? ''}</p>
+                    <p>${item.totalProductos} producto${item.totalProductos === 1 ? '' : 's'}</p>
+                `;
+                tarjeta.addEventListener('click', () => abrirDetalleLocal(item.idLocal));
+                contenedor.appendChild(tarjeta);
+            });
+
+            productosSimilares.slice(0, 5).forEach(item => {
+                item.locales.forEach(loc => {
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'tarjeta tarjeta-clic';
+                    tarjeta.innerHTML = `
+                        <h3>${item.nombre} <span class="etiqueta-tipo">${Math.round(item.similitud)}% parecido</span></h3>
+                        <p>Disponible en: ${loc.nombreLocal}</p>
+                    `;
+                    tarjeta.addEventListener('click', () => abrirDetalleLocal(loc.idLocal));
+                    contenedor.appendChild(tarjeta);
+                });
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p>Error al buscar sugerencias.</p>';
+        }
+    }
+
     async function abrirDetalleLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
@@ -610,12 +709,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const { local, ubicacion } = res;
 
-            document.getElementById('e-idLocal').value = local.idLocal;
-            document.getElementById('e-tipoLocal').value = local.tipoLocal ?? '';
-            document.getElementById('e-nombreLocal').value = local.nombreLocal;
-            document.getElementById('e-descripcion').value = local.descripcion ?? '';
-            document.getElementById('e-telefono').value = local.telefono;
-            document.getElementById('e-correo').value = local.correo;
+            const esComerciante = usuarioSesionActual?.tipo === 'Comerciante';
+            const formEditarLocal = document.getElementById('form-editar-local');
+            const infoSoloLectura = document.getElementById('e-info-solo-lectura');
+
+            if (esComerciante) {
+                formEditarLocal.classList.remove('oculto');
+                infoSoloLectura.classList.add('oculto');
+
+                document.getElementById('e-idLocal').value = local.idLocal;
+                document.getElementById('e-tipoLocal').value = local.tipoLocal ?? '';
+                document.getElementById('e-nombreLocal').value = local.nombreLocal;
+                document.getElementById('e-descripcion').value = local.descripcion ?? '';
+                document.getElementById('e-telefono').value = local.telefono;
+                document.getElementById('e-correo').value = local.correo;
+            } else {
+                formEditarLocal.classList.add('oculto');
+                infoSoloLectura.classList.remove('oculto');
+
+                document.getElementById('e-solo-tipo').textContent = local.tipoLocal ?? '';
+                document.getElementById('e-solo-nombre').textContent = local.nombreLocal;
+                document.getElementById('e-solo-descripcion').textContent = local.descripcion ?? 'Sin descripción';
+                document.getElementById('e-solo-telefono').textContent = local.telefono;
+                document.getElementById('e-solo-correo').textContent = local.correo;
+            }
+
             const imgLogo = document.getElementById('e-logo-actual');
             if (local.logo) {
                 imgLogo.src = `imagenes/${local.logo}`;
@@ -666,12 +784,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${producto.descripcion ?? ''}</p>
                     <p>${precioHtml}</p>
                     <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
-                    <button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>
+                    ${usuarioSesionActual?.tipo === 'Comerciante' ? `<button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>` : ''}
                 `;
                 contenedor.appendChild(tarjeta);
-                tarjeta.querySelector('.btn-editar-producto').addEventListener('click', () => {
-                    abrirEditarProducto(producto.idProducto, idLocal);
-                });
+                const btnEditar = tarjeta.querySelector('.btn-editar-producto');
+                if (btnEditar) {
+                    btnEditar.addEventListener('click', () => {
+                        abrirEditarProducto(producto.idProducto, idLocal);
+                    });
+                }
             });
         } catch (e) {
             contenedor.innerHTML = '<p>Error al cargar los productos.</p>';
@@ -749,6 +870,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('p-tipoProducto'),
         document.getElementById('p-tipo-sugerencias'),
         'api/buscar_tipos_producto.php'
+    );
+
+    activarAlertaSimilares(
+        document.getElementById('p-nombre'),
+        document.getElementById('p-similares'),
+        'api/buscar_productos_similares.php',
+        (item) => `${item.nombre} — ${Math.round(item.similitud)}% (en ${item.locales.map(l => l.nombreLocal).join(', ')})`
     );
 
     document.getElementById('form-producto').addEventListener('submit', async (evento) => {

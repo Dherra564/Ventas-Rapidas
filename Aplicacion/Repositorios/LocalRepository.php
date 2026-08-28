@@ -137,8 +137,26 @@ class LocalRepository
         }
 
         if ($nombre !== null && $nombre !== "") {
-            $condiciones[] = "l.tblocalnombre LIKE :nombre";
+            $condiciones[] = "(
+                l.tblocalnombre LIKE :nombre
+                OR EXISTS (
+                    SELECT 1 FROM tbproducto p
+                    WHERE p.tblocalid = l.tblocalid
+                      AND p.tbproductoactivo = 1
+                      AND p.tbproductonombre LIKE :nombreProducto
+                )
+                OR EXISTS (
+                    SELECT 1 FROM tbproductolocal pl
+                    INNER JOIN tbproducto p2 ON p2.tbproductoid = pl.tbproductoid
+                    WHERE pl.tblocalid = l.tblocalid
+                      AND pl.tbproductolocalactivo = 1
+                      AND p2.tbproductoactivo = 1
+                      AND p2.tbproductonombre LIKE :nombreProductoCompartido
+                )
+            )";
             $parametros[":nombre"] = "%{$nombre}%";
+            $parametros[":nombreProducto"] = "%{$nombre}%";
+            $parametros[":nombreProductoCompartido"] = "%{$nombre}%";
         }
 
         if ($idTipoLocal !== null) {

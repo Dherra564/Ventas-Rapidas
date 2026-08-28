@@ -1,6 +1,9 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ProductoController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+Sesion::requerirSesion();
 
 try {
     $nombre = trim($_GET['nombre'] ?? '');

@@ -128,6 +128,7 @@
 
                 <label for="p-nombre">Nombre del producto</label>
                 <input type="text" id="p-nombre" required>
+                <div id="p-similares" class="sugerencias-similares oculto"></div>
 
                 <label for="p-descripcion">Descripción</label>
                 <textarea id="p-descripcion"></textarea>
@@ -159,6 +160,7 @@
                 <label for="l-nombreLocal">Nombre del Local</label>
                 <input type="text" id="l-nombreLocal" required>
                 <span class="ayuda" id="l-nombre-msg"></span>
+                <div id="l-similares" class="sugerencias-similares oculto"></div>
 
                 <label for="l-descripcion">Descripción</label>
                 <textarea id="l-descripcion"></textarea>
@@ -311,6 +313,15 @@
                 <div class="campo-lectura">
                     <strong>Productos de este local</strong>
                     <div id="e-productos-lista" class="tarjetas"></div>
+                </div>
+
+                <div class="campo-lectura" id="e-info-solo-lectura">
+                    <strong>Información del local</strong>
+                    <p><strong>Tipo:</strong> <span id="e-solo-tipo"></span></p>
+                    <p><strong>Nombre:</strong> <span id="e-solo-nombre"></span></p>
+                    <p><strong>Descripción:</strong> <span id="e-solo-descripcion"></span></p>
+                    <p><strong>Teléfono:</strong> <span id="e-solo-telefono"></span></p>
+                    <p><strong>Correo:</strong> <span id="e-solo-correo"></span></p>
                 </div>
 
                 <form id="form-editar-local" class="formulario" enctype="multipart/form-data">
