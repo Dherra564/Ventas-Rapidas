@@ -1,10 +1,10 @@
 <?php
 
 require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
-require_once __DIR__ . "/../Modelos/Resena.php";
+require_once __DIR__ . "/../Modelos/Resenia.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 
-class ResenaRepository
+class ReseniaRepository
 {
     use GeneradorId;
 
@@ -15,18 +15,18 @@ class ResenaRepository
         $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
     }
 
-    public function registrar(Resena $resena): int|false
+    public function registrar(Resenia $resenia): int|false
     {
-        $id = $this->generarSiguienteId($this->conexion, "tbresena", "tbresenaid");
+        $id = $this->generarSiguienteId($this->conexion, "tbresenia", "tbreseniaid");
 
-        $sql = "INSERT INTO tbresena
+        $sql = "INSERT INTO tbresenia
                 (
-                    tbresenaid,
-                    tbresenaidcliente,
-                    tbresenaidlocal,
-                    tbresenacomentario,
-                    tbresenapuntuacion,
-                    tbresenaactivo
+                    tbreseniaid,
+                    tbreseniaidcliente,
+                    tbreseniaidlocal,
+                    tbreseniacomentario,
+                    tbreseniapuntuacion,
+                    tbreseniaactivo
                 )
                 VALUES
                 (
@@ -42,22 +42,22 @@ class ResenaRepository
 
         $exito = $consulta->execute([
             ":id" => $id,
-            ":idCliente" => $resena->getIdCliente(),
-            ":idLocal" => $resena->getIdLocal(),
-            ":comentario" => $resena->getComentario(),
-            ":puntuacion" => $resena->getPuntuacion(),
-            ":activo" => $resena->isActivo()
+            ":idCliente" => $resenia->getIdCliente(),
+            ":idLocal" => $resenia->getIdLocal(),
+            ":comentario" => $resenia->getComentario(),
+            ":puntuacion" => $resenia->getPuntuacion(),
+            ":activo" => $resenia->isActivo()
         ]);
 
         return $exito ? $id : false;
     }
 
-    public function obtenerPorId(int $idResena): ?Resena
+    public function obtenerPorId(int $idResenia): ?Resenia
     {
-        $sql = "SELECT * FROM tbresena WHERE tbresenaid = :id";
+        $sql = "SELECT * FROM tbresenia WHERE tbreseniaid = :id";
 
         $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":id" => $idResena]);
+        $consulta->execute([":id" => $idResenia]);
 
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
 
@@ -67,10 +67,10 @@ class ResenaRepository
     // Reseñas de un local, más reciente primero.
     public function obtenerPorLocal(int $idLocal): array
     {
-        $sql = "SELECT * FROM tbresena
-                WHERE tbresenaidlocal = :idLocal
-                  AND tbresenaactivo = 1
-                ORDER BY tbresenafecha DESC";
+        $sql = "SELECT * FROM tbresenia
+                WHERE tbreseniaidlocal = :idLocal
+                  AND tbreseniaactivo = 1
+                ORDER BY tbreseniafecha DESC";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":idLocal" => $idLocal]);
@@ -81,10 +81,10 @@ class ResenaRepository
     // Reseñas hechas por un cliente, más reciente primero.
     public function obtenerPorCliente(int $idCliente): array
     {
-        $sql = "SELECT * FROM tbresena
-                WHERE tbresenaidcliente = :idCliente
-                  AND tbresenaactivo = 1
-                ORDER BY tbresenafecha DESC";
+        $sql = "SELECT * FROM tbresenia
+                WHERE tbreseniaidcliente = :idCliente
+                  AND tbreseniaactivo = 1
+                ORDER BY tbreseniafecha DESC";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":idCliente" => $idCliente]);
@@ -95,10 +95,10 @@ class ResenaRepository
     // Promedio de puntuación de un local, redondeado a 1 decimal. Null si no tiene reseñas.
     public function obtenerPromedioPorLocal(int $idLocal): ?float
     {
-        $sql = "SELECT ROUND(AVG(tbresenapuntuacion), 1) AS promedio
-                FROM tbresena
-                WHERE tbresenaidlocal = :idLocal
-                  AND tbresenaactivo = 1";
+        $sql = "SELECT ROUND(AVG(tbreseniapuntuacion), 1) AS promedio
+                FROM tbresenia
+                WHERE tbreseniaidlocal = :idLocal
+                  AND tbreseniaactivo = 1";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":idLocal" => $idLocal]);
@@ -111,9 +111,9 @@ class ResenaRepository
     // Cantidad total de reseñas activas de un local.
     public function contarPorLocal(int $idLocal): int
     {
-        $sql = "SELECT COUNT(*) FROM tbresena
-                WHERE tbresenaidlocal = :idLocal
-                  AND tbresenaactivo = 1";
+        $sql = "SELECT COUNT(*) FROM tbresenia
+                WHERE tbreseniaidlocal = :idLocal
+                  AND tbreseniaactivo = 1";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":idLocal" => $idLocal]);
@@ -122,12 +122,12 @@ class ResenaRepository
     }
 
     // Verifica si un cliente ya reseñó un local (útil para permitir solo una reseña por cliente/local).
-    public function existeResena(int $idCliente, int $idLocal): bool
+    public function existeResenia(int $idCliente, int $idLocal): bool
     {
-        $sql = "SELECT COUNT(*) FROM tbresena
-                WHERE tbresenaidcliente = :idCliente
-                  AND tbresenaidlocal = :idLocal
-                  AND tbresenaactivo = 1";
+        $sql = "SELECT COUNT(*) FROM tbresenia
+                WHERE tbreseniaidcliente = :idCliente
+                  AND tbreseniaidlocal = :idLocal
+                  AND tbreseniaactivo = 1";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([
@@ -138,32 +138,32 @@ class ResenaRepository
         return (int) $consulta->fetchColumn() > 0;
     }
 
-    public function actualizar(Resena $resena): bool
+    public function actualizar(Resenia $resenia): bool
     {
-        $sql = "UPDATE tbresena
+        $sql = "UPDATE tbresenia
                 SET
-                    tbresenacomentario = :comentario,
-                    tbresenapuntuacion = :puntuacion,
-                    tbresenaactivo = :activo
-                WHERE tbresenaid = :id";
+                    tbreseniacomentario = :comentario,
+                    tbreseniapuntuacion = :puntuacion,
+                    tbreseniaactivo = :activo
+                WHERE tbreseniaid = :id";
 
         $consulta = $this->conexion->prepare($sql);
 
         return $consulta->execute([
-            ":comentario" => $resena->getComentario(),
-            ":puntuacion" => $resena->getPuntuacion(),
-            ":activo" => $resena->isActivo(),
-            ":id" => $resena->getIdResena()
+            ":comentario" => $resenia->getComentario(),
+            ":puntuacion" => $resenia->getPuntuacion(),
+            ":activo" => $resenia->isActivo(),
+            ":id" => $resenia->getIdResenia()
         ]);
     }
 
-    public function eliminar(int $idResena): bool
+    public function eliminar(int $idResenia): bool
     {
-        $sql = "UPDATE tbresena SET tbresenaactivo = 0 WHERE tbresenaid = :id";
+        $sql = "UPDATE tbresenia SET tbreseniaactivo = 0 WHERE tbreseniaid = :id";
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([":id" => $idResena]);
+        return $consulta->execute([":id" => $idResenia]);
     }
 
     private function mapearFilas(PDOStatement $consulta): array
@@ -177,16 +177,16 @@ class ResenaRepository
         return $registros;
     }
 
-    private function mapearFila(array $fila): Resena
+    private function mapearFila(array $fila): Resenia
     {
-        return new Resena(
-            (int) $fila["tbresenaidcliente"],
-            (int) $fila["tbresenaidlocal"],
-            $fila["tbresenacomentario"],
-            (int) $fila["tbresenapuntuacion"],
-            (bool) $fila["tbresenaactivo"],
-            (int) $fila["tbresenaid"],
-            new DateTime($fila["tbresenafecha"])
+        return new Resenia(
+            (int) $fila["tbreseniaidcliente"],
+            (int) $fila["tbreseniaidlocal"],
+            $fila["tbreseniacomentario"],
+            (int) $fila["tbreseniapuntuacion"],
+            (bool) $fila["tbreseniaactivo"],
+            (int) $fila["tbreseniaid"],
+            new DateTime($fila["tbreseniafecha"])
         );
     }
 }

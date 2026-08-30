@@ -1,14 +1,26 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ProductoController.php';
+require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion(Sesion::TIPO_COMERCIANTE);
 
 class RegistrarProductoHandler
 {
     use ManejadorImagenes;
 
-    public function manejar(): array
+    public function manejar(int $idComerciante): array
     {
+        $idLocal = (int) ($_POST['idLocal'] ?? 0);
+
+        $localControlador = new LocalController();
+        if (!$localControlador->perteneceAComerciante($idLocal, $idComerciante)) {
+            http_response_code(403);
+            return ['exito' => false, 'mensaje' => 'Ese local no pertenece a tu cuenta'];
+        }
+
         $controlador = new ProductoController();
 
         $porcentajeDescuento = trim($_POST['porcentajeDescuento'] ?? '');
@@ -16,7 +28,7 @@ class RegistrarProductoHandler
         $nombreImagen = $this->subirImagenPerfil($_FILES['imagen'] ?? null, 'producto');
 
         $idProducto = $controlador->registrar(
-            (int) ($_POST['idLocal'] ?? 0),
+            $idLocal,
             $_POST['nombreTipoProducto'] ?? '',
             $_POST['nombre'] ?? '',
             (float) ($_POST['precioOriginal'] ?? 0),
@@ -40,7 +52,7 @@ class RegistrarProductoHandler
 
 try {
     $handler = new RegistrarProductoHandler();
-    $respuesta = $handler->manejar();
+    $respuesta = $handler->manejar($usuario['id']);
 } catch (InvalidArgumentException $e) {
     $respuesta = ['exito' => false, 'mensaje' => $e->getMessage()];
 } catch (Exception $e) {

@@ -1,14 +1,18 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ProductoController.php';
+require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Modelos/Producto.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion(Sesion::TIPO_COMERCIANTE);
 
 class EditarProductoHandler
 {
     use ManejadorImagenes;
 
-    public function manejar(): array
+    public function manejar(int $idComerciante): array
     {
         $controlador = new ProductoController();
 
@@ -17,6 +21,12 @@ class EditarProductoHandler
 
         if ($productoActual === null) {
             return ['exito' => false, 'mensaje' => 'Producto no encontrado'];
+        }
+
+        $localControlador = new LocalController();
+        if (!$localControlador->perteneceAComerciante($productoActual->getIdLocal(), $idComerciante)) {
+            http_response_code(403);
+            return ['exito' => false, 'mensaje' => 'Ese producto no pertenece a tu cuenta'];
         }
 
         $idTipoProducto = $controlador->resolverTipoProducto($_POST['nombreTipoProducto'] ?? '');
@@ -55,7 +65,7 @@ class EditarProductoHandler
 
 try {
     $handler = new EditarProductoHandler();
-    $respuesta = $handler->manejar();
+    $respuesta = $handler->manejar($usuario['id']);
 } catch (InvalidArgumentException $e) {
     $respuesta = ['exito' => false, 'mensaje' => $e->getMessage()];
 } catch (Exception $e) {

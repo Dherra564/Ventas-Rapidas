@@ -76,6 +76,18 @@ class ClienteLocalRepository
         return $consulta->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function perteneceACliente(int $idClienteLocal, int $idCliente): bool
+    {
+        $sql = "SELECT COUNT(*) FROM tbclientelocal
+                WHERE tbclientelocalid = :idClienteLocal AND tbclienteid = :idCliente";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([
+            ":idClienteLocal" => $idClienteLocal,
+            ":idCliente" => $idCliente
+        ]);
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
     public function eliminarPorId(int $idClienteLocal): bool
     {
         $sql = "UPDATE tbclientelocal SET tbclientelocalactivo = 0 WHERE tbclientelocalid = :id";

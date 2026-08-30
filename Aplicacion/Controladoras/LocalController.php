@@ -2,19 +2,26 @@
 
 require_once __DIR__ . "/../Repositorios/LocalRepository.php";
 require_once __DIR__ . "/../Repositorios/TipoLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/HistorialActividadSesionLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/ComercianteLocalRepository.php";
 require_once __DIR__ . "/../Modelos/Local.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Modelos/TipoLocal.php";
+require_once __DIR__ . "/../Modelos/HistorialActividadSesionLocal.php";
 
 class LocalController
 {
     private LocalRepository $localRepository;
     private TipoLocalRepository $tipoLocalRepository;
+    private HistorialActividadSesionLocalRepository $historialActividadRepository;
+    private ComercianteLocalRepository $comercianteLocalRepository;
 
     public function __construct()
     {
         $this->localRepository = new LocalRepository();
         $this->tipoLocalRepository = new TipoLocalRepository();
+        $this->historialActividadRepository = new HistorialActividadSesionLocalRepository();
+        $this->comercianteLocalRepository = new ComercianteLocalRepository();
     }
 
        public function registrar(
@@ -30,7 +37,9 @@ class LocalController
         int $idCanton,
         int $idDistrito,
         string $direccionExacta,
-        ?string $referencia
+        ?string $referencia,
+        ?float $latitud = null,
+        ?float $longitud = null
 
     ): int|false {
 
@@ -51,10 +60,24 @@ class LocalController
             $idCanton,
             $idDistrito,
             $direccionExacta,
-            $referencia
+            $referencia,
+            null,
+            true,
+            0,
+            $latitud,
+            $longitud
         );
 
-        return $this->localRepository->insertar($local, $ubicacion, $idComerciante);
+        $idLocal = $this->localRepository->insertar($local, $ubicacion, $idComerciante);
+
+        if ($idLocal !== false) {
+            try {
+                $this->historialActividadRepository->registrarEntradaPerfil($idComerciante, $idLocal);
+            } catch (Exception $e) {
+            }
+        }
+
+        return $idLocal;
     }
 
     public function listar(): array
@@ -70,6 +93,61 @@ class LocalController
     public function buscarConUbicacion(int $idLocal): ?array
     {
         return $this->localRepository->obtenerLocalConUbicacion($idLocal);
+    }
+
+    public function perteneceAComerciante(int $idLocal, int $idComerciante): bool
+    {
+        return $this->comercianteLocalRepository->obtenerComerciantePorLocal($idLocal) === $idComerciante;
+    }
+
+    public function entrarPerfil(int $idLocal, int $idComerciante): bool
+    {
+        $duenoReal = $this->comercianteLocalRepository->obtenerComerciantePorLocal($idLocal);
+
+        if ($duenoReal !== $idComerciante) {
+            throw new InvalidArgumentException("Este local no pertenece a tu cuenta");
+        }
+
+        $this->localRepository->reactivar($idLocal);
+
+        try {
+            $this->historialActividadRepository->registrarEntradaPerfil($idComerciante, $idLocal);
+        } catch (Exception $e) {
+        }
+
+        return true;
+    }
+
+    public function listarPorComerciante(int $idComerciante): array
+    {
+        $this->sincronizarActividad();
+
+        $idsLocales = $this->comercianteLocalRepository->obtenerLocalesPorComerciante($idComerciante);
+
+        $locales = [];
+        foreach ($idsLocales as $idLocal) {
+            $local = $this->localRepository->obtenerPorId($idLocal);
+            if ($local !== null) {
+                $locales[] = $local;
+            }
+        }
+
+        return $locales;
+    }
+
+    public function sincronizarActividad(int $dias = 7): int
+    {
+        return $this->localRepository->sincronizarActivoPorInactividad($dias);
+    }
+
+    public function obtenerHistorialActividad(int $idLocal): array
+    {
+        return $this->historialActividadRepository->obtenerPorLocal($idLocal);
+    }
+
+    public function estaActivoPorActividad(int $idLocal, int $dias = 7): bool
+    {
+        return $this->historialActividadRepository->tieneActividadReciente($idLocal, $dias);
     }
 
     public function editar(Local $local): bool
@@ -140,6 +218,15 @@ class LocalController
     public function existeCorreoLocal(string $correo): bool
     {
         return $this->localRepository->existeCorreo($correo);
+    }
+
+    public function buscarSimilares(string $nombre, ?int $idLocalExcluir = null): array
+    {
+        if (trim($nombre) === "") {
+            return [];
+        }
+
+        return $this->localRepository->buscarSimilares($nombre, $idLocalExcluir);
     }
 
 }

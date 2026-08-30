@@ -100,6 +100,24 @@ class ProductoController
         return $this->productoRepository->eliminar($idProducto);
     }
 
+    public function buscarLocalesCercanos(string $termino, float $latitud, float $longitud, float $radioKm = 5): array
+    {
+        if (trim($termino) === "") {
+            throw new InvalidArgumentException("Escribe qué producto quieres buscar");
+        }
+
+        return $this->productoRepository->buscarLocalesCercanos($termino, $latitud, $longitud, $radioKm);
+    }
+
+    public function buscarSimilares(string $nombre, ?int $idProductoExcluir = null): array
+    {
+        if (trim($nombre) === "") {
+            return [];
+        }
+
+        return $this->productoRepository->buscarSimilares($nombre, $idProductoExcluir);
+    }
+
     public function buscarTiposCoincidentes(string $textoParcial): array
     {
         if (trim($textoParcial) === "") {

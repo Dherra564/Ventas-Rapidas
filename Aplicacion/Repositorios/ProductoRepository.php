@@ -4,9 +4,10 @@ require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
 require_once __DIR__ . "/../Modelos/Producto.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
+require_once __DIR__ . "/../Comun/ComparadorTexto.php";
 class ProductoRepository
 {
-    use GeneradorId, ValidadorReferencia;
+    use GeneradorId, ValidadorReferencia, ComparadorTexto;
     private PDO $conexion;
 
     public function __construct()
@@ -112,17 +113,6 @@ class ProductoRepository
         return $productos;
     }
 
-    /**
-     * Busca productos combinando filtros opcionales.
-     * Todos los parámetros son opcionales; los que se pasen como null se ignoran.
-     *
-     * @param string|null $nombre         Coincidencia parcial (LIKE) sobre el nombre
-     * @param int|null    $idLocal        Coincidencia exacta sobre el local
-     * @param int|null    $idTipoProducto Coincidencia exacta sobre el tipo de producto
-     * @param float|null  $precioMinimo   Precio mayor o igual a este valor
-     * @param float|null  $precioMaximo   Precio menor o igual a este valor
-     * @param bool|null   $activo         Coincidencia exacta sobre el estado activo
-     */
     public function buscar(
         ?string $nombre = null,
         ?int $idLocal = null,
@@ -228,6 +218,122 @@ class ProductoRepository
         $consulta = $this->conexion->prepare($sql);
 
         return $consulta->execute([":id" => $idProducto]);
+    }
+
+    public function buscarLocalesCercanos(
+        string $termino,
+        float $latitud,
+        float $longitud,
+        float $radioKm = 5
+    ): array {
+        $sql = "SELECT
+                    l.tblocalid AS idLocal,
+                    l.tblocalnombre AS nombreLocal,
+                    l.tblocaltelefono AS telefono,
+                    l.tblocallogo AS logo,
+                    p.tbproductoid AS idProducto,
+                    p.tbproductonombre AS nombreProducto,
+                    p.tbproductoprecio AS precio,
+                    p.tbproductodescuentoporcentaje AS descuento,
+                    ROUND(
+                        ST_Distance_Sphere(
+                            POINT(u.tbubicacionlongitud, u.tbubicacionlatitud),
+                            POINT(:longitud, :latitud)
+                        ) / 1000, 2
+                    ) AS distanciaKm
+                FROM tbproducto p
+                INNER JOIN tblocal l ON l.tblocalid = p.tblocalid
+                INNER JOIN tbproductotipo tp ON tp.tbproductotipoid = p.tbproductotipoid
+                INNER JOIN tbubicacion u ON u.tblocalid = l.tblocalid
+                WHERE p.tbproductoactivo = 1
+                    AND l.tblocalactivo = 1
+                    AND u.tbubicacionlatitud IS NOT NULL
+                    AND u.tbubicacionlongitud IS NOT NULL
+                    AND (p.tbproductonombre LIKE :terminoProducto OR tp.tbproductotiponombre LIKE :terminoTipo)
+                HAVING distanciaKm <= :radioKm
+                ORDER BY distanciaKm ASC";
+
+        $consulta = $this->conexion->prepare($sql);
+
+        $terminoLike = '%' . $termino . '%';
+
+        $consulta->bindValue(":longitud", $longitud);
+        $consulta->bindValue(":latitud", $latitud);
+        $consulta->bindValue(":terminoProducto", $terminoLike);
+        $consulta->bindValue(":terminoTipo", $terminoLike);
+        $consulta->bindValue(":radioKm", $radioKm);
+
+        $consulta->execute();
+
+        return $consulta->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function buscarSimilares(string $nombre, ?int $idProductoExcluir = null, float $umbralMinimo = 70.0): array
+    {
+        $sql = "SELECT p.tbproductoid, p.tbproductonombre, l.tblocalid, l.tblocalnombre
+                FROM tbproducto p
+                INNER JOIN tblocal l ON l.tblocalid = p.tblocalid
+                WHERE p.tbproductoactivo = 1 AND l.tblocalactivo = 1";
+
+        $params = [];
+        if ($idProductoExcluir !== null) {
+            $sql .= " AND p.tbproductoid != :idExcluir";
+            $params[":idExcluir"] = $idProductoExcluir;
+        }
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute($params);
+        $filas = $consulta->fetchAll(PDO::FETCH_ASSOC);
+
+        $productos = [];
+        foreach ($filas as $fila) {
+            $idProducto = (int) $fila["tbproductoid"];
+            if (!isset($productos[$idProducto])) {
+                $productos[$idProducto] = [
+                    "idProducto" => $idProducto,
+                    "nombre" => $fila["tbproductonombre"],
+                    "locales" => []
+                ];
+            }
+            $productos[$idProducto]["locales"][] = [
+                "idLocal" => (int) $fila["tblocalid"],
+                "nombreLocal" => $fila["tblocalnombre"]
+            ];
+        }
+
+        if (!empty($productos)) {
+            $ids = array_keys($productos);
+            $placeholders = implode(",", array_fill(0, count($ids), "?"));
+            $sqlCompartidos = "SELECT pl.tbproductoid, l.tblocalid, l.tblocalnombre
+                                FROM tbproductolocal pl
+                                INNER JOIN tblocal l ON l.tblocalid = pl.tblocalid
+                                WHERE pl.tbproductoid IN ($placeholders)
+                                  AND pl.tbproductolocalactivo = 1
+                                  AND l.tblocalactivo = 1";
+            $consultaCompartidos = $this->conexion->prepare($sqlCompartidos);
+            $consultaCompartidos->execute($ids);
+            while ($fila = $consultaCompartidos->fetch(PDO::FETCH_ASSOC)) {
+                $idProducto = (int) $fila["tbproductoid"];
+                $productos[$idProducto]["locales"][] = [
+                    "idLocal" => (int) $fila["tblocalid"],
+                    "nombreLocal" => $fila["tblocalnombre"]
+                ];
+            }
+        }
+
+        $candidatos = array_values($productos);
+
+        $ordenados = $this->ordenarPorSimilitud(
+            $candidatos,
+            $nombre,
+            fn($c) => $c["nombre"],
+            $umbralMinimo
+        );
+
+        return array_map(
+            fn($r) => array_merge(["similitud" => $r["similitud"]], $r["dato"]),
+            $ordenados
+        );
     }
 
         private function mapearFila(array $fila): Producto

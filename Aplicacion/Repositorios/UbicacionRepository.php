@@ -60,7 +60,9 @@ class UbicacionRepository
                     tbdistritoid,
                     tbubicaciondireccionexacta,
                     tbubicaciondereferencia,
-                    tbubicacionactivo
+                    tbubicacionactivo,
+                    tbubicacionlatitud,
+                    tbubicacionlongitud
                 )
                 VALUES
                 (
@@ -72,7 +74,9 @@ class UbicacionRepository
                     :idDistrito,
                     :direccionExacta,
                     :referencia,
-                    :activo
+                    :activo,
+                    :latitud,
+                    :longitud
                 )";
 
         $consulta = $this->conexion->prepare($sql);
@@ -85,7 +89,9 @@ class UbicacionRepository
             ":idDistrito" => $ubicacion->getIdDistrito(),
             ":direccionExacta" => $ubicacion->getDireccionExacta(),
             ":referencia" => $ubicacion->getReferencia(),
-            ":activo" => $ubicacion->isActivo()
+            ":activo" => $ubicacion->isActivo(),
+            ":latitud" => $ubicacion->getLatitud(),
+            ":longitud" => $ubicacion->getLongitud()
         ]);
 
         return $exito ? $id : false;
@@ -138,7 +144,9 @@ class UbicacionRepository
                     tbdistritoid = :idDistrito,
                     tbubicaciondireccionexacta = :direccionExacta,
                     tbubicaciondereferencia = :referencia,
-                    tbubicacionactivo = :activo
+                    tbubicacionactivo = :activo,
+                    tbubicacionlatitud = :latitud,
+                    tbubicacionlongitud = :longitud
                 WHERE {$where}";
 
         $consulta = $this->conexion->prepare($sql);
@@ -150,8 +158,24 @@ class UbicacionRepository
             ":idDistrito" => $ubicacion->getIdDistrito(),
             ":direccionExacta" => $ubicacion->getDireccionExacta(),
             ":referencia" => $ubicacion->getReferencia(),
-            ":activo" => $ubicacion->isActivo()
+            ":activo" => $ubicacion->isActivo(),
+            ":latitud" => $ubicacion->getLatitud(),
+            ":longitud" => $ubicacion->getLongitud()
         ], $idParams));
+    }
+
+    public function actualizarCoordenadasCliente(int $idCliente, float $latitud, float $longitud): bool
+    {
+        $sql = "UPDATE tbubicacion
+                SET tbubicacionlatitud = :latitud, tbubicacionlongitud = :longitud
+                WHERE tbclienteid = :idCliente";
+
+        $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([
+            ":latitud" => $latitud,
+            ":longitud" => $longitud,
+            ":idCliente" => $idCliente
+        ]);
     }
 
     private function mapearFila(array $fila): Ubicacion
@@ -165,21 +189,9 @@ class UbicacionRepository
             $fila["tbubicaciondereferencia"],
             $fila["tbclienteid"] !== null ? (int) $fila["tbclienteid"] : null,
             (bool) $fila["tbubicacionactivo"],
-            (int) $fila["tbubicacionid"]
+            (int) $fila["tbubicacionid"],
+            isset($fila["tbubicacionlatitud"]) && $fila["tbubicacionlatitud"] !== null ? (float) $fila["tbubicacionlatitud"] : null,
+            isset($fila["tbubicacionlongitud"]) && $fila["tbubicacionlongitud"] !== null ? (float) $fila["tbubicacionlongitud"] : null
         );
-    }
-
-    public function actualizarCoordenadasCliente(int $idCliente, float $latitud, float $longitud): bool
-    {
-    $sql = "UPDATE tbubicacion
-            SET tbubicacionlatitud = :latitud, tbubicacionlongitud = :longitud
-            WHERE tbclienteid = :idCliente";
-
-    $consulta = $this->conexion->prepare($sql);
-    return $consulta->execute([
-        ":latitud" => $latitud,
-        ":longitud" => $longitud,
-        ":idCliente" => $idCliente
-    ]);
     }
 }

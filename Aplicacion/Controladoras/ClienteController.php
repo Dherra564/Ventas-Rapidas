@@ -3,6 +3,8 @@
 require_once __DIR__ . "/../Repositorios/ClienteRepository.php";
 require_once __DIR__ . "/../Repositorios/HistorialPasswordRepository.php";
 require_once __DIR__ . "/../Repositorios/HistorialFotoPerfilRepository.php";
+require_once __DIR__ . "/../Repositorios/UbicacionRepository.php";
+require_once __DIR__ . "/../Repositorios/HistorialActividadSesionLocalRepository.php";
 require_once __DIR__ . "/../Modelos/Cliente.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Modelos/HistorialPassword.php";
@@ -18,12 +20,16 @@ class ClienteController
     private ClienteRepository $clienteRepository;
     private HistorialPasswordRepository $historialPasswordRepository;
     private HistorialFotoPerfilRepository $historialFotoPerfilRepository;
+    private UbicacionRepository $ubicacionRepository;
+    private HistorialActividadSesionLocalRepository $historialActividadRepository;
 
     public function __construct()
     {
         $this->clienteRepository = new ClienteRepository();
         $this->historialPasswordRepository = new HistorialPasswordRepository();
         $this->historialFotoPerfilRepository = new HistorialFotoPerfilRepository();
+        $this->ubicacionRepository = new UbicacionRepository();
+        $this->historialActividadRepository = new HistorialActividadSesionLocalRepository();
     }
 
     public function registrar(
@@ -59,6 +65,31 @@ class ClienteController
         }
 
         return $this->clienteRepository->insertar($cliente);
+    }
+
+    public function login(string $correo, string $password): Cliente
+    {
+        $cliente = $this->clienteRepository->obtenerPorCorreo($correo);
+
+        if ($cliente === null || !password_verify($password, $cliente->getPasswordHash())) {
+            throw new InvalidArgumentException("Correo o contraseña incorrectos");
+        }
+
+        if (!$cliente->isActivo()) {
+            throw new InvalidArgumentException("Esta cuenta de cliente está desactivada");
+        }
+
+        try {
+            $this->historialActividadRepository->registrarLogin($cliente->getIdCliente(), 'Cliente');
+        } catch (Exception $e) {
+        }
+
+        return $cliente;
+    }
+
+    public function actualizarUbicacionGPS(int $idCliente, float $latitud, float $longitud): bool
+    {
+        return $this->ubicacionRepository->actualizarCoordenadasCliente($idCliente, $latitud, $longitud);
     }
 
     public function cambiarPassword(int $idCliente, string $passwordActual, string $passwordNueva): bool
@@ -126,24 +157,4 @@ class ClienteController
     public function existeIdentificacion(string $identificacion): bool { return $this->clienteRepository->existeIdentificacion($identificacion); }
     public function existeCorreo(string $correo): bool { return $this->clienteRepository->existeCorreo($correo); }
     public function buscarPorIdentificacion(string $identificacion): ?Cliente { return $this->clienteRepository->obtenerPorIdentificacion($identificacion); }
-
-    public function login(string $correo, string $password): Cliente
-    {
-    $cliente = $this->clienteRepository->obtenerPorCorreo($correo);
-
-    if ($cliente === null || !password_verify($password, $cliente->getPasswordHash())) {
-        throw new InvalidArgumentException("Correo o contraseña incorrectos");
-    }
-
-    if (!$cliente->isActivo()) {
-        throw new InvalidArgumentException("Esta cuenta de cliente está desactivada");
-    }
-
-    return $cliente;
-    }
-
-    public function actualizarUbicacionGPS(int $idCliente, float $latitud, float $longitud): bool
-    {
-    return $this->ubicacionRepository->actualizarCoordenadasCliente($idCliente, $latitud, $longitud);
-    }
 }

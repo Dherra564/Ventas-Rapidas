@@ -31,7 +31,6 @@ class ClienteLocalController
         return $this->clienteLocalRepository->obtenerLocalesPorCliente($idCliente);
     }
 
-    // Métodos compatibles con las APIs/vistas que ya tenía el proyecto.
     public function seguir(int $idCliente, int $idLocal): int|false
     {
         return $this->agregarFavorito($idCliente, $idLocal);
@@ -57,5 +56,10 @@ class ClienteLocalController
         }
 
         return $resultado;
+    }
+
+    public function perteneceACliente(int $idClienteLocal, int $idCliente): bool
+    {
+        return $this->clienteLocalRepository->perteneceACliente($idClienteLocal, $idCliente);
     }
 }

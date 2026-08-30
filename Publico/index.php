@@ -10,16 +10,16 @@
 
     <header class="cabecera">
         <h1>Ventas Rápidas</h1>
-        <nav class="menu">
+        <nav class="menu" id="menu-principal">
             <button class="menu-boton activo" data-vista="vista-login">Iniciar Sesión</button>
-            <button class="menu-boton" data-vista="vista-local">Registrar Local</button>
-            <button class="menu-boton" data-vista="vista-producto">Registrar Producto</button>
-            <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
-            <button class="menu-boton" data-vista="vista-comerciantes">Ver Comerciantes</button>
-            <button class="menu-boton" data-vista="vista-clientes">Ver Clientes</button>
-            <button class="menu-boton" data-vista="vista-compras">Compras</button>
-            <button class="menu-boton" data-vista="vista-resenas">Reseñas</button>
-            <button class="menu-boton" data-vista="vista-historiales">Historiales</button>
+            <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
+            <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar Producto</button>
+            <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
+            <button class="menu-boton" data-vista="vista-comerciantes" data-rol="Admin">Ver Comerciantes</button>
+            <button class="menu-boton" data-vista="vista-clientes" data-rol="Admin">Ver Clientes</button>
+            <button class="menu-boton" data-vista="vista-compras" data-rol="Cliente">Compras</button>
+            <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
+            <button class="menu-boton" data-vista="vista-historiales" data-rol="Admin">Historiales</button>
         </nav>
         <div id="sesion-indicador" class="sesion-indicador oculto">
             <span id="sesion-texto"></span>
@@ -66,8 +66,8 @@
                 <p class="ayuda">¿Cómo quieres registrarte?</p>
 
                 <div class="rejilla-dos" style="max-width: 500px;">
-                    <button type="button" class="boton-eleccion" id="btn-elegir-cliente">🧍<br>Soy Cliente</button>
-                    <button type="button" class="boton-eleccion" id="btn-elegir-comerciante">🏪<br>Soy Comerciante</button>
+                    <button type="button" class="boton-eleccion" id="btn-elegir-cliente"><br>Soy Cliente</button>
+                    <button type="button" class="boton-eleccion" id="btn-elegir-comerciante"><br>Soy Comerciante</button>
                 </div>
 
                 <p class="ayuda">
@@ -110,6 +110,7 @@
 
                 <button type="submit">Registrar Comerciante</button>
             </form>
+            <button type="button" id="btn-volver-login-comerciante" class="boton-secundario">&larr; Volver al login</button>
         </section>
 
         <!-- Vista: Registrar Producto -->
@@ -127,6 +128,7 @@
 
                 <label for="p-nombre">Nombre del producto</label>
                 <input type="text" id="p-nombre" required>
+                <div id="p-similares" class="sugerencias-similares oculto"></div>
 
                 <label for="p-descripcion">Descripción</label>
                 <textarea id="p-descripcion"></textarea>
@@ -151,11 +153,6 @@
         <section id="vista-local" class="vista oculto">
             <h2>Registro de Local</h2>
             <form id="form-local" class="formulario" enctype="multipart/form-data">
-                <label for="l-numeroIdentificacion">Comerciante (ingresa tu número de identificación)</label>
-                <input type="text" id="l-numeroIdentificacion" placeholder="Sin espacios ni guiones" required>
-                <span class="ayuda" id="l-comerciante-info"></span>
-                <input type="hidden" id="l-idComerciante">
-
                 <label for="l-tipoLocal">Tipo de Local</label>
                 <input type="text" id="l-tipoLocal" autocomplete="off" placeholder="Ej: Soda, Feria, Repostería..." required>
                 <div class="sugerencias oculto" id="l-tipo-sugerencias"></div>
@@ -163,6 +160,7 @@
                 <label for="l-nombreLocal">Nombre del Local</label>
                 <input type="text" id="l-nombreLocal" required>
                 <span class="ayuda" id="l-nombre-msg"></span>
+                <div id="l-similares" class="sugerencias-similares oculto"></div>
 
                 <label for="l-descripcion">Descripción</label>
                 <textarea id="l-descripcion"></textarea>
@@ -262,6 +260,14 @@
 
                 <button type="submit">Registrar Cliente</button>
             </form>
+            <button type="button" id="btn-volver-login-cliente" class="boton-secundario">&larr; Volver al login</button>
+        </section>
+
+        <!-- Vista: Selector de perfiles de local (estilo Netflix) -->
+        <section id="vista-seleccionar-local" class="vista oculto">
+            <h2>¿Qué local vas a administrar?</h2>
+            <p class="ayuda">Si no entras al perfil de un local por 7 días, se marca como inactivo automáticamente.</p>
+            <div id="grid-perfiles-local" class="rejilla-perfiles"></div>
         </section>
 
         <!-- Vista: Listado de locales -->
@@ -307,6 +313,15 @@
                 <div class="campo-lectura">
                     <strong>Productos de este local</strong>
                     <div id="e-productos-lista" class="tarjetas"></div>
+                </div>
+
+                <div class="campo-lectura" id="e-info-solo-lectura">
+                    <strong>Información del local</strong>
+                    <p><strong>Tipo:</strong> <span id="e-solo-tipo"></span></p>
+                    <p><strong>Nombre:</strong> <span id="e-solo-nombre"></span></p>
+                    <p><strong>Descripción:</strong> <span id="e-solo-descripcion"></span></p>
+                    <p><strong>Teléfono:</strong> <span id="e-solo-telefono"></span></p>
+                    <p><strong>Correo:</strong> <span id="e-solo-correo"></span></p>
                 </div>
 
                 <form id="form-editar-local" class="formulario" enctype="multipart/form-data">

@@ -3,12 +3,15 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Modelos/Local.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion(Sesion::TIPO_COMERCIANTE);
 
 class EditarLocalHandler
 {
     use ManejadorImagenes;
 
-    public function manejar(): array
+    public function manejar(int $idComerciante): array
     {
         $controlador = new LocalController();
 
@@ -17,6 +20,11 @@ class EditarLocalHandler
 
         if ($localActual === null) {
             return ['exito' => false, 'mensaje' => 'Local no encontrado'];
+        }
+
+        if (!$controlador->perteneceAComerciante($idLocal, $idComerciante)) {
+            http_response_code(403);
+            return ['exito' => false, 'mensaje' => 'Ese local no pertenece a tu cuenta'];
         }
 
         $idTipoLocal = $controlador->resolverTipoLocal($_POST['nombreTipoLocal'] ?? '');
@@ -52,7 +60,7 @@ class EditarLocalHandler
 
 try {
     $handler = new EditarLocalHandler();
-    $respuesta = $handler->manejar();
+    $respuesta = $handler->manejar($usuario['id']);
 } catch (InvalidArgumentException $e) {
     $respuesta = ['exito' => false, 'mensaje' => $e->getMessage()];
 } catch (Exception $e) {

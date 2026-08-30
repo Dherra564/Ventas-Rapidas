@@ -2,12 +2,15 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion(Sesion::TIPO_COMERCIANTE);
 
 class RegistrarLocalHandler
 {
     use ManejadorImagenes;
 
-    public function manejar(): array
+    public function manejar(int $idComerciante): array
     {
         $controlador = new LocalController();
 
@@ -24,7 +27,7 @@ class RegistrarLocalHandler
         $nombreLogo = $this->subirImagenPerfil($_FILES['logo'] ?? null, 'local');
 
         $idLocal = $controlador->registrar(
-            (int) ($_POST['idComerciante'] ?? 0),
+            $idComerciante,
             $_POST['nombreTipoLocal'] ?? '',
             $nombreLocal,
             preg_replace('/\D/', '', $_POST['telefono'] ?? ''),
@@ -35,7 +38,9 @@ class RegistrarLocalHandler
             (int) ($_POST['idCanton'] ?? 0),
             (int) ($_POST['idDistrito'] ?? 0),
             $_POST['direccionExacta'] ?? '',
-            $_POST['referencia'] ?? null
+            $_POST['referencia'] ?? null,
+            isset($_POST['latitud']) && $_POST['latitud'] !== '' ? (float) $_POST['latitud'] : null,
+            isset($_POST['longitud']) && $_POST['longitud'] !== '' ? (float) $_POST['longitud'] : null
         );
 
         if ($idLocal !== false) {
@@ -52,7 +57,7 @@ class RegistrarLocalHandler
 
 try {
     $handler = new RegistrarLocalHandler();
-    $respuesta = $handler->manejar();
+    $respuesta = $handler->manejar($usuario['id']);
 } catch (InvalidArgumentException $e) {
     $respuesta = ['exito' => false, 'mensaje' => $e->getMessage()];
 } catch (Exception $e) {
