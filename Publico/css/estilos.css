@@ -46,6 +46,9 @@ body {
     color: var(--tinta);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 :focus-visible {
@@ -70,16 +73,17 @@ a:visited {
     color: var(--verde);
 }
 
-/* ---------- Cabecera ---------- */
+/* ---------- Navbar (cabecera) ---------- */
 
 .cabecera {
     background: linear-gradient(155deg, var(--verde) 0%, var(--verde-oscuro) 100%);
     color: var(--blanco);
-    padding: 1.6rem 2rem 1.9rem;
-    border-radius: 0 0 var(--radio-l) var(--radio-l);
+    padding: 1rem 1.6rem 1.1rem;
     box-shadow: 0 6px 20px rgba(21, 74, 53, 0.25);
-    position: relative;
-    overflow: hidden;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    overflow: visible;
 }
 
 .cabecera::after {
@@ -88,16 +92,36 @@ a:visited {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 5px;
+    height: 4px;
     background: linear-gradient(90deg, var(--mango), #F2B26B 50%, var(--mango));
+}
+
+.cabecera-fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.8rem;
+}
+
+.marca {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.marca-icono {
+    font-size: 1.6rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
 }
 
 .cabecera h1 {
     font-family: var(--fuente-display);
     font-weight: 800;
-    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    font-size: clamp(1.35rem, 3.4vw, 1.75rem);
     letter-spacing: -0.02em;
-    margin-bottom: 1rem;
 }
 
 .menu {
@@ -113,7 +137,7 @@ a:visited {
     padding: 0.55rem 1.1rem;
     border-radius: 999px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.87rem;
     font-weight: 500;
     transition: background var(--transicion), transform var(--transicion), color var(--transicion);
 }
@@ -128,15 +152,18 @@ a:visited {
     color: var(--verde-oscuro);
     font-weight: 700;
     border-color: var(--blanco);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
 }
 
 .sesion-indicador {
     display: flex;
     align-items: center;
     gap: 0.9rem;
-    margin-top: 1rem;
-    font-size: 0.88rem;
+    font-size: 0.86rem;
     color: rgba(255, 255, 255, 0.92);
+    background: rgba(0,0,0,0.12);
+    padding: 0.4rem 0.7rem 0.4rem 1rem;
+    border-radius: 999px;
 }
 
 .sesion-indicador .boton-secundario {
@@ -157,9 +184,11 @@ a:visited {
 /* ---------- Layout principal ---------- */
 
 .contenedor {
-    max-width: 720px;
+    max-width: 760px;
+    width: 100%;
     margin: 2.2rem auto;
     padding: 0 1rem 3rem;
+    flex: 1;
 }
 
 .vista {
@@ -183,6 +212,14 @@ a:visited {
     color: var(--verde-oscuro);
     margin-bottom: 1.1rem;
     letter-spacing: -0.01em;
+}
+
+.vista h3 {
+    font-family: var(--fuente-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--verde-oscuro);
+    margin-bottom: 0.6rem;
 }
 
 .oculto { display: none; }
@@ -356,40 +393,38 @@ button[type="submit"]:active {
 
 .tarjeta-perfil:hover {
     border-color: var(--verde);
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow: var(--sombra-hover);
 }
 
 .tarjeta-perfil img {
-    width: 80px;
-    height: 80px;
+    width: 100%;
+    height: 90px;
     object-fit: cover;
     border-radius: var(--radio-s);
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
 }
 
-.tarjeta-perfil .icono-perfil {
-    width: 80px;
-    height: 80px;
-    line-height: 80px;
-    font-size: 2.2rem;
-    background: var(--verde-suave);
-    border-radius: var(--radio-s);
-    margin: 0 auto 0.6rem;
+.icono-perfil {
+    font-size: 2.4rem;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.tarjeta-perfil .nombre-perfil {
-    font-weight: 600;
-    color: var(--tinta);
-    word-break: break-word;
-}
-
-.tarjeta-perfil .etiqueta-inactivo {
+.nombre-perfil {
     display: block;
-    font-size: 0.72rem;
-    color: var(--terracota);
     margin-top: 0.35rem;
     font-weight: 600;
+}
+
+.etiqueta-inactivo {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--terracota);
+    font-weight: 700;
 }
 
 .tarjeta-perfil.crear-nuevo {
@@ -410,7 +445,7 @@ button[type="submit"]:active {
 /* ---------- Mensajes (toasts) ---------- */
 
 .mensaje {
-    max-width: 720px;
+    max-width: 760px;
     margin: 1rem auto 0;
     padding: 0.85rem 1.1rem;
     border-radius: var(--radio-s);
@@ -529,7 +564,7 @@ button[type="submit"]:active {
     background: var(--verde-suave);
 }
 
-/* ---------- Etiquetas ---------- */
+/* ---------- Etiquetas / chips ---------- */
 
 .etiqueta-tipo {
     display: inline-block;
@@ -543,7 +578,22 @@ button[type="submit"]:active {
     letter-spacing: 0.01em;
 }
 
-/* ---------- Campos de solo lectura ---------- */
+.chip {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.22rem 0.6rem;
+    border-radius: 999px;
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.01em;
+}
+
+.chip-distancia {
+    color: var(--dorado);
+    background: var(--dorado-suave);
+}
+
+/* ---------- Campos de solo lectura / subpaneles ---------- */
 
 .campo-lectura {
     background: var(--crema);
@@ -689,15 +739,6 @@ button[type="submit"]:active {
     color: var(--verde);
 }
 
-/* ---------- Responsive ---------- */
-
-@media (max-width: 600px) {
-    .cabecera { padding: 1.3rem 1.2rem 1.6rem; border-radius: 0 0 var(--radio-m) var(--radio-m); }
-    .contenedor { margin: 1.2rem auto; padding: 0 0.7rem 2rem; }
-    .vista { padding: 1.3rem 1.1rem; }
-    .tarjetas { grid-template-columns: 1fr; }
-}
-
 /* ---------- Vista de inicio (accesos rápidos tras login) ---------- */
 
 .rejilla-accesos {
@@ -740,4 +781,243 @@ button[type="submit"]:active {
 
 .tarjeta-acceso:hover::after {
     transform: translateX(3px);
+}
+
+/* ---------- Footer ---------- */
+
+.pie-pagina {
+    margin-top: 3rem;
+    background: linear-gradient(155deg, var(--verde-oscuro) 0%, #0F3524 100%);
+    color: rgba(255,255,255,0.88);
+    padding: 2.2rem 1.5rem 1.4rem;
+}
+
+.pie-contenido {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: 1.6rem;
+}
+
+@media (max-width: 640px) {
+    .pie-contenido { grid-template-columns: 1fr; text-align: center; }
+    .pie-marca { align-items: center; }
+}
+
+.pie-marca {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.pie-marca strong {
+    font-size: 1.1rem;
+    color: var(--blanco);
+}
+
+.pie-marca p {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    max-width: 280px;
+}
+
+.pie-enlaces,
+.pie-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+}
+
+.pie-enlaces strong,
+.pie-info strong {
+    color: var(--blanco);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+}
+
+.pie-enlaces a {
+    color: rgba(255,255,255,0.78);
+    font-weight: 500;
+}
+
+.pie-enlaces a:hover {
+    color: var(--blanco);
+}
+
+.pie-info p {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.82rem;
+}
+
+.pie-pagina hr {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    max-width: 900px;
+    margin: 1.6rem auto 1rem;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 600px) {
+    .cabecera { padding: 0.9rem 1.1rem 1rem; }
+    .contenedor { margin: 1.2rem auto; padding: 0 0.7rem 2rem; }
+    .vista { padding: 1.3rem 1.1rem; }
+    .tarjetas { grid-template-columns: 1fr; }
+    .sesion-indicador { width: 100%; justify-content: space-between; }
+}
+/* ---------- Pestañas (tabs) ---------- */
+
+.pestanas {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.4rem;
+    border-bottom: 2px solid var(--niebla);
+}
+
+.pestana-boton {
+    background: transparent;
+    border: none;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--musgo);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color var(--transicion), border-color var(--transicion);
+}
+
+.pestana-boton:hover {
+    color: var(--verde-oscuro);
+}
+
+.pestana-boton.activa {
+    color: var(--verde-oscuro);
+    border-bottom-color: var(--mango);
+}
+
+.pestana-panel {
+    animation: aparecer 0.2s ease;
+}
+/* ---------- Sidebar / barra lateral ---------- */
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    align-items: stretch;
+}
+
+.barra-lateral {
+    width: 260px;
+    flex-shrink: 0;
+    background: linear-gradient(165deg, var(--verde) 0%, var(--verde-oscuro) 100%);
+    color: var(--blanco);
+    padding: 1.8rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    overflow-y: auto;
+    box-shadow: 5px 0 24px rgba(21, 74, 53, 0.2);
+}
+
+.barra-lateral .marca {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.barra-lateral .marca-icono {
+    font-size: 1.7rem;
+}
+
+.barra-lateral h1 {
+    font-family: var(--fuente-display);
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+}
+
+.barra-lateral .menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.barra-lateral .menu-boton {
+    text-align: left;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radio-s);
+    padding: 0.65rem 0.9rem;
+}
+
+.barra-lateral .menu-boton:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateX(2px);
+}
+
+.barra-lateral .menu-boton.activo {
+    background: var(--blanco);
+    color: var(--verde-oscuro);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.barra-lateral .sesion-indicador {
+    margin-top: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: rgba(0,0,0,0.16);
+    padding: 0.9rem;
+    border-radius: var(--radio-m);
+}
+
+.area-principal {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 900px) {
+    .app-shell { flex-direction: column; }
+
+    .barra-lateral {
+        width: 100%;
+        height: auto;
+        position: sticky;
+        top: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.1rem;
+        z-index: 200;
+    }
+
+    .barra-lateral .menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+        flex: 1 1 100%;
+        order: 3;
+    }
+
+    .barra-lateral .menu-boton { width: auto; }
+
+    .barra-lateral .sesion-indicador {
+        margin-top: 0;
+        flex-direction: row;
+        align-items: center;
+        order: 2;
+        margin-left: auto;
+    }
 }
