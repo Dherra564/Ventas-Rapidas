@@ -9,23 +9,29 @@
 <body>
 
     <header class="cabecera">
-        <h1>Ventas Rápidas</h1>
-        <nav class="menu" id="menu-principal">
-            <button class="menu-boton activo" data-vista="vista-login">Iniciar Sesión</button>
-            <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
-            <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar Producto</button>
-            <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
-            <button class="menu-boton" data-vista="vista-comerciantes" data-rol="Admin">Ver Comerciantes</button>
-            <button class="menu-boton" data-vista="vista-clientes" data-rol="Admin">Ver Clientes</button>
-            <button class="menu-boton" data-vista="vista-compras" data-rol="Cliente">Compras</button>
-            <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
-            <button class="menu-boton" data-vista="vista-historiales" data-rol="Admin">Historiales</button>
-        </nav>
+    <div class="cabecera-fila">
+        <div class="marca">
+            <span class="marca-icono">🛒</span>
+            <h1>Ventas Rápidas</h1>
+        </div>
         <div id="sesion-indicador" class="sesion-indicador oculto">
             <span id="sesion-texto"></span>
             <button type="button" id="btn-cerrar-sesion" class="boton-secundario">Cerrar sesión</button>
         </div>
-    </header>
+    </div>
+    <nav class="menu" id="menu-principal">
+        <button class="menu-boton activo" data-vista="vista-login">Iniciar Sesión</button>
+        <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
+        <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar Producto</button>
+        <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
+        <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente">Locales Cercanos</button>
+        <button class="menu-boton" data-vista="vista-comerciantes" data-rol="Admin">Ver Comerciantes</button>
+        <button class="menu-boton" data-vista="vista-clientes" data-rol="Admin">Ver Clientes</button>
+        <button class="menu-boton" data-vista="vista-compras" data-rol="Cliente">Compras</button>
+        <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
+        <button class="menu-boton" data-vista="vista-historiales" data-rol="Admin">Historiales</button>
+    </nav>
+</header>
 
     <main class="contenedor">
 
@@ -263,6 +269,8 @@
             <button type="button" id="btn-volver-login-cliente" class="boton-secundario">&larr; Volver al login</button>
         </section>
 
+            
+
         <!-- Vista: Selector de perfiles de local (estilo Netflix) -->
         <section id="vista-seleccionar-local" class="vista oculto">
             <h2>¿Qué local vas a administrar?</h2>
@@ -314,7 +322,20 @@
                     <strong>Productos de este local</strong>
                     <div id="e-productos-lista" class="tarjetas"></div>
                 </div>
+                                    <div class="campo-lectura oculto" id="e-panel-comerciante-local">
+                    <strong>Ventas registradas en este local</strong>
+                    <div class="filtros-busqueda">
+                        <input type="date" id="e-ventas-fecha">
+                        <button type="button" id="btn-ver-ventas-local" class="boton-secundario">Consultar Ventas</button>
+                    </div>
+                    <div id="e-ventas-lista" class="tarjetas"></div>
+                </div>
 
+                <div class="campo-lectura oculto" id="e-panel-actividad-local">
+                    <strong>Actividad de sesión de este local</strong>
+                    <p class="ayuda" id="e-actividad-estado"></p>
+                    <div id="e-actividad-lista" class="tarjetas"></div>
+                </div>
                 <div class="campo-lectura" id="e-info-solo-lectura">
                     <strong>Información del local</strong>
                     <p><strong>Tipo:</strong> <span id="e-solo-tipo"></span></p>
@@ -323,6 +344,7 @@
                     <p><strong>Teléfono:</strong> <span id="e-solo-telefono"></span></p>
                     <p><strong>Correo:</strong> <span id="e-solo-correo"></span></p>
                 </div>
+                
 
                 <form id="form-editar-local" class="formulario" enctype="multipart/form-data">
                     <input type="hidden" id="e-idLocal">
@@ -403,6 +425,11 @@
 
             <div id="panel-lista-comerciantes">
                 <h2>Comerciantes Registrados</h2>
+                    <div class="filtros-busqueda">
+        <input type="text" id="admin-buscar-identificacion" inputmode="numeric" placeholder="Buscar por número de identificación..." maxlength="15">
+        <button type="button" id="btn-buscar-comerciante-identificacion" class="boton-secundario">Buscar</button>
+    </div>
+    <span class="ayuda" id="admin-buscar-identificacion-msg"></span>
                 <label class="ayuda"><input type="checkbox" id="chk-inactivos-comerciantes"> Mostrar también inactivos</label>
                 <div id="lista-comerciantes" class="tarjetas"></div>
             </div>
@@ -596,7 +623,16 @@
                 </div>
             </div>
 
-            <div id="lista-resenas" class="tarjetas bloque-separado"></div>
+                       <div class="bloque-separado">
+                <h3 id="resena-cliente-titulo">Reseñas escritas por un cliente</h3>
+                <div class="filtros-busqueda" id="resena-cliente-controles">
+                    <select id="resena-filtro-cliente">
+                        <option value="">Seleccione un cliente...</option>
+                    </select>
+                    <button type="button" id="btn-ver-resenas-cliente" class="boton-secundario">Ver sus Reseñas</button>
+                </div>
+                <div id="lista-resenas-cliente" class="tarjetas"></div>
+            </div>
         </section>
 
         <!-- Vista: Historiales de seguridad -->
@@ -652,7 +688,55 @@
             </div>
         </section>
 
+        <!-- Vista: Locales Cercanos -->
+<section id="vista-cercanos" class="vista oculto">
+    <h2>Locales Cercanos</h2>
+    <p class="ayuda">Busca un producto o tipo de local y te mostramos los más cercanos a tu ubicación actual.</p>
+
+    <form id="form-cercanos" class="formulario">
+        <label for="cerc-termino">¿Qué estás buscando?</label>
+        <input type="text" id="cerc-termino" placeholder="Ej: Café, Empanadas, Bebidas..." required>
+
+        <label for="cerc-radio">Radio de búsqueda</label>
+        <select id="cerc-radio">
+            <option value="1">1 km</option>
+            <option value="2">2 km</option>
+            <option value="5" selected>5 km</option>
+            <option value="10">10 km</option>
+            <option value="20">20 km</option>
+        </select>
+
+        <button type="button" id="btn-cerc-ubicacion" class="boton-secundario" style="margin-top: 0.9rem;">📍 Usar mi ubicación GPS</button>
+        <span class="ayuda" id="cerc-ubicacion-msg"></span>
+        <input type="hidden" id="cerc-latitud">
+        <input type="hidden" id="cerc-longitud">
+
+        <button type="submit">Buscar Locales Cercanos</button>
+    </form>
+
+    <div id="lista-cercanos" class="tarjetas bloque-separado"></div>
+</section>
+
     </main>
+    <footer class="pie-pagina">
+    <div class="pie-contenido">
+        <div class="pie-marca">
+            <strong>🛒 Ventas Rápidas</strong>
+            <p>Conectamos clientes con locales cercanos, de forma fácil y rápida.</p>
+        </div>
+        <div class="pie-enlaces">
+            <strong>Enlaces rápidos</strong>
+            <a href="#" data-vista-footer="vista-listado">Ver Locales</a>
+            <a href="#" data-vista-footer="vista-cercanos">Locales Cercanos</a>
+            <a href="#" data-vista-footer="vista-login">Iniciar Sesión</a>
+        </div>
+        <div class="pie-info">
+            <strong>Ventas Rápidas</strong>
+            <p>Proyecto académico de comercio local.</p>
+            <p>&copy; <span id="pie-anio"></span> Todos los derechos reservados.</p>
+        </div>
+    </div>
+</footer>
 
     <script src="js/app.js"></script>
 </body>

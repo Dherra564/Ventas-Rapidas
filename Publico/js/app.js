@@ -749,11 +749,19 @@ document.addEventListener('DOMContentLoaded', () => {
             panelLista.classList.add('oculto');
             panelDetalle.classList.remove('oculto');
 
-            cargarProductosDelLocal(idLocal);
+                        cargarProductosDelLocal(idLocal);
+
+            document.getElementById('e-panel-comerciante-local').classList.toggle('oculto', !esComerciante);
+            document.getElementById('e-panel-actividad-local').classList.toggle('oculto', !esComerciante);
+            if (esComerciante) {
+                document.getElementById('e-ventas-lista').innerHTML = '<p class="ayuda">Elige una fecha y presiona "Consultar Ventas".</p>';
+                cargarHistorialActividadLocal(idLocal);
+            }
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del local', 'error');
         }
     }
+    
 
     async function cargarProductosDelLocal(idLocal) {
         const contenedor = document.getElementById('e-productos-lista');
@@ -1640,22 +1648,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function cargarDatosCompras() {
+        async function cargarDatosCompras() {
         try {
-            const [clientes, locales] = await Promise.all([
-                obtenerClientesActivos(),
-                obtenerLocalesActivos()
-            ]);
+            const esCliente = usuarioSesionActual?.tipo === 'Cliente';
+            const locales = await obtenerLocalesActivos();
 
-            llenarSelect(document.getElementById('compra-cliente'), clientes, 'idCliente', 'nombreCompleto');
-            llenarSelect(document.getElementById('compras-historial-cliente'), clientes, 'idCliente', 'nombreCompleto');
+            const selectCompraCliente = document.getElementById('compra-cliente');
+            const selectHistorialCliente = document.getElementById('compras-historial-cliente');
+            const labelCompraCliente = document.querySelector('label[for="compra-cliente"]');
+            const labelHistorialCliente = document.querySelector('label[for="compras-historial-cliente"]');
+
             llenarSelect(document.getElementById('compra-local'), locales, 'idLocal', 'nombreLocal');
+
+            if (esCliente) {
+                // Cliente: no debe ver ni elegir a otros clientes, se usa su propia sesión
+                labelCompraCliente?.classList.add('oculto');
+                labelHistorialCliente?.classList.add('oculto');
+
+                selectCompraCliente.innerHTML = `<option value="${usuarioSesionActual.id}">${escaparHtml(usuarioSesionActual.nombre)}</option>`;
+                selectHistorialCliente.innerHTML = `<option value="${usuarioSesionActual.id}">${escaparHtml(usuarioSesionActual.nombre)}</option>`;
+                selectCompraCliente.value = String(usuarioSesionActual.id);
+                selectHistorialCliente.value = String(usuarioSesionActual.id);
+                selectCompraCliente.classList.add('oculto');
+                selectHistorialCliente.classList.add('oculto');
+
+                await cargarHistorialCompras();
+            } else {
+                const clientes = await obtenerClientesActivos();
+                llenarSelect(selectCompraCliente, clientes, 'idCliente', 'nombreCompleto');
+                llenarSelect(selectHistorialCliente, clientes, 'idCliente', 'nombreCompleto');
+            }
+
             cargarRankingCompras();
         } catch (e) {
             mostrarMensaje('No se pudieron cargar los datos de compras', 'error');
         }
     }
-
     document.getElementById('form-compra').addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
@@ -1766,6 +1794,7 @@ document.addEventListener('DOMContentLoaded', () => {
             llenarSelect(document.getElementById('resena-cliente'), clientes, 'idCliente', 'nombreCompleto');
             llenarSelect(document.getElementById('resena-local'), locales, 'idLocal', 'nombreLocal');
             llenarSelect(document.getElementById('resena-filtro-local'), locales, 'idLocal', 'nombreLocal');
+            llenarSelect(document.getElementById('resena-filtro-cliente'), clientes, 'idCliente', 'nombreCompleto');
         } catch (e) {
             mostrarMensaje('No se pudieron cargar los datos de reseñas', 'error');
         }
@@ -2281,5 +2310,310 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     }
+
+       //Validacion para frontend 
+    function soloLetras(inputEl) {
+        if (!inputEl) return;
+        inputEl.addEventListener('input', () => {
+            const filtrado = inputEl.value.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñÜü' -]/g, '');
+            if (filtrado !== inputEl.value) {
+                const posicion = inputEl.selectionStart - (inputEl.value.length - filtrado.length);
+                inputEl.value = filtrado;
+                inputEl.setSelectionRange(posicion, posicion);
+            }
+        });
+    }
+
+    // Se aplica a los mismos campos que el backend valida con validarSoloLetras()
+    soloLetras(document.getElementById('c-nombre'));
+    soloLetras(document.getElementById('c-alias'));
+    soloLetras(document.getElementById('cl-nombreCompleto'));
+    soloLetras(document.getElementById('dc-nombre'));
+    soloLetras(document.getElementById('dc-alias'));
+    soloLetras(document.getElementById('dcl-nombreCompleto'));
+
+    function soloAlfanumerico(valor) {
+        return valor.replace(/[^A-Za-z0-9]/g, '');
+    }
+
+    // Rellena el pie de página
+    const pieAnio = document.getElementById('pie-anio');
+    if (pieAnio) pieAnio.textContent = new Date().getFullYear();
+
+    document.querySelectorAll('.pie-enlaces a[data-vista-footer]').forEach(enlace => {
+        enlace.addEventListener('click', (evento) => {
+            evento.preventDefault();
+            const destino = enlace.dataset.vistaFooter;
+            const boton = document.querySelector(`.menu-boton[data-vista="${destino}"]`);
+            if (boton) {
+                boton.click();
+            } else if (typeof mostrarVistaLogin === 'function') {
+                mostrarVistaLogin(destino);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    //GPS
+    document.getElementById('btn-cerc-ubicacion')?.addEventListener('click', async () => {
+        const msg = document.getElementById('cerc-ubicacion-msg');
+        msg.textContent = 'Obteniendo tu ubicación...';
+        msg.className = 'ayuda';
+
+        try {
+            const coords = await obtenerCoordenadasGPS();
+            document.getElementById('cerc-latitud').value = coords.lat;
+            document.getElementById('cerc-longitud').value = coords.lng;
+
+            const r = await fetch('api/actualizar_ubicacion_cliente.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
+            });
+            const res = await r.json();
+
+            if (res.exito) {
+                msg.textContent = 'Ubicación obtenida correctamente ✅';
+                msg.className = 'ayuda exito';
+            } else {
+                msg.textContent = res.mensaje || 'No se pudo guardar tu ubicación';
+                msg.className = 'ayuda error';
+            }
+        } catch (e) {
+            msg.textContent = 'No se pudo obtener tu ubicación GPS. Revisa los permisos del navegador.';
+            msg.className = 'ayuda error';
+        }
+    });
+
+    document.getElementById('form-cercanos')?.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const termino = document.getElementById('cerc-termino').value.trim();
+        const lat = document.getElementById('cerc-latitud').value;
+        const lng = document.getElementById('cerc-longitud').value;
+        const radio = document.getElementById('cerc-radio').value;
+        const contenedor = document.getElementById('lista-cercanos');
+
+        if (!termino) {
+            mostrarMensaje('Escribe qué producto o tipo de local buscas', 'error');
+            return;
+        }
+        if (!lat || !lng) {
+            mostrarMensaje('Primero presiona "Usar mi ubicación GPS"', 'error');
+            return;
+        }
+
+        contenedor.innerHTML = '<p class="ayuda">Buscando locales cercanos...</p>';
+
+        try {
+            const parametros = new URLSearchParams({ q: termino, lat, lng, radio });
+            const r = await fetch(`api/buscar_locales_cercanos.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudo completar la búsqueda')}</p>`;
+                return;
+            }
+
+            if (res.resultados.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">No se encontraron locales cercanos con ese producto.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.resultados.forEach(item => {
+                const precioHtml = item.descuento
+                    ? `<s>₡${item.precio}</s> ₡${(item.precio - (item.precio * item.descuento / 100)).toFixed(2)} <span class="etiqueta-tipo">-${item.descuento}%</span>`
+                    : `₡${item.precio}`;
+
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-clic';
+                tarjeta.innerHTML = `
+                    ${item.logo ? `<img src="imagenes/${item.logo}" alt="${escaparHtml(item.nombreLocal)}" class="imagen-producto">` : ''}
+                    <h3>${escaparHtml(item.nombreLocal)}</h3>
+                    <span class="chip chip-distancia">📍 ${item.distanciaKm} km</span>
+                    <p><strong>${escaparHtml(item.nombreProducto)}</strong></p>
+                    <p>${precioHtml}</p>
+                    <p>📞 ${escaparHtml(item.telefono ?? '')}</p>
+                `;
+                tarjeta.addEventListener('click', () => {
+                    mostrarVistaLogin('vista-listado');
+                    abrirDetalleLocal(item.idLocal);
+                });
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al buscar locales cercanos.</p>';
+        }
+    });
+
+   //Buscar comerciante por ID 
+    const inputBuscarIdentComerciante = document.getElementById('admin-buscar-identificacion');
+
+    inputBuscarIdentComerciante?.addEventListener('input', () => {
+        inputBuscarIdentComerciante.value = soloAlfanumerico(inputBuscarIdentComerciante.value);
+    });
+
+    document.getElementById('btn-buscar-comerciante-identificacion')?.addEventListener('click', async () => {
+        const numero = inputBuscarIdentComerciante.value.trim();
+        const msg = document.getElementById('admin-buscar-identificacion-msg');
+
+        if (!numero) {
+            msg.textContent = 'Escribe un número de identificación';
+            msg.className = 'ayuda error';
+            return;
+        }
+
+        msg.textContent = 'Buscando...';
+        msg.className = 'ayuda';
+
+        try {
+            const r = await fetch(`api/buscar_comerciante_por_identificacion.php?numeroIdentificacion=${encodeURIComponent(numero)}`);
+            const res = await r.json();
+
+            if (!res.encontrado) {
+                msg.textContent = 'No se encontró ningún comerciante con esa identificación';
+                msg.className = 'ayuda error';
+                return;
+            }
+
+            msg.textContent = '';
+            abrirDetalleComerciante(res.idComerciante);
+        } catch (e) {
+            msg.textContent = 'Error de conexión al buscar';
+            msg.className = 'ayuda error';
+        }
+    });
+
+    // ============================================================
+    // Comerciante: Ventas del local + Actividad de sesión
+    // (se activan automáticamente desde abrirDetalleLocal, ver paso final)
+    // ============================================================
+    document.getElementById('btn-ver-ventas-local')?.addEventListener('click', async () => {
+        const idLocal = document.getElementById('e-idLocal').value;
+        const fecha = document.getElementById('e-ventas-fecha').value || new Date().toISOString().slice(0, 10);
+        const contenedor = document.getElementById('e-ventas-lista');
+
+        if (!idLocal) {
+            mostrarMensaje('No se encontró el local actual', 'error');
+            return;
+        }
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando ventas...</p>';
+
+        try {
+            const parametros = new URLSearchParams({ idLocal, fecha });
+            const r = await fetch(`api/listar_compras_local.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron consultar las ventas')}</p>`;
+                return;
+            }
+
+            if (res.compras.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">No hay ventas registradas para esa fecha.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.compras.forEach(compra => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta';
+                tarjeta.innerHTML = `
+                    <h3>${escaparHtml(compra.nombreCliente)}</h3>
+                    <p><strong>Venta #${compra.idRegistroCompra}</strong></p>
+                    <p>${escaparHtml(formatearFecha(compra.fechaCompra))}</p>
+                `;
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al consultar las ventas.</p>';
+        }
+    });
+
+    async function cargarHistorialActividadLocal(idLocal) {
+        const contenedor = document.getElementById('e-actividad-lista');
+        const estado = document.getElementById('e-actividad-estado');
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const r = await fetch(`api/listar_historial_actividad_sesion_local.php?idLocal=${idLocal}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                estado.textContent = '';
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudo cargar el historial')}</p>`;
+                return;
+            }
+
+            estado.textContent = res.activoPorActividad
+                ? '✅ Este local está activo por actividad reciente.'
+                : '⚠️ Este local lleva más de 7 días sin actividad.';
+            estado.className = res.activoPorActividad ? 'ayuda exito' : 'ayuda error';
+
+            if (res.historial.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">Todavía no hay actividad registrada.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.historial.forEach(item => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta';
+                tarjeta.innerHTML = `
+                    <h3>${escaparHtml(item.tipo)}</h3>
+                    <p class="ayuda">${escaparHtml(formatearFecha(item.fecha))}</p>
+                `;
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar la actividad.</p>';
+        }
+    }
+
+// resenias escritas por un cliente 
+    document.getElementById('btn-ver-resenas-cliente')?.addEventListener('click', async () => {
+        const idCliente = document.getElementById('resena-filtro-cliente').value;
+        const contenedor = document.getElementById('lista-resenas-cliente');
+
+        if (!idCliente) {
+            mostrarMensaje('Selecciona un cliente', 'error');
+            return;
+        }
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        try {
+            const r = await fetch(`api/listar_resenias_cliente.php?idCliente=${idCliente}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron cargar las reseñas')}</p>`;
+                return;
+            }
+
+            if (res.resenias.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">Este cliente todavía no ha escrito reseñas.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.resenias.forEach(resenia => {
+                const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta';
+                tarjeta.innerHTML = `
+                    <h3>${escaparHtml(resenia.nombreLocal)}</h3>
+                    <p class="estrellas" aria-label="${resenia.puntuacion} de 5">${estrellas}</p>
+                    <p>${escaparHtml(resenia.comentario)}</p>
+                    <p class="ayuda">${escaparHtml(formatearFecha(resenia.fechaResenia))}</p>
+                `;
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar las reseñas.</p>';
+        }
+    });
 
 });
