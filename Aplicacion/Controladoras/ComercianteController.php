@@ -1,11 +1,11 @@
 <?php
 
 require_once __DIR__ . "/../Repositorios/ComercianteRepository.php";
-require_once __DIR__ . "/../Repositorios/HistorialPasswordRepository.php";
+require_once __DIR__ . "/../Repositorios/PasswordHistorialRepository.php";
 require_once __DIR__ . "/../Repositorios/HistorialFotoPerfilRepository.php";
-require_once __DIR__ . "/../Repositorios/HistorialActividadSesionLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/SesionActicoHistoricoRepository.php";
 require_once __DIR__ . "/../Modelos/Comerciante.php";
-require_once __DIR__ . "/../Modelos/HistorialPassword.php";
+require_once __DIR__ . "/../Modelos/PasswordHistorial.php";
 require_once __DIR__ . "/../Modelos/HistorialFotoPerfil.php";
 require_once __DIR__ . "/../Comun/ValidadorPassword.php";
 require_once __DIR__ . "/../Comun/ManejadorImagenes.php";
@@ -16,17 +16,18 @@ class ComercianteController
     use ValidadorPassword, ManejadorImagenes, ValidadorIdentificacion;
 
     private ComercianteRepository $comercianteRepository;
-    private HistorialPasswordRepository $historialPasswordRepository;
+    private PasswordHistorialRepository $historialPasswordRepository;
     private HistorialFotoPerfilRepository $historialFotoPerfilRepository;
-    private HistorialActividadSesionLocalRepository $historialActividadRepository;
+    private SesionActicoHistoricoRepository $historialActividadRepository;
 
     public function __construct()
     {
         $this->comercianteRepository = new ComercianteRepository();
-        $this->historialPasswordRepository = new HistorialPasswordRepository();
+        $this->historialPasswordRepository = new PasswordHistorialRepository();
         $this->historialFotoPerfilRepository = new HistorialFotoPerfilRepository();
-        $this->historialActividadRepository = new HistorialActividadSesionLocalRepository();
+        $this->historialActividadRepository = new SesionActicoHistoricoRepository();
     }
+
 
     public function registrar(
         string $nombre,
@@ -82,21 +83,28 @@ class ComercianteController
         }
 
         if (!password_verify($passwordActual, $comerciante->getPasswordHash())) {
-            $this->historialPasswordRepository->registrar(
-                new HistorialPassword($idComerciante, HistorialPassword::TIPO_COMERCIANTE, false)
-            );
             throw new InvalidArgumentException("La contraseña actual no es correcta");
         }
 
         $this->validarFormatoPassword($passwordNueva);
         $this->validarPasswordDistinta($passwordNueva, $comerciante->getPasswordHash());
 
+        $hashesRecientes = $this->historialPasswordRepository->obtenerUltimosHashes(
+            $idComerciante,
+            PasswordHistorial::TIPO_COMERCIANTE,
+            2
+        );
+        $this->validarPasswordNoReciente($passwordNueva, $hashesRecientes);
+
+        $hashAnterior = $comerciante->getPasswordHash();
         $nuevoHash = password_hash($passwordNueva, PASSWORD_DEFAULT);
         $exito = $this->comercianteRepository->actualizarPasswordHash($idComerciante, $nuevoHash);
 
-        $this->historialPasswordRepository->registrar(
-            new HistorialPassword($idComerciante, HistorialPassword::TIPO_COMERCIANTE, $exito)
-        );
+        if ($exito) {
+            $this->historialPasswordRepository->registrar(
+                new PasswordHistorial($idComerciante, PasswordHistorial::TIPO_COMERCIANTE, $hashAnterior, $nuevoHash)
+            );
+        }
 
         return $exito;
     }

@@ -2,7 +2,7 @@
 
 require_once __DIR__ . "/../Repositorios/LocalRepository.php";
 require_once __DIR__ . "/../Repositorios/TipoLocalRepository.php";
-require_once __DIR__ . "/../Repositorios/HistorialActividadSesionLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/SesionActicoHistoricoRepository.php";
 require_once __DIR__ . "/../Repositorios/ComercianteLocalRepository.php";
 require_once __DIR__ . "/../Modelos/Local.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
@@ -13,14 +13,14 @@ class LocalController
 {
     private LocalRepository $localRepository;
     private TipoLocalRepository $tipoLocalRepository;
-    private HistorialActividadSesionLocalRepository $historialActividadRepository;
+    private SesionActicoHistoricoRepository $historialActividadRepository;
     private ComercianteLocalRepository $comercianteLocalRepository;
 
     public function __construct()
     {
         $this->localRepository = new LocalRepository();
         $this->tipoLocalRepository = new TipoLocalRepository();
-        $this->historialActividadRepository = new HistorialActividadSesionLocalRepository();
+        $this->historialActividadRepository = new SesionActicoHistoricoRepository();
         $this->comercianteLocalRepository = new ComercianteLocalRepository();
     }
 

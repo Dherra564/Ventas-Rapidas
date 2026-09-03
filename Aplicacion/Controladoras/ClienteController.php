@@ -1,13 +1,13 @@
 <?php
 
 require_once __DIR__ . "/../Repositorios/ClienteRepository.php";
-require_once __DIR__ . "/../Repositorios/HistorialPasswordRepository.php";
+require_once __DIR__ . "/../Repositorios/PasswordHistorialRepository.php";
 require_once __DIR__ . "/../Repositorios/HistorialFotoPerfilRepository.php";
 require_once __DIR__ . "/../Repositorios/UbicacionRepository.php";
-require_once __DIR__ . "/../Repositorios/HistorialActividadSesionLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/SesionActicoHistoricoRepository.php";
 require_once __DIR__ . "/../Modelos/Cliente.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
-require_once __DIR__ . "/../Modelos/HistorialPassword.php";
+require_once __DIR__ . "/../Modelos/PasswordHistorial.php";
 require_once __DIR__ . "/../Modelos/HistorialFotoPerfil.php";
 require_once __DIR__ . "/../Comun/ValidadorPassword.php";
 require_once __DIR__ . "/../Comun/ManejadorImagenes.php";
@@ -18,18 +18,18 @@ class ClienteController
     use ValidadorPassword, ManejadorImagenes, ValidadorIdentificacion;
 
     private ClienteRepository $clienteRepository;
-    private HistorialPasswordRepository $historialPasswordRepository;
+    private PasswordHistorialRepository $historialPasswordRepository;
     private HistorialFotoPerfilRepository $historialFotoPerfilRepository;
     private UbicacionRepository $ubicacionRepository;
-    private HistorialActividadSesionLocalRepository $historialActividadRepository;
+    private SesionActicoHistoricoRepository $historialActividadRepository;
 
     public function __construct()
     {
         $this->clienteRepository = new ClienteRepository();
-        $this->historialPasswordRepository = new HistorialPasswordRepository();
+        $this->historialPasswordRepository = new PasswordHistorialRepository();
         $this->historialFotoPerfilRepository = new HistorialFotoPerfilRepository();
         $this->ubicacionRepository = new UbicacionRepository();
-        $this->historialActividadRepository = new HistorialActividadSesionLocalRepository();
+        $this->historialActividadRepository = new SesionActicoHistoricoRepository();
     }
 
     public function registrar(
@@ -100,21 +100,28 @@ class ClienteController
         }
 
         if (!password_verify($passwordActual, $cliente->getPasswordHash())) {
-            $this->historialPasswordRepository->registrar(
-                new HistorialPassword($idCliente, HistorialPassword::TIPO_CLIENTE, false)
-            );
             throw new InvalidArgumentException("La contraseña actual no es correcta");
         }
 
         $this->validarFormatoPassword($passwordNueva);
         $this->validarPasswordDistinta($passwordNueva, $cliente->getPasswordHash());
 
+        $hashesRecientes = $this->historialPasswordRepository->obtenerUltimosHashes(
+            $idCliente,
+            PasswordHistorial::TIPO_CLIENTE,
+            2
+        );
+        $this->validarPasswordNoReciente($passwordNueva, $hashesRecientes);
+
+        $hashAnterior = $cliente->getPasswordHash();
         $nuevoHash = password_hash($passwordNueva, PASSWORD_DEFAULT);
         $exito = $this->clienteRepository->actualizarPasswordHash($idCliente, $nuevoHash);
 
-        $this->historialPasswordRepository->registrar(
-            new HistorialPassword($idCliente, HistorialPassword::TIPO_CLIENTE, $exito)
-        );
+        if ($exito) {
+            $this->historialPasswordRepository->registrar(
+                new PasswordHistorial($idCliente, PasswordHistorial::TIPO_CLIENTE, $hashAnterior, $nuevoHash)
+            );
+        }
 
         return $exito;
     }

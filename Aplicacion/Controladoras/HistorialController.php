@@ -1,16 +1,16 @@
 <?php
 
-require_once __DIR__ . "/../Repositorios/HistorialPasswordRepository.php";
+require_once __DIR__ . "/../Repositorios/PasswordHistorialRepository.php";
 require_once __DIR__ . "/../Repositorios/HistorialFotoPerfilRepository.php";
 
 class HistorialController
 {
-    private HistorialPasswordRepository $historialPasswordRepository;
+    private PasswordHistorialRepository $historialPasswordRepository;
     private HistorialFotoPerfilRepository $historialFotoPerfilRepository;
 
     public function __construct()
     {
-        $this->historialPasswordRepository = new HistorialPasswordRepository();
+        $this->historialPasswordRepository = new PasswordHistorialRepository();
         $this->historialFotoPerfilRepository = new HistorialFotoPerfilRepository();
     }
 
