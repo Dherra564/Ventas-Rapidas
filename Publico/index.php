@@ -35,7 +35,10 @@
 
     <main class="contenedor">
 
-        <div id="mensaje" class="mensaje oculto"></div>
+        <div id="mensaje" class="mensaje oculto" role="alert">
+            <span id="mensaje-texto"></span>
+            <button type="button" id="mensaje-cerrar" class="mensaje-cerrar" aria-label="Cerrar mensaje">&times;</button>
+        </div>
 
         <!-- Vista: Iniciar Sesión / Crear cuenta -->
         <section id="vista-login" class="vista">
@@ -89,9 +92,11 @@
             <form id="form-comerciante" class="formulario" enctype="multipart/form-data">
                 <label for="c-nombre">Nombre completo</label>
                 <input type="text" id="c-nombre" required>
+                <span class="ayuda" id="c-nombre-msg"></span>
 
                 <label for="c-alias">Alias</label>
                 <input type="text" id="c-alias" required>
+                <span class="ayuda" id="c-alias-msg"></span>
 
                 <label for="c-tipoIdentificacion">Tipo de identificación</label>
                 <select id="c-tipoIdentificacion" required>
@@ -110,6 +115,7 @@
 
                 <label for="c-password">Contraseña</label>
                 <input type="password" id="c-password" required>
+                <span class="ayuda" id="c-password-msg">Mínimo 8 caracteres, con al menos una letra mayúscula. Símbolos permitidos: ! @ # $ % ^ &amp; * ( ) _ - + = [ ] { } ; : , . &lt; &gt; ?</span>
 
                 <label for="c-fotoPerfil">Foto de perfil</label>
                 <input type="file" id="c-fotoPerfil" accept="image/png, image/jpeg, image/webp">
@@ -219,6 +225,7 @@
             <form id="form-cliente" class="formulario" enctype="multipart/form-data">
                 <label for="cl-nombreCompleto">Nombre completo</label>
                 <input type="text" id="cl-nombreCompleto" required>
+                <span class="ayuda" id="cl-nombreCompleto-msg"></span>
 
                 <label for="cl-tipoIdentificacion">Tipo de identificación</label>
                 <select id="cl-tipoIdentificacion" required>
@@ -237,6 +244,7 @@
 
                 <label for="cl-password">Contraseña</label>
                 <input type="password" id="cl-password" required>
+                <span class="ayuda" id="cl-password-msg">Mínimo 8 caracteres, con al menos una letra mayúscula. Símbolos permitidos: ! @ # $ % ^ &amp; * ( ) _ - + = [ ] { } ; : , . &lt; &gt; ?</span>
 
                 <label for="cl-fotoPerfil">Foto de perfil</label>
                 <input type="file" id="cl-fotoPerfil" accept="image/png, image/jpeg, image/webp">

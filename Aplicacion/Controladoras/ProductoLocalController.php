@@ -26,6 +26,13 @@ class ProductoLocalController
         return $this->productoLocalRepository->eliminar($idProductoLocal);
     }
 
+    // Devuelve la relación cruda (idProductoLocal, idProducto, idLocal) para
+    // poder validar pertenencia antes de una acción sensible como quitar().
+    public function buscar(int $idProductoLocal): ?array
+    {
+        return $this->productoLocalRepository->obtenerPorId($idProductoLocal);
+    }
+
     // Devuelve los locales adicionales donde también se ofrece este producto, con nombre incluido, listos para mostrar.
 
     public function listarPorProducto(int $idProducto): array
