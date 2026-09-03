@@ -1,6 +1,6 @@
 <?php
 
-class HistorialPassword
+class PasswordHistorial
 {
     public const TIPO_CLIENTE = 'Cliente';
     public const TIPO_COMERCIANTE = 'Comerciante';
@@ -10,20 +10,23 @@ class HistorialPassword
     private int $idHistorialPassword;
     private int $idUsuario;
     private string $tipoUsuario;
+    private ?string $passwordHashAnterior;
+    private string $passwordHashNuevo;
     private ?DateTime $fechaCambio;
-    private bool $exitoso;
     private bool $activo;
 
     public function __construct(
         int $idUsuario,
         string $tipoUsuario,
-        bool $exitoso = true,
+        ?string $passwordHashAnterior,
+        string $passwordHashNuevo,
         bool $activo = true,
         int $idHistorialPassword = 0,
         ?DateTime $fechaCambio = null
     ) {
         $this->idHistorialPassword = $idHistorialPassword;
-        $this->exitoso = $exitoso;
+        $this->passwordHashAnterior = $passwordHashAnterior;
+        $this->passwordHashNuevo = $passwordHashNuevo;
         $this->activo = $activo;
         $this->fechaCambio = $fechaCambio;
 
@@ -46,14 +49,28 @@ class HistorialPassword
         return $this->tipoUsuario;
     }
 
+    public function getPasswordHashAnterior(): ?string
+    {
+        return $this->passwordHashAnterior;
+    }
+
+    public function getPasswordHashNuevo(): string
+    {
+        return $this->passwordHashNuevo;
+    }
+
     public function getFechaCambio(): ?DateTime
     {
         return $this->fechaCambio;
     }
 
+    // Se mantiene por compatibilidad con el endpoint/frontend que ya
+    // consumían este campo (mostraban "Cambio exitoso" / "Intento
+    // fallido"). Como ya no se registran intentos fallidos, todo registro
+    // que exista es, por definición, un cambio exitoso.
     public function isExitoso(): bool
     {
-        return $this->exitoso;
+        return true;
     }
 
     public function isActivo(): bool
@@ -75,11 +92,6 @@ class HistorialPassword
             throw new InvalidArgumentException("Tipo de usuario inválido: $tipoUsuario");
         }
         $this->tipoUsuario = $tipoUsuario;
-    }
-
-    public function setExitoso(bool $exitoso): void
-    {
-        $this->exitoso = $exitoso;
     }
 
     public function setActivo(bool $activo): void

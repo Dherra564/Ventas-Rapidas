@@ -1,6 +1,6 @@
 <?php
 
-class HistorialUbicacion
+class UbicacionHistorial
 {
     public const TIPO_CLIENTE = 'Cliente';
     public const TIPO_COMERCIANTE = 'Comerciante';
@@ -11,9 +11,10 @@ class HistorialUbicacion
     private ?int $idUbicacion;
     private int $idUsuario;
     private string $tipoUsuario;
-    private string $campo;
-    private ?string $valorAnterior;
-    private string $valorNuevo;
+    private ?float $latitudAnterior;
+    private ?float $longitudAnterior;
+    private float $latitudNueva;
+    private float $longitudNueva;
     private ?DateTime $fecha;
     private bool $activo;
 
@@ -21,9 +22,10 @@ class HistorialUbicacion
         ?int $idUbicacion,
         int $idUsuario,
         string $tipoUsuario,
-        string $campo,
-        ?string $valorAnterior,
-        string $valorNuevo,
+        ?float $latitudAnterior,
+        ?float $longitudAnterior,
+        float $latitudNueva,
+        float $longitudNueva,
         bool $activo = true,
         int $idHistorialUbicacion = 0,
         ?DateTime $fecha = null
@@ -35,9 +37,10 @@ class HistorialUbicacion
 
         $this->setIdUsuario($idUsuario);
         $this->setTipoUsuario($tipoUsuario);
-        $this->setCampo($campo);
-        $this->setValorAnterior($valorAnterior);
-        $this->setValorNuevo($valorNuevo);
+        $this->setLatitudAnterior($latitudAnterior);
+        $this->setLongitudAnterior($longitudAnterior);
+        $this->setLatitudNueva($latitudNueva);
+        $this->setLongitudNueva($longitudNueva);
     }
 
     public function getIdHistorialUbicacion(): int
@@ -60,19 +63,24 @@ class HistorialUbicacion
         return $this->tipoUsuario;
     }
 
-    public function getCampo(): string
+    public function getLatitudAnterior(): ?float
     {
-        return $this->campo;
+        return $this->latitudAnterior;
     }
 
-    public function getValorAnterior(): ?string
+    public function getLongitudAnterior(): ?float
     {
-        return $this->valorAnterior;
+        return $this->longitudAnterior;
     }
 
-    public function getValorNuevo(): string
+    public function getLatitudNueva(): float
     {
-        return $this->valorNuevo;
+        return $this->latitudNueva;
+    }
+
+    public function getLongitudNueva(): float
+    {
+        return $this->longitudNueva;
     }
 
     public function getFecha(): ?DateTime
@@ -101,25 +109,36 @@ class HistorialUbicacion
         $this->tipoUsuario = $tipoUsuario;
     }
 
-    public function setCampo(string $campo): void
+    public function setLatitudAnterior(?float $latitudAnterior): void
     {
-        if (trim($campo) === '') {
-            throw new InvalidArgumentException("El campo no puede estar vacío");
+        if ($latitudAnterior !== null && ($latitudAnterior < -90 || $latitudAnterior > 90)) {
+            throw new InvalidArgumentException("La latitud anterior debe estar entre -90 y 90");
         }
-        $this->campo = $campo;
+        $this->latitudAnterior = $latitudAnterior;
     }
 
-    public function setValorAnterior(?string $valorAnterior): void
+    public function setLongitudAnterior(?float $longitudAnterior): void
     {
-        $this->valorAnterior = $valorAnterior;
+        if ($longitudAnterior !== null && ($longitudAnterior < -180 || $longitudAnterior > 180)) {
+            throw new InvalidArgumentException("La longitud anterior debe estar entre -180 y 180");
+        }
+        $this->longitudAnterior = $longitudAnterior;
     }
 
-    public function setValorNuevo(string $valorNuevo): void
+    public function setLatitudNueva(float $latitudNueva): void
     {
-        if (trim($valorNuevo) === '') {
-            throw new InvalidArgumentException("El valor nuevo no puede estar vacío");
+        if ($latitudNueva < -90 || $latitudNueva > 90) {
+            throw new InvalidArgumentException("La latitud debe estar entre -90 y 90");
         }
-        $this->valorNuevo = $valorNuevo;
+        $this->latitudNueva = $latitudNueva;
+    }
+
+    public function setLongitudNueva(float $longitudNueva): void
+    {
+        if ($longitudNueva < -180 || $longitudNueva > 180) {
+            throw new InvalidArgumentException("La longitud debe estar entre -180 y 180");
+        }
+        $this->longitudNueva = $longitudNueva;
     }
 
     public function setActivo(bool $activo): void
