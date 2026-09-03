@@ -7,7 +7,7 @@ require_once __DIR__ . "/../Repositorios/ComercianteLocalRepository.php";
 require_once __DIR__ . "/../Modelos/Local.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Modelos/TipoLocal.php";
-require_once __DIR__ . "/../Modelos/HistorialActividadSesionLocal.php";
+require_once __DIR__ . "/../Modelos/SesionActivaHistorico.php";
 
 class LocalController
 {

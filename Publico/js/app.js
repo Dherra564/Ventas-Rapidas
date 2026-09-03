@@ -35,10 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarClientes();
             }
 
-            if (boton.dataset.vista === 'vista-compras') {
-                cargarDatosCompras();
-            }
-
             if (boton.dataset.vista === 'vista-resenas') {
                 cargarDatosResenas();
             }
@@ -72,8 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cajaMensaje.className = 'mensaje ' + tipo;
         posicionarMensaje();
 
-        // Los errores permanecen más tiempo en pantalla: suelen requerir
-        // que la persona lea y corrija algo antes de continuar.
         const duracion = tipo === 'error' ? 7000 : 4000;
         temporizadorMensaje = setTimeout(ocultarMensaje, duracion);
     }
@@ -109,8 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Validación de campos obligatorios con retroalimentación uniforme,
-    // igual que la que ya existía para Identificación y Correo.
     function activarValidacionRequerida(inputEl, mensajeEl, etiqueta) {
         function validar() {
             if (inputEl.value.trim() === '') {
@@ -129,8 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return validar;
     }
 
-    // Misma regla que ValidadorPassword.php en el backend: mínimo 8
-    // caracteres, al menos una mayúscula y solo símbolos permitidos.
     const TEXTO_AYUDA_PASSWORD = 'Mínimo 8 caracteres, con al menos una letra mayúscula. Símbolos permitidos: ! @ # $ % ^ & * ( ) _ - + = [ ] { } ; : , . < > ?';
     const PATRON_PASSWORD_PERMITIDO = /^[A-Za-z0-9!@#$%^&*()_\-+=[\]{};:,.<>?]+$/;
 
@@ -912,17 +902,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         cargarProductosDelLocal(idLocal);
 
-            document.getElementById('e-panel-comerciante-local').classList.toggle('oculto', !esComerciante);
             document.getElementById('e-panel-actividad-local').classList.toggle('oculto', !esComerciante);
             if (esComerciante) {
-                document.getElementById('e-ventas-lista').innerHTML = '<p class="ayuda">Elige una fecha y presiona "Consultar Ventas".</p>';
                 cargarHistorialActividadLocal(idLocal);
             }
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del local', 'error');
         }
     }
-    
 
     async function cargarProductosDelLocal(idLocal) {
         const contenedor = document.getElementById('e-productos-lista');
@@ -1768,6 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+
     function escaparHtml(texto) {
         return String(texto ?? '')
             .replaceAll('&', '&amp;')
@@ -1806,143 +1794,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if ([...select.options].some(o => o.value === valorActual)) {
             select.value = valorActual;
-        }
-    }
-
-        async function cargarDatosCompras() {
-        try {
-            const esCliente = usuarioSesionActual?.tipo === 'Cliente';
-            const locales = await obtenerLocalesActivos();
-
-            const selectCompraCliente = document.getElementById('compra-cliente');
-            const selectHistorialCliente = document.getElementById('compras-historial-cliente');
-            const labelCompraCliente = document.querySelector('label[for="compra-cliente"]');
-            const labelHistorialCliente = document.querySelector('label[for="compras-historial-cliente"]');
-
-            llenarSelect(document.getElementById('compra-local'), locales, 'idLocal', 'nombreLocal');
-
-            if (esCliente) {
-                // Cliente: no debe ver ni elegir a otros clientes, se usa su propia sesión
-                labelCompraCliente?.classList.add('oculto');
-                labelHistorialCliente?.classList.add('oculto');
-
-                selectCompraCliente.innerHTML = `<option value="${usuarioSesionActual.id}">${escaparHtml(usuarioSesionActual.nombre)}</option>`;
-                selectHistorialCliente.innerHTML = `<option value="${usuarioSesionActual.id}">${escaparHtml(usuarioSesionActual.nombre)}</option>`;
-                selectCompraCliente.value = String(usuarioSesionActual.id);
-                selectHistorialCliente.value = String(usuarioSesionActual.id);
-                selectCompraCliente.classList.add('oculto');
-                selectHistorialCliente.classList.add('oculto');
-
-                await cargarHistorialCompras();
-            } else {
-                const clientes = await obtenerClientesActivos();
-                llenarSelect(selectCompraCliente, clientes, 'idCliente', 'nombreCompleto');
-                llenarSelect(selectHistorialCliente, clientes, 'idCliente', 'nombreCompleto');
-            }
-
-            cargarRankingCompras();
-        } catch (e) {
-            mostrarMensaje('No se pudieron cargar los datos de compras', 'error');
-        }
-    }
-    document.getElementById('form-compra').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-
-        const idCliente = document.getElementById('compra-cliente').value;
-        const idLocal = document.getElementById('compra-local').value;
-
-        try {
-            const r = await fetch('api/registrar_compra.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idCliente, idLocal })
-            });
-            const res = await r.json();
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-            if (res.exito) {
-                document.getElementById('compras-historial-cliente').value = idCliente;
-                await cargarHistorialCompras();
-                await cargarRankingCompras();
-            }
-        } catch (e) {
-            mostrarMensaje('Error de conexión al registrar la compra', 'error');
-        }
-    });
-
-    async function cargarHistorialCompras() {
-        const idCliente = document.getElementById('compras-historial-cliente').value;
-        const fecha = document.getElementById('compras-fecha').value;
-        const contenedor = document.getElementById('lista-compras');
-
-        if (!idCliente) {
-            contenedor.innerHTML = '<p class="ayuda">Selecciona un cliente.</p>';
-            return;
-        }
-
-        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
-        try {
-            const parametros = new URLSearchParams({ idCliente });
-            if (fecha) parametros.set('fecha', fecha);
-
-            const r = await fetch(`api/listar_compras_cliente.php?${parametros.toString()}`);
-            const res = await r.json();
-
-            if (!res.exito) {
-                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron consultar las compras')}</p>`;
-                return;
-            }
-
-            if (res.compras.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">No hay compras registradas para esta consulta.</p>';
-                return;
-            }
-
-            contenedor.innerHTML = '';
-            res.compras.forEach(compra => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta';
-                tarjeta.innerHTML = `
-                    <h3>${escaparHtml(compra.nombreLocal)}</h3>
-                    <p><strong>Compra #${compra.idRegistroCompra}</strong></p>
-                    <p>${escaparHtml(formatearFecha(compra.fechaCompra))}</p>
-                `;
-                contenedor.appendChild(tarjeta);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al consultar las compras.</p>';
-        }
-    }
-
-    document.getElementById('btn-buscar-compras').addEventListener('click', cargarHistorialCompras);
-
-
-    async function cargarRankingCompras() {
-        const contenedor = document.getElementById('ranking-compras');
-        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
-        try {
-            const r = await fetch('api/locales_mas_comprados.php?limite=5');
-            const res = await r.json();
-
-            if (!res.exito || res.locales.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">Todavía no hay compras suficientes para mostrar un ranking.</p>';
-                return;
-            }
-
-            contenedor.innerHTML = '';
-            res.locales.forEach((local, indice) => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta';
-                tarjeta.innerHTML = `
-                    <h3>${indice + 1}. ${escaparHtml(local.nombreLocal)}</h3>
-                    <p>${local.totalCompras} compra${local.totalCompras === 1 ? '' : 's'} registrada${local.totalCompras === 1 ? '' : 's'}</p>
-                `;
-                contenedor.appendChild(tarjeta);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">No se pudo cargar el ranking.</p>';
         }
     }
 
@@ -2026,9 +1877,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 tarjeta.className = 'tarjeta';
                 const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
 
-                // El backend ya valida que solo el dueño pueda editar/eliminar
-                // su reseña; aquí además evitamos ofrecer esos botones sobre
-                // reseñas ajenas para no invitar a intentarlo.
                 const esPropia = usuarioSesionActual
                     && usuarioSesionActual.tipo === 'Cliente'
                     && Number(usuarioSesionActual.id) === Number(resenia.idCliente);
@@ -2659,52 +2507,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ============================================================
-    // Comerciante: Ventas del local + Actividad de sesión
-    // (se activan automáticamente desde abrirDetalleLocal, ver paso final)
-    // ============================================================
-    document.getElementById('btn-ver-ventas-local')?.addEventListener('click', async () => {
-        const idLocal = document.getElementById('e-idLocal').value;
-        const fecha = document.getElementById('e-ventas-fecha').value || new Date().toISOString().slice(0, 10);
-        const contenedor = document.getElementById('e-ventas-lista');
-
-        if (!idLocal) {
-            mostrarMensaje('No se encontró el local actual', 'error');
-            return;
-        }
-
-        contenedor.innerHTML = '<p class="ayuda">Cargando ventas...</p>';
-
-        try {
-            const parametros = new URLSearchParams({ idLocal, fecha });
-            const r = await fetch(`api/listar_compras_local.php?${parametros.toString()}`);
-            const res = await r.json();
-
-            if (!res.exito) {
-                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron consultar las ventas')}</p>`;
-                return;
-            }
-
-            if (res.compras.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">No hay ventas registradas para esa fecha.</p>';
-                return;
-            }
-
-            contenedor.innerHTML = '';
-            res.compras.forEach(compra => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta';
-                tarjeta.innerHTML = `
-                    <h3>${escaparHtml(compra.nombreCliente)}</h3>
-                    <p><strong>Venta #${compra.idRegistroCompra}</strong></p>
-                    <p>${escaparHtml(formatearFecha(compra.fechaCompra))}</p>
-                `;
-                contenedor.appendChild(tarjeta);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al consultar las ventas.</p>';
-        }
-    });
 
     async function cargarHistorialActividadLocal(idLocal) {
         const contenedor = document.getElementById('e-actividad-lista');
@@ -2712,7 +2514,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         try {
-            const r = await fetch(`api/listar_historial_actividad_sesion_local.php?idLocal=${idLocal}`);
+            const r = await fetch(`api/listar_sesion_activo_historico.php?idLocal=${idLocal}`);
             const res = await r.json();
 
             if (!res.exito) {
@@ -2759,7 +2561,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         try {
-            const r = await fetch(`api/listar_historial_actividad_sesion_local.php?idLocal=${idLocal}`);
+            const r = await fetch(`api/listar_resenias_cliente.php?idCliente=${idCliente}`);
             const res = await r.json();
 
             if (!res.exito) {

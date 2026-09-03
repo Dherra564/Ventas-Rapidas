@@ -350,9 +350,9 @@ class LocalRepository
                 SET l.tblocalactivo = 0
                 WHERE l.tblocalactivo = 1
                   AND NOT EXISTS (
-                      SELECT 1 FROM tbhistorialactividadsesionlocal h
+                      SELECT 1 FROM tbsesionactivohistorico h
                       WHERE h.tblocalid = l.tblocalid
-                        AND h.tbhistorialactividadsesionlocalfecha >= (NOW() - INTERVAL :dias DAY)
+                        AND h.fecha >= (NOW() - INTERVAL :dias DAY)
                   )";
 
         $consulta = $this->conexion->prepare($sql);
