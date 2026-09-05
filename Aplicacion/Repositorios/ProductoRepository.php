@@ -5,17 +5,22 @@ require_once __DIR__ . "/../Modelos/Producto.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
 require_once __DIR__ . "/../Comun/ComparadorTexto.php";
+require_once __DIR__ . "/../Repositorios/HistorialCampoRepository.php";
 class ProductoRepository
 {
     use GeneradorId, ValidadorReferencia, ComparadorTexto;
     private PDO $conexion;
+    private HistorialCampoRepository $historialPrecio;
+    private HistorialCampoRepository $historialDescuento;
 
     public function __construct()
     {
         $this->conexion = BaseDatos::obtenerConexion();
+        $this->historialPrecio = new HistorialCampoRepository("tbproductopreciohistorico", "tbproductopreciohistoricoid", "tbproductoid", $this->conexion);
+        $this->historialDescuento = new HistorialCampoRepository("tbproductodescuentoporcentajehistorico", "tbproductodescuentoporcentajehistoricoid", "tbproductoid", $this->conexion);
     }
 
-        public function insertar(Producto $producto): int|false
+    public function insertar(Producto $producto): int|false
     {
         $this->validarReferencia($this->conexion, "tblocal", "tblocalid", $producto->getIdLocal(), "El local con ID {$producto->getIdLocal()} no existe");
         $this->validarReferencia($this->conexion, "tbproductotipo", "tbproductotipoid", $producto->getIdTipoProducto(), "El tipo de producto con ID {$producto->getIdTipoProducto()} no existe");
@@ -174,7 +179,7 @@ class ProductoRepository
         return $productos;
     }
 
-        public function actualizar(Producto $producto): bool
+    public function actualizar(Producto $producto): bool
     {
         $this->validarReferencia(
             $this->conexion,
@@ -184,21 +189,23 @@ class ProductoRepository
             "El tipo de producto con ID {$producto->getIdTipoProducto()} no existe"
         );
 
+        $anterior = $this->obtenerPorId($producto->getIdProducto());
+
         $sql = "UPDATE tbproducto
-                SET
-                    tbproductotipoid = :idTipoProducto,
-                    tbproductonombre = :nombre,
-                    tbproductodescripcion = :descripcion,
-                    tbproductocantidad = :cantidad,
-                    tbproductoprecio = :precio,
-                    tbproductodescuentoporcentaje = :porcentajeDescuento,
-                    tbproductoimagen = :imagen,
-                    tbproductoactivo = :activo
-                WHERE tbproductoid = :id";
+            SET
+                tbproductotipoid = :idTipoProducto,
+                tbproductonombre = :nombre,
+                tbproductodescripcion = :descripcion,
+                tbproductocantidad = :cantidad,
+                tbproductoprecio = :precio,
+                tbproductodescuentoporcentaje = :porcentajeDescuento,
+                tbproductoimagen = :imagen,
+                tbproductoactivo = :activo
+            WHERE tbproductoid = :id";
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([
+        $exito = $consulta->execute([
             ":idTipoProducto" => $producto->getIdTipoProducto(),
             ":nombre" => $producto->getNombre(),
             ":descripcion" => $producto->getDescripcion(),
@@ -209,6 +216,14 @@ class ProductoRepository
             ":activo" => $producto->isActivo(),
             ":id" => $producto->getIdProducto()
         ]);
+
+        if ($exito && $anterior !== null) {
+            $id = $producto->getIdProducto();
+            $this->historialPrecio->registrarSiCambio($id, $anterior->getPrecioOriginal(), $producto->getPrecioOriginal());
+            $this->historialDescuento->registrarSiCambio($id, $anterior->getPorcentajeDescuento(), $producto->getPorcentajeDescuento());
+        }
+
+        return $exito;
     }
 
     public function eliminar(int $idProducto): bool
@@ -336,7 +351,7 @@ class ProductoRepository
         );
     }
 
-        private function mapearFila(array $fila): Producto
+    private function mapearFila(array $fila): Producto
     {
         return new Producto(
             (int) $fila["tblocalid"],
@@ -350,8 +365,8 @@ class ProductoRepository
             (bool) $fila["tbproductoactivo"],
             (int) $fila["tbproductoid"],
             $fila["tbproductoregistrofecha"] != null
-                ? new DateTime($fila["tbproductoregistrofecha"])
-                : null
+            ? new DateTime($fila["tbproductoregistrofecha"])
+            : null
         );
     }
 }

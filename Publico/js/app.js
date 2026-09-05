@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const botonesMenu = document.querySelectorAll('.menu-boton');
     const vistas = document.querySelectorAll('.vista');
     const cajaMensaje = document.getElementById('mensaje');
+    const textoMensaje = document.getElementById('mensaje-texto');
+    const botonCerrarMensaje = document.getElementById('mensaje-cerrar');
 
     let usuarioSesionActual = null;
 
@@ -33,10 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarClientes();
             }
 
-            if (boton.dataset.vista === 'vista-compras') {
-                cargarDatosCompras();
-            }
-
             if (boton.dataset.vista === 'vista-resenas') {
                 cargarDatosResenas();
             }
@@ -47,11 +45,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function mostrarMensaje(texto, tipo) {
-        cajaMensaje.textContent = texto;
-        cajaMensaje.className = 'mensaje ' + tipo;
-        setTimeout(() => { cajaMensaje.className = 'mensaje oculto'; }, 4000);
+    let temporizadorMensaje = null;
+
+    function posicionarMensaje() {
+        const cabecera = document.querySelector('.cabecera');
+        const margen = 12;
+        const topPredeterminado = cabecera
+            ? cabecera.getBoundingClientRect().bottom + margen
+            : margen;
+        cajaMensaje.style.top = topPredeterminado + 'px';
     }
+
+    function ocultarMensaje() {
+        clearTimeout(temporizadorMensaje);
+        cajaMensaje.className = 'mensaje oculto';
+    }
+
+    function mostrarMensaje(texto, tipo) {
+        clearTimeout(temporizadorMensaje);
+
+        textoMensaje.textContent = texto;
+        cajaMensaje.className = 'mensaje ' + tipo;
+        posicionarMensaje();
+
+        const duracion = tipo === 'error' ? 7000 : 4000;
+        temporizadorMensaje = setTimeout(ocultarMensaje, duracion);
+    }
+
+    if (botonCerrarMensaje) {
+        botonCerrarMensaje.addEventListener('click', ocultarMensaje);
+    }
+
+    window.addEventListener('resize', () => {
+        if (!cajaMensaje.classList.contains('oculto')) {
+            posicionarMensaje();
+        }
+    });
 
     function debounce(funcion, espera) {
         let temporizador;
@@ -72,6 +101,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? digitos.slice(0, 4) + '-' + digitos.slice(4)
                 : digitos;
         });
+    }
+
+    function activarValidacionRequerida(inputEl, mensajeEl, etiqueta) {
+        function validar() {
+            if (inputEl.value.trim() === '') {
+                mensajeEl.textContent = `${etiqueta} es obligatorio`;
+                mensajeEl.className = 'ayuda error';
+                return false;
+            }
+            mensajeEl.textContent = '';
+            mensajeEl.className = 'ayuda';
+            return true;
+        }
+        inputEl.addEventListener('blur', validar);
+        inputEl.addEventListener('input', () => {
+            if (mensajeEl.classList.contains('error')) validar();
+        });
+        return validar;
+    }
+
+    const TEXTO_AYUDA_PASSWORD = 'Mínimo 8 caracteres, con al menos una letra mayúscula. Símbolos permitidos: ! @ # $ % ^ & * ( ) _ - + = [ ] { } ; : , . < > ?';
+    const PATRON_PASSWORD_PERMITIDO = /^[A-Za-z0-9!@#$%^&*()_\-+=[\]{};:,.<>?]+$/;
+
+    function evaluarPassword(password) {
+        if (password.length < 8) {
+            return 'La contraseña debe tener al menos 8 caracteres';
+        }
+        if (!/[A-Z]/.test(password)) {
+            return 'La contraseña debe tener al menos una letra mayúscula';
+        }
+        if (!PATRON_PASSWORD_PERMITIDO.test(password)) {
+            return 'La contraseña contiene símbolos no permitidos';
+        }
+        return null;
+    }
+
+    function activarValidacionPassword(inputEl, mensajeEl) {
+        function validar() {
+            const password = inputEl.value;
+            if (password === '') {
+                mensajeEl.textContent = TEXTO_AYUDA_PASSWORD;
+                mensajeEl.className = 'ayuda';
+                return false;
+            }
+            const error = evaluarPassword(password);
+            if (error) {
+                mensajeEl.textContent = error;
+                mensajeEl.className = 'ayuda error';
+                return false;
+            }
+            mensajeEl.textContent = 'Contraseña válida';
+            mensajeEl.className = 'ayuda exito';
+            return true;
+        }
+        inputEl.addEventListener('input', validar);
+        inputEl.addEventListener('blur', validar);
+        return validar;
     }
 
     const inputIdentificacionComerciante = document.getElementById('c-numeroIdentificacion');
@@ -111,10 +197,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputCorreoComerciante.addEventListener('input', verificarCorreoComercianteDebounced);
 
+    const inputNombreComerciante = document.getElementById('c-nombre');
+    const inputAliasComerciante = document.getElementById('c-alias');
+    const inputPasswordComerciante = document.getElementById('c-password');
+
+    const validarNombreComerciante = activarValidacionRequerida(
+        inputNombreComerciante,
+        document.getElementById('c-nombre-msg'),
+        'El nombre'
+    );
+    const validarAliasComerciante = activarValidacionRequerida(
+        inputAliasComerciante,
+        document.getElementById('c-alias-msg'),
+        'El alias'
+    );
+    const validarPasswordComerciante = activarValidacionPassword(
+        inputPasswordComerciante,
+        document.getElementById('c-password-msg')
+    );
+
     document.getElementById('form-comerciante').addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const numeroIdentificacion = inputIdentificacionComerciante.value.trim();
+
+        const camposValidos = [
+            validarNombreComerciante(),
+            validarAliasComerciante(),
+            validarPasswordComerciante()
+        ];
+
+        if (camposValidos.includes(false)) {
+            mostrarMensaje('Revisa los campos marcados en el formulario', 'error');
+            return;
+        }
 
         const datos = new FormData();
         datos.append('nombre', document.getElementById('c-nombre').value);
@@ -142,6 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 evento.target.reset();
                 mensajeIdentificacionComerciante.textContent = '';
                 mensajeCorreoComerciante.textContent = '';
+                document.getElementById('c-nombre-msg').textContent = '';
+                document.getElementById('c-nombre-msg').className = 'ayuda';
+                document.getElementById('c-alias-msg').textContent = '';
+                document.getElementById('c-alias-msg').className = 'ayuda';
+                const mensajePasswordComerciante = document.getElementById('c-password-msg');
+                mensajePasswordComerciante.textContent = TEXTO_AYUDA_PASSWORD;
+                mensajePasswordComerciante.className = 'ayuda';
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
@@ -537,8 +660,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputCorreoCliente.addEventListener('input', verificarCorreoClienteDebounced);
 
+    const inputNombreCliente = document.getElementById('cl-nombreCompleto');
+    const inputPasswordCliente = document.getElementById('cl-password');
+
+    const validarNombreCliente = activarValidacionRequerida(
+        inputNombreCliente,
+        document.getElementById('cl-nombreCompleto-msg'),
+        'El nombre'
+    );
+    const validarPasswordCliente = activarValidacionPassword(
+        inputPasswordCliente,
+        document.getElementById('cl-password-msg')
+    );
+
     document.getElementById('form-cliente').addEventListener('submit', async (evento) => {
         evento.preventDefault();
+
+        const camposValidosCliente = [
+            validarNombreCliente(),
+            validarPasswordCliente()
+        ];
+
+        if (camposValidosCliente.includes(false)) {
+            mostrarMensaje('Revisa los campos marcados en el formulario', 'error');
+            return;
+        }
 
         const datos = new FormData();
         datos.append('nombreCompleto', document.getElementById('cl-nombreCompleto').value);
@@ -570,6 +716,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 evento.target.reset();
                 mensajeIdentificacionCliente.textContent = '';
                 mensajeCorreoCliente.textContent = '';
+                document.getElementById('cl-nombreCompleto-msg').textContent = '';
+                document.getElementById('cl-nombreCompleto-msg').className = 'ayuda';
+                const mensajePasswordCliente = document.getElementById('cl-password-msg');
+                mensajePasswordCliente.textContent = TEXTO_AYUDA_PASSWORD;
+                mensajePasswordCliente.className = 'ayuda';
                 selectCantonCliente.innerHTML = '<option value="">Primero elige provincia</option>';
                 selectCantonCliente.disabled = true;
                 selectDistritoCliente.innerHTML = '<option value="">Primero elige cantón</option>';
@@ -751,17 +902,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         cargarProductosDelLocal(idLocal);
 
-            document.getElementById('e-panel-comerciante-local').classList.toggle('oculto', !esComerciante);
             document.getElementById('e-panel-actividad-local').classList.toggle('oculto', !esComerciante);
             if (esComerciante) {
-                document.getElementById('e-ventas-lista').innerHTML = '<p class="ayuda">Elige una fecha y presiona "Consultar Ventas".</p>';
                 cargarHistorialActividadLocal(idLocal);
             }
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del local', 'error');
         }
     }
-    
 
     async function cargarProductosDelLocal(idLocal) {
         const contenedor = document.getElementById('e-productos-lista');
@@ -1607,6 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+
     function escaparHtml(texto) {
         return String(texto ?? '')
             .replaceAll('&', '&amp;')
@@ -1645,142 +1794,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if ([...select.options].some(o => o.value === valorActual)) {
             select.value = valorActual;
-        }
-    }
-
-        async function cargarDatosCompras() {
-        try {
-            const esCliente = usuarioSesionActual?.tipo === 'Cliente';
-            const locales = await obtenerLocalesActivos();
-
-            const selectCompraCliente = document.getElementById('compra-cliente');
-            const selectHistorialCliente = document.getElementById('compras-historial-cliente');
-            const labelCompraCliente = document.querySelector('label[for="compra-cliente"]');
-            const labelHistorialCliente = document.querySelector('label[for="compras-historial-cliente"]');
-
-            llenarSelect(document.getElementById('compra-local'), locales, 'idLocal', 'nombreLocal');
-
-            if (esCliente) {
-                // Cliente: no debe ver ni elegir a otros clientes, se usa su propia sesión
-                labelCompraCliente?.classList.add('oculto');
-                labelHistorialCliente?.classList.add('oculto');
-
-                selectCompraCliente.innerHTML = `<option value="${usuarioSesionActual.id}">${escaparHtml(usuarioSesionActual.nombre)}</option>`;
-                selectHistorialCliente.innerHTML = `<option value="${usuarioSesionActual.id}">${escaparHtml(usuarioSesionActual.nombre)}</option>`;
-                selectCompraCliente.value = String(usuarioSesionActual.id);
-                selectHistorialCliente.value = String(usuarioSesionActual.id);
-                selectCompraCliente.classList.add('oculto');
-                selectHistorialCliente.classList.add('oculto');
-
-                await cargarHistorialCompras();
-            } else {
-                const clientes = await obtenerClientesActivos();
-                llenarSelect(selectCompraCliente, clientes, 'idCliente', 'nombreCompleto');
-                llenarSelect(selectHistorialCliente, clientes, 'idCliente', 'nombreCompleto');
-            }
-
-            cargarRankingCompras();
-        } catch (e) {
-            mostrarMensaje('No se pudieron cargar los datos de compras', 'error');
-        }
-    }
-    document.getElementById('form-compra').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-
-        const idCliente = document.getElementById('compra-cliente').value;
-        const idLocal = document.getElementById('compra-local').value;
-
-        try {
-            const r = await fetch('api/registrar_compra.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idCliente, idLocal })
-            });
-            const res = await r.json();
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-            if (res.exito) {
-                document.getElementById('compras-historial-cliente').value = idCliente;
-                await cargarHistorialCompras();
-                await cargarRankingCompras();
-            }
-        } catch (e) {
-            mostrarMensaje('Error de conexión al registrar la compra', 'error');
-        }
-    });
-
-    async function cargarHistorialCompras() {
-        const idCliente = document.getElementById('compras-historial-cliente').value;
-        const fecha = document.getElementById('compras-fecha').value;
-        const contenedor = document.getElementById('lista-compras');
-
-        if (!idCliente) {
-            contenedor.innerHTML = '<p class="ayuda">Selecciona un cliente.</p>';
-            return;
-        }
-
-        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
-        try {
-            const parametros = new URLSearchParams({ idCliente });
-            if (fecha) parametros.set('fecha', fecha);
-
-            const r = await fetch(`api/listar_compras_cliente.php?${parametros.toString()}`);
-            const res = await r.json();
-
-            if (!res.exito) {
-                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron consultar las compras')}</p>`;
-                return;
-            }
-
-            if (res.compras.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">No hay compras registradas para esta consulta.</p>';
-                return;
-            }
-
-            contenedor.innerHTML = '';
-            res.compras.forEach(compra => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta';
-                tarjeta.innerHTML = `
-                    <h3>${escaparHtml(compra.nombreLocal)}</h3>
-                    <p><strong>Compra #${compra.idRegistroCompra}</strong></p>
-                    <p>${escaparHtml(formatearFecha(compra.fechaCompra))}</p>
-                `;
-                contenedor.appendChild(tarjeta);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al consultar las compras.</p>';
-        }
-    }
-
-    document.getElementById('btn-buscar-compras').addEventListener('click', cargarHistorialCompras);
-
-    async function cargarRankingCompras() {
-        const contenedor = document.getElementById('ranking-compras');
-        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
-        try {
-            const r = await fetch('api/locales_mas_comprados.php?limite=5');
-            const res = await r.json();
-
-            if (!res.exito || res.locales.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">Todavía no hay compras suficientes para mostrar un ranking.</p>';
-                return;
-            }
-
-            contenedor.innerHTML = '';
-            res.locales.forEach((local, indice) => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta';
-                tarjeta.innerHTML = `
-                    <h3>${indice + 1}. ${escaparHtml(local.nombreLocal)}</h3>
-                    <p>${local.totalCompras} compra${local.totalCompras === 1 ? '' : 's'} registrada${local.totalCompras === 1 ? '' : 's'}</p>
-                `;
-                contenedor.appendChild(tarjeta);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">No se pudo cargar el ranking.</p>';
         }
     }
 
@@ -1863,19 +1876,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta';
                 const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
+
+                const esPropia = usuarioSesionActual
+                    && usuarioSesionActual.tipo === 'Cliente'
+                    && Number(usuarioSesionActual.id) === Number(resenia.idCliente);
+
                 tarjeta.innerHTML = `
                     <h3>${escaparHtml(resenia.nombreCliente)}</h3>
                     <p class="estrellas" aria-label="${resenia.puntuacion} de 5">${estrellas}</p>
                     <p>${escaparHtml(resenia.comentario)}</p>
                     <p class="ayuda">${escaparHtml(formatearFecha(resenia.fechaResenia))}</p>
+                    ${esPropia ? `
                     <div class="acciones-tarjeta">
                         <button type="button" class="boton-pequeno boton-editar btn-editar-resena">Editar</button>
                         <button type="button" class="boton-peligro btn-eliminar-resena">Eliminar</button>
                     </div>
+                    ` : ''}
                 `;
 
-                tarjeta.querySelector('.btn-editar-resena').addEventListener('click', () => editarResenaDesdeLista(resenia));
-                tarjeta.querySelector('.btn-eliminar-resena').addEventListener('click', () => eliminarResenaDesdeLista(resenia.idResenia));
+                if (esPropia) {
+                    tarjeta.querySelector('.btn-editar-resena').addEventListener('click', () => editarResenaDesdeLista(resenia));
+                    tarjeta.querySelector('.btn-eliminar-resena').addEventListener('click', () => eliminarResenaDesdeLista(resenia.idResenia));
+                }
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
@@ -2485,52 +2507,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ============================================================
-    // Comerciante: Ventas del local + Actividad de sesión
-    // (se activan automáticamente desde abrirDetalleLocal, ver paso final)
-    // ============================================================
-    document.getElementById('btn-ver-ventas-local')?.addEventListener('click', async () => {
-        const idLocal = document.getElementById('e-idLocal').value;
-        const fecha = document.getElementById('e-ventas-fecha').value || new Date().toISOString().slice(0, 10);
-        const contenedor = document.getElementById('e-ventas-lista');
-
-        if (!idLocal) {
-            mostrarMensaje('No se encontró el local actual', 'error');
-            return;
-        }
-
-        contenedor.innerHTML = '<p class="ayuda">Cargando ventas...</p>';
-
-        try {
-            const parametros = new URLSearchParams({ idLocal, fecha });
-            const r = await fetch(`api/listar_compras_local.php?${parametros.toString()}`);
-            const res = await r.json();
-
-            if (!res.exito) {
-                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron consultar las ventas')}</p>`;
-                return;
-            }
-
-            if (res.compras.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">No hay ventas registradas para esa fecha.</p>';
-                return;
-            }
-
-            contenedor.innerHTML = '';
-            res.compras.forEach(compra => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta';
-                tarjeta.innerHTML = `
-                    <h3>${escaparHtml(compra.nombreCliente)}</h3>
-                    <p><strong>Venta #${compra.idRegistroCompra}</strong></p>
-                    <p>${escaparHtml(formatearFecha(compra.fechaCompra))}</p>
-                `;
-                contenedor.appendChild(tarjeta);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al consultar las ventas.</p>';
-        }
-    });
 
     async function cargarHistorialActividadLocal(idLocal) {
         const contenedor = document.getElementById('e-actividad-lista');
@@ -2538,7 +2514,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         try {
-            const r = await fetch(`api/listar_historial_actividad_sesion_local.php?idLocal=${idLocal}`);
+            const r = await fetch(`api/listar_sesion_activo_historico.php?idLocal=${idLocal}`);
             const res = await r.json();
 
             if (!res.exito) {

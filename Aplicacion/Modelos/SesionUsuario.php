@@ -1,61 +1,56 @@
 <?php
 
-class HistorialPassword
+class SesionUsuario
 {
     public const TIPO_CLIENTE = 'Cliente';
     public const TIPO_COMERCIANTE = 'Comerciante';
+    public const TIPO_SUPERADMIN = 'SuperAdmin';
+    private const TIPOS_VALIDOS = [self::TIPO_CLIENTE, self::TIPO_COMERCIANTE, self::TIPO_SUPERADMIN];
 
-    private const TIPOS_VALIDOS = [self::TIPO_CLIENTE, self::TIPO_COMERCIANTE];
-
-    private int $idHistorialPassword;
+    private int $idSesion;
     private int $idUsuario;
     private string $tipoUsuario;
-    private ?DateTime $fechaCambio;
-    private bool $exitoso;
+    private ?DateTime $fechaInicio;
+    private ?DateTime $fechaCierre;
     private bool $activo;
 
     public function __construct(
         int $idUsuario,
         string $tipoUsuario,
-        bool $exitoso = true,
         bool $activo = true,
-        int $idHistorialPassword = 0,
-        ?DateTime $fechaCambio = null
+        int $idSesion = 0,
+        ?DateTime $fechaInicio = null,
+        ?DateTime $fechaCierre = null
     ) {
-        $this->idHistorialPassword = $idHistorialPassword;
-        $this->exitoso = $exitoso;
+        $this->idSesion = $idSesion;
         $this->activo = $activo;
-        $this->fechaCambio = $fechaCambio;
+        $this->fechaInicio = $fechaInicio;
+        $this->fechaCierre = $fechaCierre;
 
         $this->setIdUsuario($idUsuario);
         $this->setTipoUsuario($tipoUsuario);
     }
 
-    public function getIdHistorialPassword(): int
+    public function getIdSesion(): int
     {
-        return $this->idHistorialPassword;
+        return $this->idSesion;
     }
-
     public function getIdUsuario(): int
     {
         return $this->idUsuario;
     }
-
     public function getTipoUsuario(): string
     {
         return $this->tipoUsuario;
     }
-
-    public function getFechaCambio(): ?DateTime
+    public function getFechaInicio(): ?DateTime
     {
-        return $this->fechaCambio;
+        return $this->fechaInicio;
     }
-
-    public function isExitoso(): bool
+    public function getFechaCierre(): ?DateTime
     {
-        return $this->exitoso;
+        return $this->fechaCierre;
     }
-
     public function isActivo(): bool
     {
         return $this->activo;
@@ -75,11 +70,6 @@ class HistorialPassword
             throw new InvalidArgumentException("Tipo de usuario inválido: $tipoUsuario");
         }
         $this->tipoUsuario = $tipoUsuario;
-    }
-
-    public function setExitoso(bool $exitoso): void
-    {
-        $this->exitoso = $exitoso;
     }
 
     public function setActivo(bool $activo): void

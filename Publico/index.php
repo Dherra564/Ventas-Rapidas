@@ -27,7 +27,6 @@
         <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente">Locales Cercanos</button>
         <button class="menu-boton" data-vista="vista-comerciantes" data-rol="Admin">Ver Comerciantes</button>
         <button class="menu-boton" data-vista="vista-clientes" data-rol="Admin">Ver Clientes</button>
-        <button class="menu-boton" data-vista="vista-compras" data-rol="Cliente">Compras</button>
         <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
         <button class="menu-boton" data-vista="vista-historiales" data-rol="Admin">Historiales</button>
     </nav>
@@ -35,7 +34,10 @@
 
     <main class="contenedor">
 
-        <div id="mensaje" class="mensaje oculto"></div>
+        <div id="mensaje" class="mensaje oculto" role="alert">
+            <span id="mensaje-texto"></span>
+            <button type="button" id="mensaje-cerrar" class="mensaje-cerrar" aria-label="Cerrar mensaje">&times;</button>
+        </div>
 
         <!-- Vista: Iniciar Sesión / Crear cuenta -->
         <section id="vista-login" class="vista">
@@ -89,9 +91,11 @@
             <form id="form-comerciante" class="formulario" enctype="multipart/form-data">
                 <label for="c-nombre">Nombre completo</label>
                 <input type="text" id="c-nombre" required>
+                <span class="ayuda" id="c-nombre-msg"></span>
 
                 <label for="c-alias">Alias</label>
                 <input type="text" id="c-alias" required>
+                <span class="ayuda" id="c-alias-msg"></span>
 
                 <label for="c-tipoIdentificacion">Tipo de identificación</label>
                 <select id="c-tipoIdentificacion" required>
@@ -110,6 +114,7 @@
 
                 <label for="c-password">Contraseña</label>
                 <input type="password" id="c-password" required>
+                <span class="ayuda" id="c-password-msg">Mínimo 8 caracteres, con al menos una letra mayúscula. Símbolos permitidos: ! @ # $ % ^ &amp; * ( ) _ - + = [ ] { } ; : , . &lt; &gt; ?</span>
 
                 <label for="c-fotoPerfil">Foto de perfil</label>
                 <input type="file" id="c-fotoPerfil" accept="image/png, image/jpeg, image/webp">
@@ -219,6 +224,7 @@
             <form id="form-cliente" class="formulario" enctype="multipart/form-data">
                 <label for="cl-nombreCompleto">Nombre completo</label>
                 <input type="text" id="cl-nombreCompleto" required>
+                <span class="ayuda" id="cl-nombreCompleto-msg"></span>
 
                 <label for="cl-tipoIdentificacion">Tipo de identificación</label>
                 <select id="cl-tipoIdentificacion" required>
@@ -237,6 +243,7 @@
 
                 <label for="cl-password">Contraseña</label>
                 <input type="password" id="cl-password" required>
+                <span class="ayuda" id="cl-password-msg">Mínimo 8 caracteres, con al menos una letra mayúscula. Símbolos permitidos: ! @ # $ % ^ &amp; * ( ) _ - + = [ ] { } ; : , . &lt; &gt; ?</span>
 
                 <label for="cl-fotoPerfil">Foto de perfil</label>
                 <input type="file" id="cl-fotoPerfil" accept="image/png, image/jpeg, image/webp">
@@ -321,14 +328,6 @@
                 <div class="campo-lectura">
                     <strong>Productos de este local</strong>
                     <div id="e-productos-lista" class="tarjetas"></div>
-                </div>
-                                    <div class="campo-lectura oculto" id="e-panel-comerciante-local">
-                    <strong>Ventas registradas en este local</strong>
-                    <div class="filtros-busqueda">
-                        <input type="date" id="e-ventas-fecha">
-                        <button type="button" id="btn-ver-ventas-local" class="boton-secundario">Consultar Ventas</button>
-                    </div>
-                    <div id="e-ventas-lista" class="tarjetas"></div>
                 </div>
 
                 <div class="campo-lectura oculto" id="e-panel-actividad-local">
@@ -522,55 +521,6 @@
                 </div>
             </div>
 
-        </section>
-
-        <!-- Vista: Registro e historial de compras -->
-        <section id="vista-compras" class="vista oculto">
-            <h2>Registro e Historial de Compras</h2>
-
-            <div class="rejilla-dos">
-                <div>
-                    <h3>Registrar compra</h3>
-                    <form id="form-compra" class="formulario">
-                        <label for="compra-cliente">Cliente</label>
-                        <select id="compra-cliente" required>
-                            <option value="">Seleccione...</option>
-                        </select>
-
-                        <label for="compra-local">Local</label>
-                        <select id="compra-local" required>
-                            <option value="">Seleccione...</option>
-                        </select>
-
-                        <button type="submit">Registrar Compra</button>
-                    </form>
-                </div>
-
-                <div>
-                    <h3>Historial por cliente</h3>
-                    <div class="formulario">
-                        <label for="compras-historial-cliente">Cliente</label>
-                        <select id="compras-historial-cliente">
-                            <option value="">Seleccione...</option>
-                        </select>
-
-                        <label for="compras-fecha">Fecha (opcional)</label>
-                        <input type="date" id="compras-fecha">
-
-                        <button type="button" id="btn-buscar-compras">Consultar Compras</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="campo-lectura bloque-separado">
-                <strong>Compras encontradas</strong>
-                <div id="lista-compras" class="tarjetas"></div>
-            </div>
-
-            <div class="campo-lectura bloque-separado">
-                <strong>Locales con más compras</strong>
-                <div id="ranking-compras" class="tarjetas"></div>
-            </div>
         </section>
 
         <!-- Vista: Reseñas -->

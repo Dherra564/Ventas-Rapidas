@@ -2,34 +2,34 @@
 
 require_once __DIR__ . "/../Repositorios/LocalRepository.php";
 require_once __DIR__ . "/../Repositorios/TipoLocalRepository.php";
-require_once __DIR__ . "/../Repositorios/HistorialActividadSesionLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/SesionActicoHistoricoRepository.php";
 require_once __DIR__ . "/../Repositorios/ComercianteLocalRepository.php";
 require_once __DIR__ . "/../Modelos/Local.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Modelos/TipoLocal.php";
-require_once __DIR__ . "/../Modelos/HistorialActividadSesionLocal.php";
+require_once __DIR__ . "/../Modelos/SesionActivaHistorico.php";
+require_once __DIR__ . "/../Comun/Sesion.php";
 
 class LocalController
 {
     private LocalRepository $localRepository;
     private TipoLocalRepository $tipoLocalRepository;
-    private HistorialActividadSesionLocalRepository $historialActividadRepository;
+    private SesionActicoHistoricoRepository $historialActividadRepository;
     private ComercianteLocalRepository $comercianteLocalRepository;
 
     public function __construct()
     {
         $this->localRepository = new LocalRepository();
         $this->tipoLocalRepository = new TipoLocalRepository();
-        $this->historialActividadRepository = new HistorialActividadSesionLocalRepository();
+        $this->historialActividadRepository = new SesionActicoHistoricoRepository();
         $this->comercianteLocalRepository = new ComercianteLocalRepository();
     }
 
-       public function registrar(
+    public function registrar(
         int $idComerciante,
         string $nombreTipoLocal,
         string $nombreLocal,
         string $telefono,
-        string $correo,
         ?string $descripcion,
         ?string $logo,
 
@@ -49,7 +49,6 @@ class LocalController
             $idTipoLocal,
             $nombreLocal,
             $telefono,
-            $correo,
             $descripcion,
             $logo
         );
@@ -71,9 +70,12 @@ class LocalController
         $idLocal = $this->localRepository->insertar($local, $ubicacion, $idComerciante);
 
         if ($idLocal !== false) {
-            try {
-                $this->historialActividadRepository->registrarEntradaPerfil($idComerciante, $idLocal);
-            } catch (Exception $e) {
+            $idSesion = Sesion::idSesionActual();
+            if ($idSesion !== null) {
+                try {
+                    $this->historialActividadRepository->registrarCambioActivo($idSesion, $idLocal, false, true);
+                } catch (Exception $e) {
+                }
             }
         }
 
@@ -108,11 +110,17 @@ class LocalController
             throw new InvalidArgumentException("Este local no pertenece a tu cuenta");
         }
 
+        $local = $this->localRepository->obtenerPorId($idLocal);
+        $estabaActivo = $local !== null && $local->isActivo();
+
         $this->localRepository->reactivar($idLocal);
 
-        try {
-            $this->historialActividadRepository->registrarEntradaPerfil($idComerciante, $idLocal);
-        } catch (Exception $e) {
+        $idSesion = Sesion::idSesionActual();
+        if ($idSesion !== null) {
+            try {
+                $this->historialActividadRepository->registrarCambioActivo($idSesion, $idLocal, $estabaActivo, true);
+            } catch (Exception $e) {
+            }
         }
 
         return true;
@@ -213,11 +221,6 @@ class LocalController
     public function resolverTipoLocal(string $nombreTipoLocal): int
     {
         return $this->resolverOCrearTipoLocal($nombreTipoLocal);
-    }
-
-    public function existeCorreoLocal(string $correo): bool
-    {
-        return $this->localRepository->existeCorreo($correo);
     }
 
     public function buscarSimilares(string $nombre, ?int $idLocalExcluir = null): array

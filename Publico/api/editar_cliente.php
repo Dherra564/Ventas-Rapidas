@@ -2,11 +2,21 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ClienteController.php';
 require_once __DIR__ . '/../../Aplicacion/Modelos/Cliente.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
+
+$usuario = Sesion::requerirSesion(Sesion::TIPO_CLIENTE);
 
 try {
     $controlador = new ClienteController();
 
     $idCliente = (int) ($_POST['idCliente'] ?? 0);
+
+    if ($idCliente !== $usuario['id']) {
+        http_response_code(403);
+        echo json_encode(['exito' => false, 'mensaje' => 'No tienes permiso para editar esa cuenta']);
+        exit;
+    }
+
     $actual = $controlador->buscar($idCliente);
 
     if ($actual === null) {

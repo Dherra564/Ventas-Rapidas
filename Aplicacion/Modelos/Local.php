@@ -10,7 +10,6 @@ class Local
     private string $nombreLocal;
     private ?string $descripcion;
     private string $telefono;
-    private string $correo;
     private ?string $logo;
     private bool $activo;
     private ?DateTime $fechaRegistro;
@@ -19,7 +18,6 @@ class Local
         int $idTipoLocal,
         string $nombreLocal,
         string $telefono,
-        string $correo,
         ?string $descripcion = null,
         ?string $logo = null,
         bool $activo = true,
@@ -33,7 +31,6 @@ class Local
 
         $this->setNombreLocal($nombreLocal);
         $this->setTelefono($telefono);
-        $this->setCorreo($correo);
         $this->setDescripcion($descripcion);
         $this->setLogo($logo);
     }
@@ -57,10 +54,6 @@ class Local
     public function getTelefono(): string
     {
         return $this->telefono;
-    }
-    public function getCorreo(): string
-    {
-        return $this->correo;
     }
     public function getLogo(): ?string
     {
@@ -98,14 +91,6 @@ class Local
         }
         $this->validarTelefono($telefono);
         $this->telefono = $telefono;
-    }
-
-    public function setCorreo(string $correo): void
-    {
-        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException("Correo inválido: $correo");
-        }
-        $this->correo = $correo;
     }
 
     public function setLogo(?string $logo): void

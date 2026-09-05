@@ -52,6 +52,21 @@ class ProductoLocalRepository
         return $exito ? $id : false;
     }
 
+    public function obtenerPorId(int $idProductoLocal): ?array
+    {
+        $sql = "SELECT tbproductolocalid, tbproductoid, tblocalid
+                FROM tbproductolocal
+                WHERE tbproductolocalid = :id
+                AND tbproductolocalactivo = 1";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":id" => $idProductoLocal]);
+
+        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        return $fila ?: null;
+    }
+
     public function obtenerLocalesPorProducto(int $idProducto): array
     {
         $sql = "SELECT tblocalid

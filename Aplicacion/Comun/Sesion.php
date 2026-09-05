@@ -1,10 +1,12 @@
 <?php
 
+require_once __DIR__ . "/../Repositorios/SesionUsuarioRepository.php";
+
 class Sesion
 {
     public const TIPO_CLIENTE = "Cliente";
     public const TIPO_COMERCIANTE = "Comerciante";
-
+    public const TIPO_SUPERADMIN = "SuperAdmin";
     public static function iniciar(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -17,9 +19,19 @@ class Sesion
         self::iniciar();
         session_regenerate_id(true);
 
+        $sesionRepository = new SesionUsuarioRepository();
+        $idSesionDB = $sesionRepository->registrarLogin($id, $tipo);
+
         $_SESSION["usuarioId"] = $id;
         $_SESSION["usuarioTipo"] = $tipo;
         $_SESSION["usuarioNombre"] = $nombre;
+        $_SESSION["idSesionDB"] = $idSesionDB !== false ? $idSesionDB : null;
+    }
+
+    public static function idSesionActual(): ?int
+    {
+        self::iniciar();
+        return $_SESSION["idSesionDB"] ?? null;
     }
 
     public static function usuarioActual(): ?array
@@ -40,14 +52,17 @@ class Sesion
     public static function cerrar(): void
     {
         self::iniciar();
+
+        $idSesionDB = $_SESSION["idSesionDB"] ?? null;
+        if ($idSesionDB !== null) {
+            $sesionRepository = new SesionUsuarioRepository();
+            $sesionRepository->cerrarSesion($idSesionDB);
+        }
+
         $_SESSION = [];
         session_destroy();
     }
 
-    /**
-     * Corta la ejecución con 401/403 si no hay sesión válida.
-     * Úsalo al inicio de cualquier endpoint que requiera estar logueado.
-     */
     public static function requerirSesion(?string $tipoRequerido = null): array
     {
         $usuario = self::usuarioActual();

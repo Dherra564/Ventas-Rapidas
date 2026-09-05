@@ -34,4 +34,14 @@ trait ValidadorPassword
             );
         }
     }
+    protected function validarPasswordNoReciente(string $passwordNueva, array $hashesRecientes): void
+{
+    foreach ($hashesRecientes as $hash) {
+        if (password_verify($passwordNueva, $hash)) {
+            throw new InvalidArgumentException(
+                "La nueva contraseña no puede ser igual a ninguna de las últimas " . count($hashesRecientes) . " usadas"
+            );
+        }
+    }
+}
 }

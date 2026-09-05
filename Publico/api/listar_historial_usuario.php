@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/HistorialController.php';
-require_once __DIR__ . '/../../Aplicacion/Modelos/HistorialPassword.php';
+require_once __DIR__ . '/../../Aplicacion/Modelos/PasswordHistorial.php';
 
 try {
     $idUsuario = (int) ($_GET['idUsuario'] ?? 0);

@@ -5,6 +5,7 @@ require_once __DIR__ . "/../Modelos/Cliente.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 require_once __DIR__ . "/UbicacionRepository.php";
+require_once __DIR__ . "/HistorialCampoRepository.php";
 
 class ClienteRepository
 {
@@ -12,11 +13,19 @@ class ClienteRepository
 
     private PDO $conexion;
     private UbicacionRepository $ubicacionRepository;
+    private HistorialCampoRepository $historialNombre;
+    private HistorialCampoRepository $historialCorreo;
+    private HistorialCampoRepository $historialPerfilImagen;
+    private HistorialCampoRepository $historialPassword;
 
     public function __construct(?PDO $conexion = null)
     {
         $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
         $this->ubicacionRepository = new UbicacionRepository($this->conexion);
+        $this->historialNombre = new HistorialCampoRepository("tbclientenombrecompletohistorico", "tbclientenombrecompletohistoricoid", "tbclienteid", $this->conexion);
+        $this->historialCorreo = new HistorialCampoRepository("tbclientecorreohistorico", "tbclientecorreohistoricoid", "tbclienteid", $this->conexion);
+        $this->historialPerfilImagen = new HistorialCampoRepository("tbclienteperfilimagenhistorico", "tbclienteperfilimagenhistoricoid", "tbclienteid", $this->conexion);
+        $this->historialPassword = new HistorialCampoRepository("tbclientepasswordhistorico", "tbclientepasswordhistoricoid", "tbclienteid", $this->conexion);
     }
 
     public function insertarConUbicacion(Cliente $cliente, Ubicacion $ubicacion): int|false
@@ -139,6 +148,8 @@ class ClienteRepository
 
     public function actualizar(Cliente $cliente): bool
     {
+        $anterior = $this->obtenerPorId($cliente->getIdCliente());
+
         $sql = "UPDATE tbcliente
                 SET
                     tbclientenombrecompleto = :nombre,
@@ -150,7 +161,7 @@ class ClienteRepository
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([
+        $exito = $consulta->execute([
             ":nombre" => $cliente->getNombreCompleto(),
             ":perfilImagen" => $cliente->getPerfilImagen(),
             ":correo" => $cliente->getCorreo(),
@@ -158,20 +169,50 @@ class ClienteRepository
             ":activo" => $cliente->isActivo(),
             ":id" => $cliente->getIdCliente()
         ]);
+
+        if ($exito && $anterior !== null) {
+            $id = $cliente->getIdCliente();
+            $this->historialNombre->registrarSiCambio($id, $anterior->getNombreCompleto(), $cliente->getNombreCompleto());
+            $this->historialCorreo->registrarSiCambio($id, $anterior->getCorreo(), $cliente->getCorreo());
+            $this->historialPerfilImagen->registrarSiCambio($id, $anterior->getPerfilImagen(), $cliente->getPerfilImagen());
+        }
+
+        return $exito;
     }
 
     public function actualizarPasswordHash(int $idCliente, string $passwordHash): bool
     {
+        $anterior = $this->obtenerPorId($idCliente);
+
         $sql = "UPDATE tbcliente SET tbclientepassword = :password WHERE tbclienteid = :id";
         $consulta = $this->conexion->prepare($sql);
-        return $consulta->execute([":password" => $passwordHash, ":id" => $idCliente]);
+        $exito = $consulta->execute([":password" => $passwordHash, ":id" => $idCliente]);
+
+        if ($exito && $anterior !== null) {
+            $this->historialPassword->registrar($idCliente, $anterior->getPasswordHash(), $passwordHash);
+        }
+
+        return $exito;
     }
 
     public function actualizarPerfilImagen(int $idCliente, ?string $perfilImagen): bool
     {
+        $anterior = $this->obtenerPorId($idCliente);
+
         $sql = "UPDATE tbcliente SET tbclienteperfilimagen = :perfilImagen WHERE tbclienteid = :id";
         $consulta = $this->conexion->prepare($sql);
-        return $consulta->execute([":perfilImagen" => $perfilImagen, ":id" => $idCliente]);
+        $exito = $consulta->execute([":perfilImagen" => $perfilImagen, ":id" => $idCliente]);
+
+        if ($exito && $anterior !== null) {
+            $this->historialPerfilImagen->registrarSiCambio($idCliente, $anterior->getPerfilImagen(), $perfilImagen);
+        }
+
+        return $exito;
+    }
+
+    public function obtenerUltimosHashesPassword(int $idCliente, int $cantidad = 2): array
+    {
+        return $this->historialPassword->obtenerUltimosValores($idCliente, $cantidad);
     }
 
     public function activar(int $idCliente): bool
@@ -256,6 +297,15 @@ class ClienteRepository
         return ["cliente" => $cliente, "ubicacion" => $ubicacion];
     }
 
+    public function obtenerPorCorreo(string $correo): ?Cliente
+    {
+        $sql = "SELECT * FROM tbcliente WHERE tbclientecorreo = :correo";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":correo" => $correo]);
+        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+        return $fila ? $this->mapearFila($fila) : null;
+    }
+
     private function mapearFilas(PDOStatement $consulta): array
     {
         $clientes = [];
@@ -276,14 +326,5 @@ class ClienteRepository
             (bool) $fila["tbclienteactivo"],
             (int) $fila["tbclienteid"]
         );
-    }
-
-    public function obtenerPorCorreo(string $correo): ?Cliente
-    {
-    $sql = "SELECT * FROM tbcliente WHERE tbclientecorreo = :correo";
-    $consulta = $this->conexion->prepare($sql);
-    $consulta->execute([":correo" => $correo]);
-    $fila = $consulta->fetch(PDO::FETCH_ASSOC);
-    return $fila ? $this->mapearFila($fila) : null;
     }
 }
