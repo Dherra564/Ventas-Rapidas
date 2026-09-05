@@ -16,7 +16,6 @@ class UbicacionHistorial
     private float $latitudNueva;
     private float $longitudNueva;
     private ?DateTime $fecha;
-    private bool $activo;
 
     public function __construct(
         ?int $idUbicacion,
@@ -26,13 +25,11 @@ class UbicacionHistorial
         ?float $longitudAnterior,
         float $latitudNueva,
         float $longitudNueva,
-        bool $activo = true,
         int $idHistorialUbicacion = 0,
         ?DateTime $fecha = null
     ) {
         $this->idHistorialUbicacion = $idHistorialUbicacion;
         $this->idUbicacion = $idUbicacion;
-        $this->activo = $activo;
         $this->fecha = $fecha;
 
         $this->setIdUsuario($idUsuario);
@@ -88,11 +85,6 @@ class UbicacionHistorial
         return $this->fecha;
     }
 
-    public function isActivo(): bool
-    {
-        return $this->activo;
-    }
-
     public function setIdUsuario(int $idUsuario): void
     {
         if ($idUsuario <= 0) {
@@ -139,10 +131,5 @@ class UbicacionHistorial
             throw new InvalidArgumentException("La longitud debe estar entre -180 y 180");
         }
         $this->longitudNueva = $longitudNueva;
-    }
-
-    public function setActivo(bool $activo): void
-    {
-        $this->activo = $activo;
     }
 }

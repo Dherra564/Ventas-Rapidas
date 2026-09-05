@@ -4,16 +4,26 @@ require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
+require_once __DIR__ . "/../Repositorios/HistorialCampoRepository.php";
 
 class UbicacionRepository
 {
     use GeneradorId, ValidadorReferencia;
 
     private PDO $conexion;
+    private HistorialCampoRepository $historialProvincia;
+    private HistorialCampoRepository $historialCanton;
+    private HistorialCampoRepository $historialDistrito;
+    private HistorialCampoRepository $historialDireccion;
+
 
     public function __construct(?PDO $conexion = null)
     {
         $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
+        $this->historialProvincia = new HistorialCampoRepository("tbubicacionprovinciahistorico", "tbubicacionprovinciahistoricoid", "tbubicacionid", $this->conexion);
+        $this->historialCanton = new HistorialCampoRepository("tbubicacioncantonhistorico", "tbubicacioncantonhistoricoid", "tbubicacionid", $this->conexion);
+        $this->historialDistrito = new HistorialCampoRepository("tbubicaciondistritohistorico", "tbubicaciondistritohistoricoid", "tbubicacionid", $this->conexion);
+        $this->historialDireccion = new HistorialCampoRepository("tbubicaciondireccionexactahistorico", "tbubicaciondireccionexactahistoricoid", "tbubicacionid", $this->conexion);
     }
 
     public function insertar(Ubicacion $ubicacion): int|false
@@ -60,7 +70,6 @@ class UbicacionRepository
                     tbdistritoid,
                     tbubicaciondireccionexacta,
                     tbubicaciondereferencia,
-                    tbubicacionactivo,
                     tbubicacionlatitud,
                     tbubicacionlongitud
                 )
@@ -74,7 +83,6 @@ class UbicacionRepository
                     :idDistrito,
                     :direccionExacta,
                     :referencia,
-                    :activo,
                     :latitud,
                     :longitud
                 )";
@@ -89,7 +97,6 @@ class UbicacionRepository
             ":idDistrito" => $ubicacion->getIdDistrito(),
             ":direccionExacta" => $ubicacion->getDireccionExacta(),
             ":referencia" => $ubicacion->getReferencia(),
-            ":activo" => $ubicacion->isActivo(),
             ":latitud" => $ubicacion->getLatitud(),
             ":longitud" => $ubicacion->getLongitud()
         ]);
@@ -102,6 +109,15 @@ class UbicacionRepository
         $sql = "SELECT * FROM tbubicacion WHERE tblocalid = :idLocal ORDER BY tbubicacionid DESC LIMIT 1";
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":idLocal" => $idLocal]);
+        $fila = $consulta->fetch(PDO::FETCH_ASSOC);
+        return $fila ? $this->mapearFila($fila) : null;
+    }
+
+    public function obtenerPorId(int $idUbicacion): ?Ubicacion
+    {
+        $sql = "SELECT * FROM tbubicacion WHERE tbubicacionid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":id" => $idUbicacion]);
         $fila = $consulta->fetch(PDO::FETCH_ASSOC);
         return $fila ? $this->mapearFila($fila) : null;
     }
@@ -125,6 +141,8 @@ class UbicacionRepository
         $this->validarReferencia($this->conexion, "tbcanton", "tbcantonid", $ubicacion->getIdCanton(), "El cantón con ID {$ubicacion->getIdCanton()} no existe");
         $this->validarReferencia($this->conexion, "tbdistrito", "tbdistritoid", $ubicacion->getIdDistrito(), "El distrito con ID {$ubicacion->getIdDistrito()} no existe");
 
+        $anterior = $ubicacion->getIdUbicacion() > 0 ? $this->obtenerPorId($ubicacion->getIdUbicacion()) : null;
+
         if ($ubicacion->getIdUbicacion() > 0) {
             $where = "tbubicacionid = :idUbicacion";
             $idParams = [":idUbicacion" => $ubicacion->getIdUbicacion()];
@@ -137,20 +155,20 @@ class UbicacionRepository
         }
 
         $sql = "UPDATE tbubicacion
-                SET tblocalid = :idLocal,
-                    tbclienteid = :idCliente,
-                    tbprovinciaid = :idProvincia,
-                    tbcantonid = :idCanton,
-                    tbdistritoid = :idDistrito,
-                    tbubicaciondireccionexacta = :direccionExacta,
-                    tbubicaciondereferencia = :referencia,
-                    tbubicacionactivo = :activo,
-                    tbubicacionlatitud = :latitud,
-                    tbubicacionlongitud = :longitud
-                WHERE {$where}";
+            SET tblocalid = :idLocal,
+                tbclienteid = :idCliente,
+                tbprovinciaid = :idProvincia,
+                tbcantonid = :idCanton,
+                tbdistritoid = :idDistrito,
+                tbubicaciondireccionexacta = :direccionExacta,
+                tbubicaciondereferencia = :referencia,
+                tbubicacionactivo = :activo,
+                tbubicacionlatitud = :latitud,
+                tbubicacionlongitud = :longitud
+            WHERE {$where}";
 
         $consulta = $this->conexion->prepare($sql);
-        return $consulta->execute(array_merge([
+        $exito = $consulta->execute(array_merge([
             ":idLocal" => $ubicacion->getIdLocal(),
             ":idCliente" => $ubicacion->getIdCliente(),
             ":idProvincia" => $ubicacion->getIdProvincia(),
@@ -162,6 +180,16 @@ class UbicacionRepository
             ":latitud" => $ubicacion->getLatitud(),
             ":longitud" => $ubicacion->getLongitud()
         ], $idParams));
+
+        if ($exito && $anterior !== null) {
+            $idUbicacion = $anterior->getIdUbicacion();
+            $this->historialProvincia->registrarSiCambio($idUbicacion, $anterior->getIdProvincia(), $ubicacion->getIdProvincia());
+            $this->historialCanton->registrarSiCambio($idUbicacion, $anterior->getIdCanton(), $ubicacion->getIdCanton());
+            $this->historialDistrito->registrarSiCambio($idUbicacion, $anterior->getIdDistrito(), $ubicacion->getIdDistrito());
+            $this->historialDireccion->registrarSiCambio($idUbicacion, $anterior->getDireccionExacta(), $ubicacion->getDireccionExacta());
+        }
+
+        return $exito;
     }
 
     public function actualizarCoordenadasCliente(int $idCliente, float $latitud, float $longitud): bool

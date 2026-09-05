@@ -9,6 +9,7 @@ require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
 require_once __DIR__ . "/../Comun/ComparadorTexto.php";
 require_once __DIR__ . "/UbicacionRepository.php";
 require_once __DIR__ . "/ComercianteLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/HistorialCampoRepository.php";
 
 class LocalRepository
 {
@@ -17,14 +18,19 @@ class LocalRepository
     private PDO $conexion;
     private UbicacionRepository $ubicacionRepository;
     private ComercianteLocalRepository $comercianteLocalRepository;
+    private HistorialCampoRepository $historialNombre;
+    private HistorialCampoRepository $historialTelefono;
+    private HistorialCampoRepository $historialLogo;
 
     public function __construct()
     {
         $this->conexion = BaseDatos::obtenerConexion();
         $this->ubicacionRepository = new UbicacionRepository($this->conexion);
         $this->comercianteLocalRepository = new ComercianteLocalRepository($this->conexion);
+        $this->historialNombre = new HistorialCampoRepository("tblocalnombrehistorico", "tblocalnombrehistoricoid", "tblocalid", $this->conexion);
+        $this->historialTelefono = new HistorialCampoRepository("tblocaltelefonohistorico", "tblocaltelefonohistoricoid", "tblocalid", $this->conexion);
+        $this->historialLogo = new HistorialCampoRepository("tblocallogohistorico", "tblocallogohistoricoid", "tblocalid", $this->conexion);
     }
-
     public function insertar(Local $local, Ubicacion $ubicacion, int $idComerciante): int|false
     {
         try {
@@ -47,7 +53,6 @@ class LocalRepository
                         tblocalnombre,
                         tblocaldescripcion,
                         tblocaltelefono,
-                        tblocalcorreo,
                         tblocallogo,
                         tblocalactivo
                     )
@@ -58,7 +63,6 @@ class LocalRepository
                         :nombre,
                         :descripcion,
                         :telefono,
-                        :correo,
                         :logo,
                         :activo
                     )";
@@ -71,7 +75,6 @@ class LocalRepository
                 ":nombre" => $local->getNombreLocal(),
                 ":descripcion" => $local->getDescripcion(),
                 ":telefono" => $local->getTelefono(),
-                ":correo" => $local->getCorreo(),
                 ":logo" => $local->getLogo(),
                 ":activo" => $local->isActivo()
             ]);
@@ -247,29 +250,37 @@ class LocalRepository
             "El tipo de local con ID {$local->getIdTipoLocal()} no existe"
         );
 
+        $anterior = $this->obtenerPorId($local->getIdLocal());
+
         $sql = "UPDATE tblocal
-                SET
-                    tblocaltipoid = :idTipoLocal,
-                    tblocalnombre = :nombre,
-                    tblocaldescripcion = :descripcion,
-                    tblocaltelefono = :telefono,
-                    tblocalcorreo = :correo,
-                    tblocallogo = :logo,
-                    tblocalactivo = :activo
-                WHERE tblocalid = :id";
+            SET
+                tblocaltipoid = :idTipoLocal,
+                tblocalnombre = :nombre,
+                tblocaldescripcion = :descripcion,
+                tblocaltelefono = :telefono,
+                tblocallogo = :logo,
+                tblocalactivo = :activo
+            WHERE tblocalid = :id";
 
         $consulta = $this->conexion->prepare($sql);
 
-        return $consulta->execute([
+        $exito = $consulta->execute([
             ":idTipoLocal" => $local->getIdTipoLocal(),
             ":nombre" => $local->getNombreLocal(),
             ":descripcion" => $local->getDescripcion(),
             ":telefono" => $local->getTelefono(),
-            ":correo" => $local->getCorreo(),
             ":logo" => $local->getLogo(),
             ":activo" => $local->isActivo(),
             ":id" => $local->getIdLocal()
         ]);
+
+        if ($exito && $anterior !== null) {
+            $this->historialNombre->registrarSiCambio($local->getIdLocal(), $anterior->getNombreLocal(), $local->getNombreLocal());
+            $this->historialTelefono->registrarSiCambio($local->getIdLocal(), $anterior->getTelefono(), $local->getTelefono());
+            $this->historialLogo->registrarSiCambio($local->getIdLocal(), $anterior->getLogo(), $local->getLogo());
+        }
+
+        return $exito;
     }
 
     public function eliminar(int $idLocal): bool
@@ -377,7 +388,6 @@ class LocalRepository
             (int) $fila["tblocaltipoid"],
             $fila["tblocalnombre"],
             $fila["tblocaltelefono"],
-            $fila["tblocalcorreo"],
             $fila["tblocaldescripcion"],
             $fila["tblocallogo"],
             (bool) $fila["tblocalactivo"],
@@ -393,14 +403,6 @@ class LocalRepository
         $sql = "SELECT COUNT(*) FROM tblocal WHERE tblocalnombre = :nombre";
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute([":nombre" => $nombreLocal]);
-        return (int) $consulta->fetchColumn() > 0;
-    }
-
-    public function existeCorreo(string $correo): bool
-    {
-        $sql = "SELECT COUNT(*) FROM tblocal WHERE tblocalcorreo = :correo";
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->execute([":correo" => $correo]);
         return (int) $consulta->fetchColumn() > 0;
     }
 }

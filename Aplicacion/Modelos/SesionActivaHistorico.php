@@ -1,88 +1,59 @@
 <?php
 
-class HistorialActividadSesionLocal
+class SesionActivaHistorico
 {
-    public const TIPO_LOGIN = 'Login';
-    public const TIPO_ENTRADA_PERFIL = 'EntradaPerfil';
-
-    private const TIPOS_VALIDOS = [self::TIPO_LOGIN, self::TIPO_ENTRADA_PERFIL];
-    private const TIPOS_USUARIO_VALIDOS = ['Comerciante', 'Cliente'];
-
-    private int $idHistorialActividadSesionLocal;
-    private int $idUsuario;
-    private string $tipoUsuario;
-    private ?int $idLocal;
-    private string $tipo;
+    private int $idSesionActivoHistorico;
+    private int $idSesion;
+    private int $idLocal;
+    private bool $valorAnterior;
+    private bool $valorNuevo;
     private ?DateTime $fecha;
+    private bool $activo;
 
     public function __construct(
-        int $idUsuario,
-        string $tipoUsuario,
-        string $tipo,
-        ?int $idLocal = null,
-        int $idHistorialActividadSesionLocal = 0,
+        int $idSesion,
+        int $idLocal,
+        bool $valorAnterior,
+        bool $valorNuevo,
+        bool $activo = true,
+        int $idSesionActivoHistorico = 0,
         ?DateTime $fecha = null
     ) {
-        $this->idHistorialActividadSesionLocal = $idHistorialActividadSesionLocal;
+        $this->idSesionActivoHistorico = $idSesionActivoHistorico;
+        $this->idSesion = $idSesion;
         $this->idLocal = $idLocal;
+        $this->valorAnterior = $valorAnterior;
+        $this->valorNuevo = $valorNuevo;
+        $this->activo = $activo;
         $this->fecha = $fecha;
-
-        $this->setIdUsuario($idUsuario);
-        $this->setTipoUsuario($tipoUsuario);
-        $this->setTipo($tipo);
     }
 
-    public function getIdHistorialActividadSesionLocal(): int
+    public function getIdSesionActivoHistorico(): int
     {
-        return $this->idHistorialActividadSesionLocal;
+        return $this->idSesionActivoHistorico;
     }
-
-    public function getIdUsuario(): int
+    public function getIdSesion(): int
     {
-        return $this->idUsuario;
+        return $this->idSesion;
     }
-
-    public function getTipoUsuario(): string
-    {
-        return $this->tipoUsuario;
-    }
-
-    public function getIdLocal(): ?int
+    public function getIdLocal(): int
     {
         return $this->idLocal;
     }
-
-    public function getTipo(): string
+    public function isValorAnterior(): bool
     {
-        return $this->tipo;
+        return $this->valorAnterior;
     }
-
+    public function isValorNuevo(): bool
+    {
+        return $this->valorNuevo;
+    }
     public function getFecha(): ?DateTime
     {
         return $this->fecha;
     }
-
-    public function setIdUsuario(int $idUsuario): void
+    public function isActivo(): bool
     {
-        if ($idUsuario <= 0) {
-            throw new InvalidArgumentException("El ID de usuario debe ser mayor a cero");
-        }
-        $this->idUsuario = $idUsuario;
-    }
-
-    public function setTipoUsuario(string $tipoUsuario): void
-    {
-        if (!in_array($tipoUsuario, self::TIPOS_USUARIO_VALIDOS, true)) {
-            throw new InvalidArgumentException("Tipo de usuario inválido: $tipoUsuario");
-        }
-        $this->tipoUsuario = $tipoUsuario;
-    }
-
-    public function setTipo(string $tipo): void
-    {
-        if (!in_array($tipo, self::TIPOS_VALIDOS, true)) {
-            throw new InvalidArgumentException("Tipo de actividad inválido: $tipo");
-        }
-        $this->tipo = $tipo;
+        return $this->activo;
     }
 }

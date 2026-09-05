@@ -19,7 +19,7 @@ class RegistrarLocalHandler
         if ($controlador->existeNombreLocal($nombreLocal)) {
             return ['exito' => false, 'mensaje' => 'Ya existe un local con ese nombre'];
         }
-
+//BORRAR CORREO
         if ($controlador->existeCorreoLocal($_POST['correo'] ?? '')) {
             return ['exito' => false, 'mensaje' => 'Ya existe un local registrado con ese correo'];
         }

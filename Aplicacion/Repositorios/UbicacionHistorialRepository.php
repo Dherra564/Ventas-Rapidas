@@ -20,31 +20,29 @@ class UbicacionHistorialRepository
         $id = $this->generarSiguienteId($this->conexion, "tbubicacioncoordenadashistorico", "tbubicacioncoordenadashistoricoid");
 
         $sql = "INSERT INTO tbubicacioncoordenadashistorico
-                (
-                    tbubicacioncoordenadashistoricoid,
-                    tbubicacionid,
-                    idusuario,
-                    tipousuario,
-                    latitudanterior,
-                    longitudanterior,
-                    latitudnueva,
-                    longitudnueva,
-                    fecha,
-                    activo
-                )
-                VALUES
-                (
-                    :id,
-                    :idUbicacion,
-                    :idUsuario,
-                    :tipoUsuario,
-                    :latitudAnterior,
-                    :longitudAnterior,
-                    :latitudNueva,
-                    :longitudNueva,
-                    NOW(),
-                    :activo
-                )";
+            (
+                tbubicacioncoordenadashistoricoid,
+                tbubicacionid,
+                idusuario,
+                tipousuario,
+                latitudanterior,
+                longitudanterior,
+                latitudnueva,
+                longitudnueva,
+                fecha
+            )
+            VALUES
+            (
+                :id,
+                :idUbicacion,
+                :idUsuario,
+                :tipoUsuario,
+                :latitudAnterior,
+                :longitudAnterior,
+                :latitudNueva,
+                :longitudNueva,
+                NOW()
+            )";
 
         $consulta = $this->conexion->prepare($sql);
 
@@ -56,8 +54,7 @@ class UbicacionHistorialRepository
             ":latitudAnterior" => $historial->getLatitudAnterior(),
             ":longitudAnterior" => $historial->getLongitudAnterior(),
             ":latitudNueva" => $historial->getLatitudNueva(),
-            ":longitudNueva" => $historial->getLongitudNueva(),
-            ":activo" => (int) $historial->isActivo()
+            ":longitudNueva" => $historial->getLongitudNueva()
         ]);
 
         return $exito ? $id : false;
@@ -113,7 +110,6 @@ class UbicacionHistorialRepository
             $fila["longitudanterior"] !== null ? (float) $fila["longitudanterior"] : null,
             (float) $fila["latitudnueva"],
             (float) $fila["longitudnueva"],
-            (bool) $fila["activo"],
             (int) $fila["tbubicacioncoordenadashistoricoid"],
             new DateTime($fila["fecha"])
         );

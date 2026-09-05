@@ -1,10 +1,10 @@
 <?php
 
 require_once __DIR__ . "/../../Configuracion/BaseDatos.php";
-require_once __DIR__ . "/../Modelos/HistorialActividadSesionLocal.php";
+require_once __DIR__ . "/../Modelos/SesionActivaHistorico.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 
-class HistorialActividadSesionLocalRepository
+class SesionActicoHistoricoRepository
 {
     use GeneradorId;
 
@@ -15,69 +15,44 @@ class HistorialActividadSesionLocalRepository
         $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
     }
 
-    public function registrar(HistorialActividadSesionLocal $historial): int|false
+    public function registrar(SesionActivaHistorico $historial): int|false
     {
-        $id = $this->generarSiguienteId($this->conexion, "tbhistorialactividadsesionlocal", "tbhistorialactividadsesionlocalid");
+        $id = $this->generarSiguienteId($this->conexion, "tbsesionactivohistorico", "tbsesionactivohistoricoid");
 
-        $sql = "INSERT INTO tbhistorialactividadsesionlocal
-                (tbhistorialactividadsesionlocalid, tbhistorialactividadsesionlocalusuarioid, tbhistorialactividadsesionlocalusuariotipo, tblocalid, tbhistorialactividadsesionlocaltipo)
-                VALUES (:id, :idUsuario, :tipoUsuario, :idLocal, :tipo)";
+        $sql = "INSERT INTO tbsesionactivohistorico
+                (tbsesionactivohistoricoid, tbsesionid, tblocalid, valoranterior, valornuevo, fecha, activo)
+                VALUES (:id, :idSesion, :idLocal, :valorAnterior, :valorNuevo, NOW(), :activo)";
 
         $consulta = $this->conexion->prepare($sql);
 
         $exito = $consulta->execute([
             ":id" => $id,
-            ":idUsuario" => $historial->getIdUsuario(),
-            ":tipoUsuario" => $historial->getTipoUsuario(),
+            ":idSesion" => $historial->getIdSesion(),
             ":idLocal" => $historial->getIdLocal(),
-            ":tipo" => $historial->getTipo()
+            ":valorAnterior" => (int) $historial->isValorAnterior(),
+            ":valorNuevo" => (int) $historial->isValorNuevo(),
+            ":activo" => (int) $historial->isActivo()
         ]);
 
         return $exito ? $id : false;
     }
 
-    public function registrarLogin(int $idUsuario, string $tipoUsuario): int|false
-    {
-        $historial = new HistorialActividadSesionLocal($idUsuario, $tipoUsuario, HistorialActividadSesionLocal::TIPO_LOGIN);
-        return $this->registrar($historial);
-    }
 
-    public function registrarEntradaPerfil(int $idComerciante, int $idLocal): int|false
+    public function registrarCambioActivo(int $idSesion, int $idLocal, bool $valorAnterior, bool $valorNuevo): int|false
     {
-        $historial = new HistorialActividadSesionLocal($idComerciante, 'Comerciante', HistorialActividadSesionLocal::TIPO_ENTRADA_PERFIL, $idLocal);
+        $historial = new SesionActivaHistorico($idSesion, $idLocal, $valorAnterior, $valorNuevo);
         return $this->registrar($historial);
     }
 
     public function obtenerPorLocal(int $idLocal, int $limite = 50): array
     {
-        $sql = "SELECT * FROM tbhistorialactividadsesionlocal
+        $sql = "SELECT * FROM tbsesionactivohistorico
                 WHERE tblocalid = :idLocal
-                  AND tbhistorialactividadsesionlocaltipo = :tipo
-                ORDER BY tbhistorialactividadsesionlocalfecha DESC
+                ORDER BY fecha DESC
                 LIMIT :limite";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->bindValue(":idLocal", $idLocal, PDO::PARAM_INT);
-        $consulta->bindValue(":tipo", HistorialActividadSesionLocal::TIPO_ENTRADA_PERFIL);
-        $consulta->bindValue(":limite", $limite, PDO::PARAM_INT);
-        $consulta->execute();
-
-        return $this->mapearFilas($consulta);
-    }
-
-    public function obtenerSesionesPorUsuario(int $idUsuario, string $tipoUsuario, int $limite = 50): array
-    {
-        $sql = "SELECT * FROM tbhistorialactividadsesionlocal
-                WHERE tbhistorialactividadsesionlocalusuarioid = :idUsuario
-                  AND tbhistorialactividadsesionlocalusuariotipo = :tipoUsuario
-                  AND tbhistorialactividadsesionlocaltipo = :tipo
-                ORDER BY tbhistorialactividadsesionlocalfecha DESC
-                LIMIT :limite";
-
-        $consulta = $this->conexion->prepare($sql);
-        $consulta->bindValue(":idUsuario", $idUsuario, PDO::PARAM_INT);
-        $consulta->bindValue(":tipoUsuario", $tipoUsuario);
-        $consulta->bindValue(":tipo", HistorialActividadSesionLocal::TIPO_LOGIN);
         $consulta->bindValue(":limite", $limite, PDO::PARAM_INT);
         $consulta->execute();
 
@@ -86,14 +61,13 @@ class HistorialActividadSesionLocalRepository
 
     public function tieneActividadReciente(int $idLocal, int $dias = 7): bool
     {
-        $sql = "SELECT COUNT(*) FROM tbhistorialactividadsesionlocal
+        $sql = "SELECT COUNT(*) FROM tbsesionactivohistorico
                 WHERE tblocalid = :idLocal
-                  AND tbhistorialactividadsesionlocaltipo = :tipo
-                  AND tbhistorialactividadsesionlocalfecha >= (NOW() - INTERVAL :dias DAY)";
+                  AND valornuevo = 1
+                  AND fecha >= (NOW() - INTERVAL :dias DAY)";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->bindValue(":idLocal", $idLocal, PDO::PARAM_INT);
-        $consulta->bindValue(":tipo", HistorialActividadSesionLocal::TIPO_ENTRADA_PERFIL);
         $consulta->bindValue(":dias", $dias, PDO::PARAM_INT);
         $consulta->execute();
 
@@ -107,10 +81,10 @@ class HistorialActividadSesionLocalRepository
         }
 
         $placeholders = implode(",", array_fill(0, count($idsLocales), "?"));
-        $sql = "SELECT DISTINCT tblocalid FROM tbhistorialactividadsesionlocal
+        $sql = "SELECT DISTINCT tblocalid FROM tbsesionactivohistorico
                 WHERE tblocalid IN ($placeholders)
-                  AND tbhistorialactividadsesionlocaltipo = '" . HistorialActividadSesionLocal::TIPO_ENTRADA_PERFIL . "'
-                  AND tbhistorialactividadsesionlocalfecha >= (NOW() - INTERVAL $dias DAY)";
+                  AND valornuevo = 1
+                  AND fecha >= (NOW() - INTERVAL $dias DAY)";
 
         $consulta = $this->conexion->prepare($sql);
         $consulta->execute($idsLocales);
@@ -127,23 +101,22 @@ class HistorialActividadSesionLocalRepository
     private function mapearFilas(PDOStatement $consulta): array
     {
         $registros = [];
-
         while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
             $registros[] = $this->mapearFila($fila);
         }
-
         return $registros;
     }
 
-    private function mapearFila(array $fila): HistorialActividadSesionLocal
+    private function mapearFila(array $fila): SesionActivaHistorico
     {
-        return new HistorialActividadSesionLocal(
-            (int) $fila["tbhistorialactividadsesionlocalusuarioid"],
-            $fila["tbhistorialactividadsesionlocalusuariotipo"],
-            $fila["tbhistorialactividadsesionlocaltipo"],
-            $fila["tblocalid"] !== null ? (int) $fila["tblocalid"] : null,
-            (int) $fila["tbhistorialactividadsesionlocalid"],
-            new DateTime($fila["tbhistorialactividadsesionlocalfecha"])
+        return new SesionActivaHistorico(
+            (int) $fila["tbsesionid"],
+            (int) $fila["tblocalid"],
+            (bool) $fila["valoranterior"],
+            (bool) $fila["valornuevo"],
+            (bool) $fila["activo"],
+            (int) $fila["tbsesionactivohistoricoid"],
+            new DateTime($fila["fecha"])
         );
     }
 }
