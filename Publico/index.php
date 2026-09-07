@@ -8,82 +8,119 @@
 </head>
 <body>
 
-    <header class="cabecera">
-    <div class="cabecera-fila">
-        <div class="marca">
-            <span class="marca-icono">🛒</span>
-            <h1>Ventas Rápidas</h1>
+<div class="app-shell">
+    <aside class="barra-lateral">
+        <div class="marca-sidebar">
+            <img src="imagenes/logo-rapiventas.png" alt="RapiVentas">
+            <h1>Rapi<span>Ventas</span></h1>
         </div>
+
+        <nav class="menu" id="menu-principal">
+            <button class="menu-boton activo" data-vista="vista-inicio">Inicio</button>
+            <button class="menu-boton" data-vista="vista-login">Iniciar Sesión</button>
+            <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
+            <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar Producto</button>
+            <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
+            <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
+            <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente">Locales Cercanos</button>
+            <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
+            <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin">Dashboard</button>
+            <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin">Ver Comerciantes</button>
+            <button class="menu-boton" data-vista="vista-clientes" data-rol="SuperAdmin">Ver Clientes</button>
+            <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin">Historiales</button>
+        </nav>
+
         <div id="sesion-indicador" class="sesion-indicador oculto">
             <span id="sesion-texto"></span>
             <button type="button" id="btn-cerrar-sesion" class="boton-secundario">Cerrar sesión</button>
         </div>
-    </div>
-    <nav class="menu" id="menu-principal">
-        <button class="menu-boton activo" data-vista="vista-login">Iniciar Sesión</button>
-        <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
-        <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar Producto</button>
-        <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
-        <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente">Locales Cercanos</button>
-        <button class="menu-boton" data-vista="vista-comerciantes" data-rol="Admin">Ver Comerciantes</button>
-        <button class="menu-boton" data-vista="vista-clientes" data-rol="Admin">Ver Clientes</button>
-        <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
-        <button class="menu-boton" data-vista="vista-historiales" data-rol="Admin">Historiales</button>
-    </nav>
-</header>
+    </aside>
 
-    <main class="contenedor">
+    <div class="area-principal">
+        <main class="contenedor">
 
         <div id="mensaje" class="mensaje oculto" role="alert">
             <span id="mensaje-texto"></span>
             <button type="button" id="mensaje-cerrar" class="mensaje-cerrar" aria-label="Cerrar mensaje">&times;</button>
         </div>
 
+        <!-- Vista: Inicio (catálogo público) -->
+<section id="vista-inicio" class="vista">
+    <div class="hero-inicio">
+        <h2>Encuentra los mejores locales cerca de ti</h2>
+        <p class="ayuda">Sodas, ferias, reposterías y más — todo en un solo lugar.</p>
+    </div>
+
+    <div class="carrusel" id="carrusel-locales">
+        <button type="button" class="carrusel-flecha carrusel-flecha-izq" id="carrusel-prev" aria-label="Anterior">&#10094;</button>
+        <div class="carrusel-pista" id="carrusel-pista"></div>
+        <button type="button" class="carrusel-flecha carrusel-flecha-der" id="carrusel-next" aria-label="Siguiente">&#10095;</button>
+    </div>
+    <div class="carrusel-puntos" id="carrusel-puntos"></div>
+
+    <h3 class="bloque-separado">Todos los locales</h3>
+    <div class="filtros-busqueda">
+        <input type="text" id="inicio-buscar" placeholder="Buscar por nombre o tipo...">
+    </div>
+    <div id="catalogo-inicio" class="tarjetas"></div>
+</section>
+
+        
         <!-- Vista: Iniciar Sesión / Crear cuenta -->
-        <section id="vista-login" class="vista">
+   <section id="vista-login" class="vista oculto">
+    <div class="login-wrapper">
+        <!-- Lado izquierdo -->
+        <div class="login-ilustracion">
+    <div class="logo-grande">
+        <img src="imagenes/logo-rapiventas.png" alt="RapiVentas" style="width:100%;height:100%;object-fit:contain;"> 
+    </div>
+    <h2>Rapi<span>Ventas</span></h2>
+    <p>La plataforma que conecta comerciantes y clientes</p>
+    <div class="testimonial">
+        <blockquote>"La mejor forma de encontrar locales cerca de ti"</blockquote>
+        <cite>— Usuarios satisfechos</cite>
+    </div>
+</div>
 
-            <div id="login-panel-entrar">
-                <h2>Iniciar Sesión</h2>
+        <!-- Lado derecho -->
+        <div class="login-formulario">
+            <span class="badge">Bienvenido</span>
+            <h3>Iniciar Sesión</h3>
+            <p class="subtitulo">Ingresa a tu cuenta para continuar</p>
 
-                <div class="formulario" style="max-width: 320px;">
-                    <label for="login-tipo">Ingresar como</label>
-                    <select id="login-tipo">
-                        <option value="cliente">Cliente</option>
-                        <option value="comerciante">Comerciante</option>
-                    </select>
-                </div>
-
-                <form id="form-login" class="formulario" novalidate>
-                    <label for="login-correo">Correo</label>
-                    <input type="email" id="login-correo" required>
-
-                    <label for="login-password">Contraseña</label>
-                    <input type="password" id="login-password" required>
-
-                    <button type="submit">Ingresar</button>
-                </form>
-
-                <p class="ayuda">
-                    ¿No tienes cuenta?
-                    <a href="#" id="link-crear-cuenta">Crear cuenta</a>
-                </p>
+            <div class="login-tabs">
+                <button class="login-tab activo" data-rol="cliente">Cliente</button>
+                <button class="login-tab" data-rol="comerciante">Comerciante</button>
+                <button type="button" class="login-tab" data-rol="superadmin">Admin</button>
             </div>
 
-            <div id="login-panel-elegir-tipo" class="oculto">
-                <h2>Crear cuenta</h2>
-                <p class="ayuda">¿Cómo quieres registrarte?</p>
-
-                <div class="rejilla-dos" style="max-width: 500px;">
-                    <button type="button" class="boton-eleccion" id="btn-elegir-cliente"><br>Soy Cliente</button>
-                    <button type="button" class="boton-eleccion" id="btn-elegir-comerciante"><br>Soy Comerciante</button>
+            <form id="form-login">
+                <div class="grupo-form">
+                    <label> Correo electrónico</label>
+                    <input type="email" id="login-correo" placeholder="tucorreo@ejemplo.com" required>
+                </div>
+                <div class="grupo-form">
+                    <label>Contraseña</label>
+                    <div class="password-wrap">
+                        <input type="password" id="login-password" placeholder="••••••••" required>
+                        <button type="button" class="toggle-pwd" id="toggle-password">👁️</button>
+                    </div>
                 </div>
 
-                <p class="ayuda">
-                    <a href="#" id="link-volver-login">&larr; Volver a iniciar sesión</a>
-                </p>
-            </div>
+                <div class="login-opciones">
+                    <label><input type="checkbox"> Recordarme</label>
+                    <a href="#">¿Olvidaste tu contraseña?</a>
+                </div>
 
-        </section>
+                <button type="submit" class="btn-ingresar">Ingresar →</button>
+
+                <div class="login-footer">
+                    ¿No tienes cuenta? <a id="btn-registro">Crear cuenta</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
 
         <!-- Vista: Registrar Comerciante -->
         <section id="vista-comerciante" class="vista oculto">
@@ -637,7 +674,47 @@
                 </div>
             </div>
         </section>
+<!-- Vista: Dashboard de Administrador -->
+<section id="vista-dashboard-admin" class="vista oculto">
+    <h2>Panel de Administración</h2>
+    <p class="ayuda">Resumen general de la plataforma.</p>
 
+    <div class="rejilla-stats bloque-separado">
+        <div class="stat-card">
+            <div class="icon-container"><i data-lucide="store"></i></div>
+            <p class="stat-numero" id="stat-locales">—</p>
+            <p class="stat-etiqueta">Locales activos</p>
+        </div>
+        <div class="stat-card">
+            <div class="icon-container"><i data-lucide="users"></i></div>
+            <p class="stat-numero" id="stat-clientes">—</p>
+            <p class="stat-etiqueta">Clientes activos</p>
+        </div>
+        <div class="stat-card">
+            <div class="icon-container"><i data-lucide="briefcase"></i></div>
+            <p class="stat-numero" id="stat-comerciantes">—</p>
+            <p class="stat-etiqueta">Comerciantes activos</p>
+        </div>
+        <div class="stat-card">
+            <div class="icon-container"><i data-lucide="user-x"></i></div>
+            <p class="stat-numero" id="stat-comerciantes-inactivos">—</p>
+            <p class="stat-etiqueta">Comerciantes inactivos</p>
+        </div>
+    </div>
+
+    <h3 class="bloque-separado">Accesos rápidos</h3>
+    <div class="accesos-dashboard">
+        <button type="button" class="acceso-dashboard-boton" data-vista="vista-comerciantes">
+            <i data-lucide="briefcase" class="icon-sm"></i> Ver Comerciantes
+        </button>
+        <button type="button" class="acceso-dashboard-boton" data-vista="vista-clientes">
+            <i data-lucide="users" class="icon-sm"></i> Ver Clientes
+        </button>
+        <button type="button" class="acceso-dashboard-boton" data-vista="vista-historiales">
+            <i data-lucide="history" class="icon-sm"></i> Historiales de Seguridad
+        </button>
+    </div>
+</section>
         <!-- Vista: Locales Cercanos -->
 <section id="vista-cercanos" class="vista oculto">
     <h2>Locales Cercanos</h2>
@@ -667,27 +744,33 @@
     <div id="lista-cercanos" class="tarjetas bloque-separado"></div>
 </section>
 
-    </main>
-    <footer class="pie-pagina">
-    <div class="pie-contenido">
-        <div class="pie-marca">
-            <strong>🛒 Ventas Rápidas</strong>
-            <p>Conectamos clientes con locales cercanos, de forma fácil y rápida.</p>
-        </div>
-        <div class="pie-enlaces">
-            <strong>Enlaces rápidos</strong>
-            <a href="#" data-vista-footer="vista-listado">Ver Locales</a>
-            <a href="#" data-vista-footer="vista-cercanos">Locales Cercanos</a>
-            <a href="#" data-vista-footer="vista-login">Iniciar Sesión</a>
-        </div>
-        <div class="pie-info">
-            <strong>Ventas Rápidas</strong>
-            <p>Proyecto académico de comercio local.</p>
-            <p>&copy; <span id="pie-anio"></span> Todos los derechos reservados.</p>
-        </div>
-    </div>
-</footer>
+            </main>
 
-    <script src="js/app.js"></script>
+        <footer class="pie-pagina">
+            <div class="pie-contenido">
+                <div class="pie-marca">
+                    <strong>RapiVentas</strong>
+                    <p>Conectamos clientes con locales cercanos, de forma rápida, simple y eficiente.</p>
+                </div>
+                <div class="pie-enlaces">
+                    <strong>Enlaces rápidos</strong>
+                    <a href="#" data-vista-footer="vista-listado">Ver Locales</a>
+                    <a href="#" data-vista-footer="vista-cercanos">Locales Cercanos</a>
+                    <a href="#" data-vista-footer="vista-login">Iniciar Sesión</a>
+                </div>
+                <div class="pie-info">
+                    <strong>RapiVentas</strong>
+                    <p>Proyecto académico de comercio local.</p>
+                    <p>&copy; <span id="pie-anio"></span> Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </footer>
+    </div> <!-- cierra .area-principal -->
+</div> <!-- cierra .app-shell -->
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="js/app.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

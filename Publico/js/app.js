@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
             vistas.forEach(v => v.classList.add('oculto'));
             document.getElementById(boton.dataset.vista).classList.remove('oculto');
 
+            if (boton.dataset.vista === 'vista-inicio') {
+                cargarInicio();
+            }
+
             if (boton.dataset.vista === 'vista-listado') {
                 mostrarListaLocales();
                 cargarLocales();
@@ -39,8 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarDatosResenas();
             }
 
-            if (boton.dataset.vista === 'vista-historiales') {
+                       if (boton.dataset.vista === 'vista-historiales') {
                 cargarUsuariosHistorial();
+            }
+
+            if (boton.dataset.vista === 'vista-dashboard-admin') {
+                cargarDashboardAdmin();
             }
         });
     });
@@ -61,15 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
         cajaMensaje.className = 'mensaje oculto';
     }
 
-    function mostrarMensaje(texto, tipo) {
-        clearTimeout(temporizadorMensaje);
-
-        textoMensaje.textContent = texto;
-        cajaMensaje.className = 'mensaje ' + tipo;
-        posicionarMensaje();
-
-        const duracion = tipo === 'error' ? 7000 : 4000;
-        temporizadorMensaje = setTimeout(ocultarMensaje, duracion);
+       function mostrarMensaje(texto, tipo) {
+        Swal.fire({
+            text: texto,
+            icon: tipo === 'error' ? 'error' : 'success',
+            confirmButtonColor: '#8E7CC3'
+        });
     }
 
     if (botonCerrarMensaje) {
@@ -2107,7 +2112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function verificarSesionActual() {
+        async function verificarSesionActual() {
         try {
             const r = await fetch('api/sesion_actual.php');
             const res = await r.json();
@@ -2116,8 +2121,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 actualizarIndicadorSesion(res.usuario);
                 if (res.usuario.tipo === 'Cliente') {
                     mostrarVistaLogin('vista-listado');
-                } else {
+                } else if (res.usuario.tipo === 'Comerciante') {
                     await mostrarSelectorPerfilesLocal();
+                } else {
+                    mostrarVistaLogin('vista-dashboard-admin');
+                    cargarDashboardAdmin();
                 }
             } else {
                 actualizarIndicadorSesion(null);
@@ -2126,7 +2134,6 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarIndicadorSesion(null);
         }
     }
-
     function actualizarMenuPorRol(tipoUsuario) {
         botonesMenu.forEach(boton => {
             const rol = boton.dataset.rol;
@@ -2146,6 +2153,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         actualizarMenuPorRol(usuario ? usuario.tipo : null);
 
+                const barraLateral = document.getElementById('barra-lateral');
+        const topbarPublica = document.getElementById('topbar-publica');
+        if (barraLateral) barraLateral.classList.toggle('oculto', !usuario);
+        if (topbarPublica) topbarPublica.classList.toggle('oculto', !!usuario);
+
+                const menuSecundario = document.getElementById('menu-secundario');
+        if (menuSecundario) {
+            menuSecundario.style.display = usuario ? 'flex' : 'none';
+        }
+
+        const botonLoginHeader = document.getElementById('btn-ir-login');
+        if (botonLoginHeader) {
+            botonLoginHeader.style.display = usuario ? 'none' : 'inline-flex';
+        }
+
         const botonLogin = document.querySelector('.menu-boton[data-vista="vista-login"]');
         if (botonLogin) {
             botonLogin.classList.toggle('oculto', !!usuario);
@@ -2164,7 +2186,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('form-login')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
-        const tipo = document.getElementById('login-tipo').value;
+        const tabActivo = document.querySelector('.login-tab.activo');
+        const tipo = tabActivo ? tabActivo.dataset.rol : 'cliente';
         const correo = document.getElementById('login-correo').value.trim();
         const password = document.getElementById('login-password').value;
 
@@ -2178,8 +2201,11 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('El correo no tiene un formato válido', 'error');
             return;
         }
-
-        const endpoint = tipo === 'cliente' ? 'api/login_cliente.php' : 'api/login_comerciante.php';
+            const endpoint = tipo === 'cliente'
+    ? 'api/login_cliente.php'
+    : tipo === 'comerciante'
+        ? 'api/login_comerciante.php'
+        : 'api/login_superadmin.php';
 
         const datos = new FormData();
         datos.append('correo', correo);
@@ -2205,10 +2231,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) {
                 }
 
-                if (res.usuario.tipo === 'Cliente') {
+                          if (res.usuario.tipo === 'Cliente') {
                     mostrarVistaLogin('vista-listado');
-                } else {
+                } else if (res.usuario.tipo === 'Comerciante') {
                     await mostrarSelectorPerfilesLocal();
+                } else {
+                    mostrarVistaLogin('vista-dashboard-admin');
+                    cargarDashboardAdmin();
                 }
             }
         } catch (e) {
@@ -2241,9 +2270,24 @@ document.addEventListener('DOMContentLoaded', () => {
         panelElegirTipo?.classList.remove('oculto');
     }
 
-    document.getElementById('link-crear-cuenta')?.addEventListener('click', (evento) => {
+        document.getElementById('btn-registro')?.addEventListener('click', (evento) => {
         evento.preventDefault();
-        mostrarPanelElegirTipo();
+        Swal.fire({
+            title: '¿Cómo quieres registrarte?',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Soy Cliente',
+            denyButtonText: 'Soy Comerciante',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#8E7CC3',
+            denyButtonColor: '#7A69B6'
+        }).then((resultado) => {
+            if (resultado.isConfirmed) {
+                mostrarVistaLogin('vista-cliente');
+            } else if (resultado.isDenied) {
+                mostrarVistaLogin('vista-comerciante');
+            }
+        });
     });
 
     document.getElementById('link-volver-login')?.addEventListener('click', (evento) => {
@@ -2591,5 +2635,239 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar las reseñas.</p>';
         }
     });
+
+
+
+        // ============================================================
+    // Dashboard de SuperAdmin
+    // ============================================================
+    async function cargarDashboardAdmin() {
+        const statLocales = document.getElementById('stat-locales');
+        const statClientes = document.getElementById('stat-clientes');
+        const statComerciantes = document.getElementById('stat-comerciantes');
+        const statComerciantesInactivos = document.getElementById('stat-comerciantes-inactivos');
+
+        if (!statLocales) return; // la vista del dashboard todavía no existe en el HTML
+
+        statLocales.textContent = '—';
+        statClientes.textContent = '—';
+        statComerciantes.textContent = '—';
+        statComerciantesInactivos.textContent = '—';
+
+        try {
+            const [locales, clientes, rComerciantesActivos, rComerciantesTodos] = await Promise.all([
+                obtenerLocalesActivos(),
+                obtenerClientesActivos(),
+                fetch('api/listar_comerciantes.php?soloActivos=1').then(r => r.json()),
+                fetch('api/listar_comerciantes.php?soloActivos=0').then(r => r.json())
+            ]);
+
+            statLocales.textContent = locales.length;
+            statClientes.textContent = clientes.length;
+
+            const comerciantesActivos = rComerciantesActivos.exito ? rComerciantesActivos.comerciantes.length : 0;
+            const comerciantesTodos = rComerciantesTodos.exito ? rComerciantesTodos.comerciantes.length : 0;
+
+            statComerciantes.textContent = comerciantesActivos;
+            statComerciantesInactivos.textContent = Math.max(comerciantesTodos - comerciantesActivos, 0);
+
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            mostrarMensaje('No se pudo cargar el resumen del dashboard', 'error');
+        }
+    }
+
+    document.querySelectorAll('.acceso-dashboard-boton[data-vista]').forEach(boton => {
+        boton.addEventListener('click', () => {
+            const destino = document.querySelector(`.menu-boton[data-vista="${boton.dataset.vista}"]`);
+            if (destino) destino.click();
+        });
+    });
+
+        // ============================================================
+    // Vista: Inicio (catálogo público + carrusel)
+    // ============================================================
+    let carruselLocales = [];
+    let carruselIndice = 0;
+    let carruselIntervalo = null;
+    let localesInicioCache = [];
+
+    function renderizarCarrusel() {
+        const pista = document.getElementById('carrusel-pista');
+        const puntos = document.getElementById('carrusel-puntos');
+        if (!pista) return;
+
+        if (carruselLocales.length === 0) {
+            pista.innerHTML = '<div class="carrusel-slide"><p class="ayuda">Todavía no hay locales registrados.</p></div>';
+            puntos.innerHTML = '';
+            return;
+        }
+
+        pista.innerHTML = carruselLocales.map(local => `
+            <div class="carrusel-slide">
+                ${local.logo
+                    ? `<img src="imagenes/${local.logo}" alt="${escaparHtml(local.nombreLocal)}">`
+                    : `<div class="carrusel-slide-sin-logo">🏪</div>`}
+                <div class="carrusel-slide-info">
+                    <span class="etiqueta-tipo">${escaparHtml(local.tipoLocal ?? '')}</span>
+                    <h3>${escaparHtml(local.nombreLocal)}</h3>
+                    <p>${escaparHtml(local.descripcion ?? 'Sin descripción')}</p>
+                    <button type="button" class="boton-secundario carrusel-ver-local" data-id="${local.idLocal}">Ver local →</button>
+                </div>
+            </div>
+        `).join('');
+
+        pista.style.transform = `translateX(-${carruselIndice * 100}%)`;
+
+        puntos.innerHTML = carruselLocales.map((_, i) =>
+            `<button type="button" class="carrusel-punto ${i === carruselIndice ? 'activo' : ''}" data-indice="${i}" aria-label="Ir al local ${i + 1}"></button>`
+        ).join('');
+
+        puntos.querySelectorAll('.carrusel-punto').forEach(punto => {
+            punto.addEventListener('click', () => {
+                carruselIndice = Number(punto.dataset.indice);
+                renderizarCarrusel();
+                iniciarAutoplayCarrusel();
+            });
+        });
+
+        pista.querySelectorAll('.carrusel-ver-local').forEach(boton => {
+            boton.addEventListener('click', () => {
+                mostrarVistaLogin('vista-listado');
+                abrirDetalleLocal(Number(boton.dataset.id));
+            });
+        });
+    }
+
+    function moverCarrusel(direccion) {
+        if (carruselLocales.length === 0) return;
+        carruselIndice = (carruselIndice + direccion + carruselLocales.length) % carruselLocales.length;
+        renderizarCarrusel();
+    }
+
+    document.getElementById('carrusel-prev')?.addEventListener('click', () => {
+        moverCarrusel(-1);
+        iniciarAutoplayCarrusel();
+    });
+    document.getElementById('carrusel-next')?.addEventListener('click', () => {
+        moverCarrusel(1);
+        iniciarAutoplayCarrusel();
+    });
+
+    function iniciarAutoplayCarrusel() {
+        clearInterval(carruselIntervalo);
+        carruselIntervalo = setInterval(() => moverCarrusel(1), 5000);
+    }
+
+    function renderizarCatalogoInicio(locales) {
+        const contenedor = document.getElementById('catalogo-inicio');
+        const termino = (document.getElementById('inicio-buscar')?.value || '').trim().toLowerCase();
+
+        const filtrados = termino
+            ? locales.filter(l =>
+                l.nombreLocal.toLowerCase().includes(termino) ||
+                (l.tipoLocal ?? '').toLowerCase().includes(termino))
+            : locales;
+
+        if (filtrados.length === 0) {
+            contenedor.innerHTML = '<p class="ayuda">No se encontraron locales.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        filtrados.forEach(local => {
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'tarjeta tarjeta-clic';
+            tarjeta.innerHTML = `
+                ${local.logo ? `<img src="imagenes/${local.logo}" alt="${escaparHtml(local.nombreLocal)}" class="imagen-producto">` : ''}
+                <h3>${escaparHtml(local.nombreLocal)}</h3>
+                <p class="etiqueta-tipo">${escaparHtml(local.tipoLocal ?? '')}</p>
+                <p>${escaparHtml(local.descripcion ?? '')}</p>
+            `;
+            tarjeta.addEventListener('click', () => {
+                mostrarVistaLogin('vista-listado');
+                abrirDetalleLocal(local.idLocal);
+            });
+            contenedor.appendChild(tarjeta);
+        });
+    }
+
+    document.getElementById('inicio-buscar')?.addEventListener('input', debounce(() => {
+        renderizarCatalogoInicio(localesInicioCache);
+    }, 300));
+
+    async function cargarInicio() {
+        const contenedorCatalogo = document.getElementById('catalogo-inicio');
+        if (!contenedorCatalogo) return;
+
+        contenedorCatalogo.innerHTML = '<p class="ayuda">Cargando locales...</p>';
+
+        try {
+            const locales = await obtenerLocalesActivos();
+            localesInicioCache = locales;
+
+            carruselLocales = locales.slice(0, 8);
+            carruselIndice = 0;
+            renderizarCarrusel();
+            iniciarAutoplayCarrusel();
+
+            renderizarCatalogoInicio(locales);
+        } catch (e) {
+            contenedorCatalogo.innerHTML = '<p class="ayuda error">No se pudieron cargar los locales.</p>';
+        }
+    }
+
+    cargarInicio();
+
+
+    // ============================================================
+// BOTÓN LOGIN - Redirige al login
+// ============================================================
+document.getElementById('btn-ir-login')?.addEventListener('click', function() {
+    document.querySelectorAll('.vista').forEach(v => v.classList.add('oculto'));
+    document.getElementById('vista-login')?.classList.remove('oculto');
+    document.querySelectorAll('.menu-boton').forEach(b => b.classList.remove('activo'));
+});
+
+// ============================================================
+// TABS DE LOGIN
+// ============================================================
+document.querySelectorAll('.login-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('activo'));
+        this.classList.add('activo');
+    });
+});
+
+// ============================================================
+// TOGGLE PASSWORD
+// ============================================================
+document.getElementById('toggle-password')?.addEventListener('click', function() {
+    const input = document.getElementById('login-password');
+    if (input.type === 'password') {
+        input.type = 'text';
+        this.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        this.textContent = '👁️';
+    }
+});
+
+// Mostrar menú secundario al iniciar sesión
+function mostrarMenuSecundario(rol) {
+    const menuSec = document.getElementById('menu-secundario');
+    menuSec.style.display = 'flex';
+    
+    // Mostrar solo botones según rol
+    document.querySelectorAll('#menu-secundario .menu-boton').forEach(boton => {
+        const rolRequerido = boton.dataset.rol;
+        boton.style.display = (rol === rolRequerido || !rolRequerido) ? 'inline-block' : 'none';
+    });
+}
+
+// Ocultar menú secundario al cerrar sesión
+function ocultarMenuSecundario() {
+    document.getElementById('menu-secundario').style.display = 'none';
+}
 
 });
