@@ -5,6 +5,7 @@ require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 require_once __DIR__ . "/../Comun/ValidadorReferencia.php";
 require_once __DIR__ . "/../Repositorios/HistorialCampoRepository.php";
+require_once __DIR__ . "/../Comun/LectorUbicaciones.php";
 
 class UbicacionRepository
 {
@@ -54,9 +55,7 @@ class UbicacionRepository
             );
         }
 
-        $this->validarReferencia($this->conexion, "tbprovincia", "tbprovinciaid", $ubicacion->getIdProvincia(), "La provincia con ID {$ubicacion->getIdProvincia()} no existe");
-        $this->validarReferencia($this->conexion, "tbcanton", "tbcantonid", $ubicacion->getIdCanton(), "El cantón con ID {$ubicacion->getIdCanton()} no existe");
-        $this->validarReferencia($this->conexion, "tbdistrito", "tbdistritoid", $ubicacion->getIdDistrito(), "El distrito con ID {$ubicacion->getIdDistrito()} no existe");
+        $this->validarUbicacionTxt($ubicacion);
 
         $id = $this->generarSiguienteId($this->conexion, "tbubicacion", "tbubicacionid");
 
@@ -137,9 +136,7 @@ class UbicacionRepository
             throw new InvalidArgumentException("La ubicación debe pertenecer a un local o a un cliente");
         }
 
-        $this->validarReferencia($this->conexion, "tbprovincia", "tbprovinciaid", $ubicacion->getIdProvincia(), "La provincia con ID {$ubicacion->getIdProvincia()} no existe");
-        $this->validarReferencia($this->conexion, "tbcanton", "tbcantonid", $ubicacion->getIdCanton(), "El cantón con ID {$ubicacion->getIdCanton()} no existe");
-        $this->validarReferencia($this->conexion, "tbdistrito", "tbdistritoid", $ubicacion->getIdDistrito(), "El distrito con ID {$ubicacion->getIdDistrito()} no existe");
+        $this->validarUbicacionTxt($ubicacion);
 
         $anterior = $ubicacion->getIdUbicacion() > 0 ? $this->obtenerPorId($ubicacion->getIdUbicacion()) : null;
 
@@ -204,6 +201,27 @@ class UbicacionRepository
             ":longitud" => $longitud,
             ":idCliente" => $idCliente
         ]);
+    }
+
+    private function validarUbicacionTxt(Ubicacion $ubicacion): void
+    {
+        if (!LectorUbicaciones::existeProvincia($ubicacion->getIdProvincia())) {
+            throw new InvalidArgumentException(
+                "La provincia con ID {$ubicacion->getIdProvincia()} no existe"
+            );
+        }
+
+        if (!LectorUbicaciones::existeCanton($ubicacion->getIdCanton())) {
+            throw new InvalidArgumentException(
+                "El cantón con ID {$ubicacion->getIdCanton()} no existe"
+            );
+        }
+
+        if (!LectorUbicaciones::existeDistrito($ubicacion->getIdDistrito())) {
+            throw new InvalidArgumentException(
+                "El distrito con ID {$ubicacion->getIdDistrito()} no existe"
+            );
+        }
     }
 
     private function mapearFila(array $fila): Ubicacion

@@ -1,17 +1,11 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../../Aplicacion/Controladoras/CantonController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/LectorUbicaciones.php';
 
 $idProvincia = (int)($_GET['idProvincia'] ?? 0);
 
 try {
-    $controlador = new CantonController();
-    $cantones = $controlador->listarPorProvincia($idProvincia);
-
-    $datos = array_map(fn($c) => [
-        'idCanton' => $c->getIdCanton(),
-        'nombre' => $c->getNombre()
-    ], $cantones);
+    $datos = LectorUbicaciones::cantonesPorProvincia($idProvincia);
 
     echo json_encode(['exito' => true, 'cantones' => $datos]);
 } catch (Exception $e) {

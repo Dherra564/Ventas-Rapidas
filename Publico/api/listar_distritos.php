@@ -1,17 +1,11 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../../Aplicacion/Controladoras/DistritoController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/LectorUbicaciones.php';
 
 $idCanton = (int)($_GET['idCanton'] ?? 0);
 
 try {
-    $controlador = new DistritoController();
-    $distritos = $controlador->listarPorCanton($idCanton);
-
-    $datos = array_map(fn($d) => [
-        'idDistrito' => $d->getIdDistrito(),
-        'nombre' => $d->getNombre()
-    ], $distritos);
+    $datos = LectorUbicaciones::distritosPorCanton($idCanton);
 
     echo json_encode(['exito' => true, 'distritos' => $datos]);
 } catch (Exception $e) {
