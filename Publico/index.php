@@ -8,8 +8,18 @@
 </head>
 <body>
 
+<header id="topbar-publica" class="topbar-publica">
+    <div class="topbar-publica-fila">
+        <div class="marca-sidebar">
+            <img src="imagenes/logo-rapiventas.png" alt="RapiVentas">
+            <h1>Rapi<span>Ventas</span></h1>
+        </div>
+        <button class="btn-login-header" id="btn-ir-login">Iniciar Sesión</button>
+    </div>
+</header>
+
 <div class="app-shell">
-    <aside class="barra-lateral">
+        <aside class="barra-lateral oculto" id="barra-lateral">
         <div class="marca-sidebar">
             <img src="imagenes/logo-rapiventas.png" alt="RapiVentas">
             <h1>Rapi<span>Ventas</span></h1>

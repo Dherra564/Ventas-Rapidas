@@ -1414,7 +1414,7 @@ body {
     .barra-lateral .menu { flex-direction: row; flex-wrap: wrap; flex: 1 1 100%; order: 3; }
     .barra-lateral .menu-boton { width: auto; }
 
-    .barra-lateral .sesion-indicador {
+        .barra-lateral .sesion-indicador {
         margin-top: 0;
         flex-direction: row;
         align-items: center;
@@ -1422,8 +1422,27 @@ body {
         margin-left: auto;
         padding: 0.4rem 0.7rem;
     }
-
-
-    
 }
+
+.topbar-publica {
+    background: var(--color-white);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.9rem 1.6rem;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+}
+
+.topbar-publica-fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.barra-lateral.oculto {
+    display: none !important;
+}
+
 
