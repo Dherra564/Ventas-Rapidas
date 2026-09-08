@@ -50,6 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (boton.dataset.vista === 'vista-dashboard-admin') {
                 cargarDashboardAdmin();
             }
+
+            if (boton.dataset.vista === 'vista-producto') {
+                cargarLocalesComercianteParaProducto();
+            }
         });
     });
  
@@ -566,7 +570,6 @@ document.addEventListener('DOMContentLoaded', () => {
  
     formLocal.addEventListener('submit', async (evento) => {
         evento.preventDefault();
- 
         const datos = new FormData();
         datos.append('nombreTipoLocal', document.getElementById('l-tipoLocal').value);
         datos.append('nombreLocal', inputNombreLocal.value);
@@ -579,21 +582,21 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('referencia', document.getElementById('l-referencia').value);
         datos.append('latitud', inputLatitudLocal ? inputLatitudLocal.value : '');
         datos.append('longitud', inputLongitudLocal ? inputLongitudLocal.value : '');
- 
+
         const archivoLogo = document.getElementById('l-logo').files[0];
         if (archivoLogo) {
             datos.append('logo', archivoLogo);
         }
- 
+
         try {
             const r = await fetch('api/registrar_local.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
- 
+
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
+
             if (res.exito) {
                 formLocal.reset();
                 mensajeNombreLocal.textContent = '';
@@ -602,6 +605,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectCantonLocal.disabled = true;
                 selectDistritoLocal.innerHTML = '<option value="">Primero elige cantón</option>';
                 selectDistritoLocal.disabled = true;
+
+                if (usuarioSesionActual?.tipo === 'Comerciante') {
+                    await mostrarSelectorPerfilesLocal();
+                }
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
@@ -973,36 +980,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    const inputNombreLocalProducto = document.getElementById('p-nombreLocal');
-    const infoLocalProducto = document.getElementById('p-local-info');
-    const inputIdLocalProducto = document.getElementById('p-idLocal');
- 
-    const buscarLocalDebounced = debounce(async () => {
-        const nombre = inputNombreLocalProducto.value.trim();
-        infoLocalProducto.textContent = '';
-        infoLocalProducto.className = 'ayuda';
-        if (nombre.length < 3) return;
- 
+       const selectIdLocalProducto = document.getElementById('p-idLocal');
+       async function cargarLocalesComercianteParaProducto() {
+        selectIdLocalProducto.innerHTML = '<option value="">Cargando...</option>';
+
         try {
-            const r = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombre)}`);
+            const r = await fetch('api/listar_locales_comerciante.php');
             const res = await r.json();
- 
-            if (res.encontrado) {
-                inputIdLocalProducto.value = res.idLocal;
-                infoLocalProducto.textContent = 'Local encontrado';
-                infoLocalProducto.className = 'ayuda exito';
-            } else {
-                inputIdLocalProducto.value = '';
-                infoLocalProducto.textContent = 'No existe un local con ese nombre exacto';
-                infoLocalProducto.className = 'ayuda error';    
+
+            if (!res.exito || res.locales.length === 0) {
+                selectIdLocalProducto.innerHTML = '<option value="">No tienes locales registrados todavía</option>';
+                return;
             }
-        } catch (e) {}
-    }, 400);
- 
-    inputNombreLocalProducto.addEventListener('input', () => {
-        inputIdLocalProducto.value = '';
-        buscarLocalDebounced();
-    });
+
+            selectIdLocalProducto.innerHTML = '<option value="">Selecciona un local...</option>';
+            res.locales.forEach(local => {
+                const opcion = document.createElement('option');
+                opcion.value = local.idLocal;
+                opcion.textContent = local.nombreLocal;
+                selectIdLocalProducto.appendChild(opcion);
+            });
+        } catch (e) {
+            selectIdLocalProducto.innerHTML = '<option value="">Error al cargar tus locales</option>';
+        }
+    }
  
     activarAutocompletadoTipo(
         document.getElementById('p-tipoProducto'),
@@ -1019,39 +1020,37 @@ document.addEventListener('DOMContentLoaded', () => {
  
     document.getElementById('form-producto').addEventListener('submit', async (evento) => {
         evento.preventDefault();
- 
-        if (!inputIdLocalProducto.value) {
-            mostrarMensaje('Ingresa el nombre exacto de un local válido antes de continuar', 'error');
+
+        if (!selectIdLocalProducto.value) {
+            mostrarMensaje('Selecciona un local antes de continuar', 'error');
             return;
         }
- 
+
         const datos = new FormData();
-        datos.append('idLocal', inputIdLocalProducto.value);
+        datos.append('idLocal', selectIdLocalProducto.value);
         datos.append('nombreTipoProducto', document.getElementById('p-tipoProducto').value);
         datos.append('nombre', document.getElementById('p-nombre').value);
         datos.append('precioOriginal', document.getElementById('p-precio').value);
         datos.append('porcentajeDescuento', document.getElementById('p-descuento').value);
         datos.append('descripcion', document.getElementById('p-descripcion').value);
         datos.append('cantidadDisponible', document.getElementById('p-cantidad').value);
- 
+
         const archivoImagen = document.getElementById('p-imagen').files[0];
         if (archivoImagen) {
             datos.append('imagen', archivoImagen);
         }
- 
+
         try {
             const r = await fetch('api/registrar_producto.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
- 
+
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
+
             if (res.exito) {
                 evento.target.reset();
-                infoLocalProducto.textContent = '';
-                inputIdLocalProducto.value = '';
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
