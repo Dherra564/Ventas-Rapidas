@@ -1,60 +1,60 @@
 document.addEventListener('DOMContentLoaded', () => {
-
+ 
     const botonesMenu = document.querySelectorAll('.menu-boton');
     const vistas = document.querySelectorAll('.vista');
     const cajaMensaje = document.getElementById('mensaje');
     const textoMensaje = document.getElementById('mensaje-texto');
     const botonCerrarMensaje = document.getElementById('mensaje-cerrar');
-
+ 
     let usuarioSesionActual = null;
-
+ 
     botonesMenu.forEach(boton => {
         boton.addEventListener('click', () => {
             if (boton.dataset.vista === 'vista-login' && usuarioSesionActual) {
                 return;
             }
-
+ 
             botonesMenu.forEach(b => b.classList.remove('activo'));
             boton.classList.add('activo');
-
+ 
             vistas.forEach(v => v.classList.add('oculto'));
             document.getElementById(boton.dataset.vista).classList.remove('oculto');
-
+ 
             if (boton.dataset.vista === 'vista-inicio') {
                 cargarInicio();
             }
-
+ 
             if (boton.dataset.vista === 'vista-listado') {
                 mostrarListaLocales();
                 cargarLocales();
             }
-
+ 
             if (boton.dataset.vista === 'vista-comerciantes') {
                 mostrarListaComerciantes();
                 cargarComerciantes();
             }
-
+ 
             if (boton.dataset.vista === 'vista-clientes') {
                 mostrarListaClientes();
                 cargarClientes();
             }
-
+ 
             if (boton.dataset.vista === 'vista-resenas') {
                 cargarDatosResenas();
             }
-
+ 
                        if (boton.dataset.vista === 'vista-historiales') {
                 cargarUsuariosHistorial();
             }
-
+ 
             if (boton.dataset.vista === 'vista-dashboard-admin') {
                 cargarDashboardAdmin();
             }
         });
     });
-
+ 
     let temporizadorMensaje = null;
-
+ 
     function posicionarMensaje() {
         const cabecera = document.querySelector('.cabecera');
         const margen = 12;
@@ -63,12 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
             : margen;
         cajaMensaje.style.top = topPredeterminado + 'px';
     }
-
+ 
     function ocultarMensaje() {
         clearTimeout(temporizadorMensaje);
         cajaMensaje.className = 'mensaje oculto';
     }
-
+ 
        function mostrarMensaje(texto, tipo) {
         Swal.fire({
             text: texto,
@@ -76,17 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmButtonColor: '#8E7CC3'
         });
     }
-
+ 
     if (botonCerrarMensaje) {
         botonCerrarMensaje.addEventListener('click', ocultarMensaje);
     }
-
+ 
     window.addEventListener('resize', () => {
         if (!cajaMensaje.classList.contains('oculto')) {
             posicionarMensaje();
         }
     });
-
+ 
     function debounce(funcion, espera) {
         let temporizador;
         return (...args) => {
@@ -94,11 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
             temporizador = setTimeout(() => funcion(...args), espera);
         };
     }
-
+ 
     function soloDigitos(valor) {
         return valor.replace(/\D/g, '');
     }
-
+ 
     function formatearTelefono(input) {
         input.addEventListener('input', () => {
             const digitos = soloDigitos(input.value).slice(0, 8);
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : digitos;
         });
     }
-
+ 
     function activarValidacionRequerida(inputEl, mensajeEl, etiqueta) {
         function validar() {
             if (inputEl.value.trim() === '') {
@@ -125,10 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return validar;
     }
-
+ 
     const TEXTO_AYUDA_PASSWORD = 'Mínimo 8 caracteres, con al menos una letra mayúscula. Símbolos permitidos: ! @ # $ % ^ & * ( ) _ - + = [ ] { } ; : , . < > ?';
     const PATRON_PASSWORD_PERMITIDO = /^[A-Za-z0-9!@#$%^&*()_\-+=[\]{};:,.<>?]+$/;
-
+ 
     function evaluarPassword(password) {
         if (password.length < 8) {
             return 'La contraseña debe tener al menos 8 caracteres';
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return null;
     }
-
+ 
     function activarValidacionPassword(inputEl, mensajeEl) {
         function validar() {
             const password = inputEl.value;
@@ -164,18 +164,18 @@ document.addEventListener('DOMContentLoaded', () => {
         inputEl.addEventListener('blur', validar);
         return validar;
     }
-
+ 
     const inputIdentificacionComerciante = document.getElementById('c-numeroIdentificacion');
     const mensajeIdentificacionComerciante = document.getElementById('c-identificacion-msg');
     const inputCorreoComerciante = document.getElementById('c-correo');
     const mensajeCorreoComerciante = document.getElementById('c-correo-msg');
-
+ 
     const verificarIdentificacionComercianteDebounced = debounce(async () => {
         const numeroIdentificacion = inputIdentificacionComerciante.value.trim();
         mensajeIdentificacionComerciante.textContent = '';
         mensajeIdentificacionComerciante.className = 'ayuda';
         if (numeroIdentificacion.length < 5) return;
-
+ 
         try {
             const r = await fetch(`api/verificar_identificacion.php?numeroIdentificacion=${encodeURIComponent(numeroIdentificacion)}`);
             const res = await r.json();
@@ -183,15 +183,15 @@ document.addEventListener('DOMContentLoaded', () => {
             mensajeIdentificacionComerciante.className = res.existe ? 'ayuda error' : 'ayuda exito';
         } catch (e) {}
     }, 400);
-
+ 
     inputIdentificacionComerciante.addEventListener('input', verificarIdentificacionComercianteDebounced);
-
+ 
     const verificarCorreoComercianteDebounced = debounce(async () => {
         const correo = inputCorreoComerciante.value.trim();
         mensajeCorreoComerciante.textContent = '';
         mensajeCorreoComerciante.className = 'ayuda';
         if (!correo.includes('@') || !correo.includes('.')) return;
-
+ 
         try {
             const r = await fetch(`api/verificar_correo.php?correo=${encodeURIComponent(correo)}`);
             const res = await r.json();
@@ -199,13 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
             mensajeCorreoComerciante.className = res.existe ? 'ayuda error' : 'ayuda exito';
         } catch (e) {}
     }, 500);
-
+ 
     inputCorreoComerciante.addEventListener('input', verificarCorreoComercianteDebounced);
-
+ 
     const inputNombreComerciante = document.getElementById('c-nombre');
     const inputAliasComerciante = document.getElementById('c-alias');
     const inputPasswordComerciante = document.getElementById('c-password');
-
+ 
     const validarNombreComerciante = activarValidacionRequerida(
         inputNombreComerciante,
         document.getElementById('c-nombre-msg'),
@@ -220,23 +220,23 @@ document.addEventListener('DOMContentLoaded', () => {
         inputPasswordComerciante,
         document.getElementById('c-password-msg')
     );
-
+ 
     document.getElementById('form-comerciante').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const numeroIdentificacion = inputIdentificacionComerciante.value.trim();
-
+ 
         const camposValidos = [
             validarNombreComerciante(),
             validarAliasComerciante(),
             validarPasswordComerciante()
         ];
-
+ 
         if (camposValidos.includes(false)) {
             mostrarMensaje('Revisa los campos marcados en el formulario', 'error');
             return;
         }
-
+ 
         const datos = new FormData();
         datos.append('nombre', document.getElementById('c-nombre').value);
         datos.append('alias', document.getElementById('c-alias').value);
@@ -244,21 +244,21 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('numeroIdentificacion', numeroIdentificacion);
         datos.append('correo', inputCorreoComerciante.value);
         datos.append('password', document.getElementById('c-password').value);
-
+ 
         const archivoFoto = document.getElementById('c-fotoPerfil').files[0];
         if (archivoFoto) {
             datos.append('fotoPerfil', archivoFoto);
         }
-
+ 
         try {
             const r = await fetch('api/registrar_comerciante.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 evento.target.reset();
                 mensajeIdentificacionComerciante.textContent = '';
@@ -275,21 +275,21 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     function activarAutocompletadoTipo(inputEl, listaEl, endpoint) {
         const buscar = debounce(async () => {
             const texto = inputEl.value.trim();
             listaEl.innerHTML = '';
             listaEl.classList.add('oculto');
-
+ 
             if (texto.length < 2) return;
-
+ 
             try {
                 const r = await fetch(`${endpoint}?texto=${encodeURIComponent(texto)}`);
                 const res = await r.json();
-
+ 
                 if (!res.exito || res.tipos.length === 0) return;
-
+ 
                 res.tipos.forEach(tipo => {
                     const item = document.createElement('div');
                     item.className = 'sugerencia-item';
@@ -301,11 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     listaEl.appendChild(item);
                 });
-
+ 
                 listaEl.classList.remove('oculto');
             } catch (e) {}
         }, 300);
-
+ 
         inputEl.addEventListener('input', buscar);
         document.addEventListener('click', (e) => {
             if (e.target !== inputEl) {
@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
+ 
     activarAutocompletadoTipo(
         document.getElementById('l-tipoLocal'),
         document.getElementById('l-tipo-sugerencias'),
@@ -324,47 +324,47 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('e-tipo-sugerencias'),
         'api/buscar_tipos_local.php'
     );
-
+ 
     function activarAlertaSimilares(inputEl, contenedorEl, endpoint, formatearItem) {
         const buscar = debounce(async () => {
             const texto = inputEl.value.trim();
             contenedorEl.innerHTML = '';
             contenedorEl.classList.add('oculto');
-
+ 
             if (texto.length < 3) return;
-
+ 
             try {
                 const r = await fetch(`${endpoint}?nombre=${encodeURIComponent(texto)}`);
                 const res = await r.json();
-
+ 
                 if (!res.exito || res.similares.length === 0) return;
-
+ 
                 const titulo = document.createElement('p');
                 titulo.className = 'similares-titulo';
                 titulo.textContent = '¿Quisiste decir...?';
                 contenedorEl.appendChild(titulo);
-
+ 
                 res.similares.slice(0, 5).forEach(item => {
                     const fila = document.createElement('div');
                     fila.className = 'similar-item';
                     fila.textContent = formatearItem(item);
                     contenedorEl.appendChild(fila);
                 });
-
+ 
                 contenedorEl.classList.remove('oculto');
             } catch (e) {}
         }, 400);
-
+ 
         inputEl.addEventListener('input', buscar);
     }
-
+ 
     function activarCascadaUbicacion(selectProvincia, selectCanton, selectDistrito) {
         async function cargarProvincias() {
             try {
                 const r = await fetch('api/listar_provincias.php');
                 const res = await r.json();
                 if (!res.exito) return;
-
+ 
                 res.provincias.forEach(p => {
                     const opcion = document.createElement('option');
                     opcion.value = p.idProvincia;
@@ -374,22 +374,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {}
         }
         cargarProvincias();
-
+ 
         selectProvincia.addEventListener('change', async () => {
             selectCanton.innerHTML = '<option value="">Cargando...</option>';
             selectCanton.disabled = true;
             selectDistrito.innerHTML = '<option value="">Primero elige cantón</option>';
             selectDistrito.disabled = true;
-
+ 
             if (!selectProvincia.value) {
                 selectCanton.innerHTML = '<option value="">Primero elige provincia</option>';
                 return;
             }
-
+ 
             try {
                 const r = await fetch(`api/listar_cantones.php?idProvincia=${selectProvincia.value}`);
                 const res = await r.json();
-
+ 
                 selectCanton.innerHTML = '<option value="">Seleccione...</option>';
                 res.cantones.forEach(c => {
                     const opcion = document.createElement('option');
@@ -400,20 +400,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectCanton.disabled = false;
             } catch (e) {}
         });
-
+ 
         selectCanton.addEventListener('change', async () => {
             selectDistrito.innerHTML = '<option value="">Cargando...</option>';
             selectDistrito.disabled = true;
-
+ 
             if (!selectCanton.value) {
                 selectDistrito.innerHTML = '<option value="">Primero elige cantón</option>';
                 return;
             }
-
+ 
             try {
                 const r = await fetch(`api/listar_distritos.php?idCanton=${selectCanton.value}`);
                 const res = await r.json();
-
+ 
                 selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
                 res.distritos.forEach(d => {
                     const opcion = document.createElement('option');
@@ -425,26 +425,26 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {}
         });
     }
-
+ 
     const selectProvinciaLocal = document.getElementById('l-provincia');
     const selectCantonLocal = document.getElementById('l-canton');
     const selectDistritoLocal = document.getElementById('l-distrito');
     activarCascadaUbicacion(selectProvinciaLocal, selectCantonLocal, selectDistritoLocal);
-
+ 
     const selectProvinciaCliente = document.getElementById('cl-provincia');
     const selectCantonCliente = document.getElementById('cl-canton');
     const selectDistritoCliente = document.getElementById('cl-distrito');
     activarCascadaUbicacion(selectProvinciaCliente, selectCantonCliente, selectDistritoCliente);
-
+ 
     const inputNombreLocal = document.getElementById('l-nombreLocal');
     const mensajeNombreLocal = document.getElementById('l-nombre-msg');
-
+ 
     const verificarNombreLocalDebounced = debounce(async () => {
         const nombre = inputNombreLocal.value.trim();
         mensajeNombreLocal.textContent = '';
         mensajeNombreLocal.className = 'ayuda';
         if (nombre.length < 3) return;
-
+ 
         try {
             const r = await fetch(`api/verificar_nombre_local.php?nombre=${encodeURIComponent(nombre)}`);
             const res = await r.json();
@@ -452,43 +452,24 @@ document.addEventListener('DOMContentLoaded', () => {
             mensajeNombreLocal.className = res.disponible ? 'ayuda exito' : 'ayuda error';
         } catch (e) {}
     }, 400);
-
+ 
     inputNombreLocal.addEventListener('input', verificarNombreLocalDebounced);
-
+ 
     activarAlertaSimilares(
         inputNombreLocal,
         document.getElementById('l-similares'),
         'api/buscar_locales_similares.php',
         (item) => `${item.nombre} — ${Math.round(item.similitud)}% (${item.tipoLocal ?? 'Sin tipo'}, ${item.totalProductos} producto${item.totalProductos === 1 ? '' : 's'})`
     );
-
-    const inputCorreoLocal = document.getElementById('l-correo');
-    const mensajeCorreoLocal = document.getElementById('l-correo-msg');
-
-    const verificarCorreoLocalDebounced = debounce(async () => {
-        const correo = inputCorreoLocal.value.trim();
-        mensajeCorreoLocal.textContent = '';
-        mensajeCorreoLocal.className = 'ayuda';
-        if (!correo.includes('@') || !correo.includes('.')) return;
-
-        try {
-            const r = await fetch(`api/verificar_correo_local.php?correo=${encodeURIComponent(correo)}`);
-            const res = await r.json();
-            mensajeCorreoLocal.textContent = res.existe ? 'Ese correo ya está registrado en otro local' : 'Correo disponible';
-            mensajeCorreoLocal.className = res.existe ? 'ayuda error' : 'ayuda exito';
-        } catch (e) {}
-    }, 500);
-
-    inputCorreoLocal.addEventListener('input', verificarCorreoLocalDebounced);
-
+ 
     formatearTelefono(document.getElementById('l-telefono'));
     formatearTelefono(document.getElementById('e-telefono'));
-
+ 
     const formLocal = document.getElementById('form-local');
     const inputLatitudLocal = document.getElementById('l-latitud');
     const inputLongitudLocal = document.getElementById('l-longitud');
     const mensajeGpsLocal = document.getElementById('l-gps-msg');
-
+ 
     function normalizarTextoUbicacion(texto) {
         return String(texto ?? '')
             .toLowerCase()
@@ -496,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/[\u0300-\u036f]/g, '')
             .trim();
     }
-
+ 
     function seleccionarOpcionPorTexto(selectEl, texto) {
         if (!texto) return false;
         const objetivo = normalizarTextoUbicacion(texto);
@@ -510,21 +491,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return false;
     }
-
+ 
     async function autocompletarUbicacionPorGPS(lat, lng, selectProvincia, selectCanton, selectDistrito) {
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1&accept-language=es`);
             const datos = await r.json();
             const direccion = datos.address || {};
-
+ 
             const nombreProvincia = direccion.state;
             const nombreCanton = direccion.county || direccion.city || direccion.town;
             const nombreDistrito = direccion.suburb || direccion.city_district || direccion.neighbourhood || direccion.village;
-
+ 
             if (!nombreProvincia || !seleccionarOpcionPorTexto(selectProvincia, nombreProvincia)) {
                 return false;
             }
-
+ 
             selectCanton.innerHTML = '<option value="">Cargando...</option>';
             selectCanton.disabled = true;
             const rc = await fetch(`api/listar_cantones.php?idProvincia=${selectProvincia.value}`);
@@ -537,11 +518,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectCanton.appendChild(opcion);
             });
             selectCanton.disabled = false;
-
+ 
             if (!nombreCanton || !seleccionarOpcionPorTexto(selectCanton, nombreCanton)) {
                 return false;
             }
-
+ 
             selectDistrito.innerHTML = '<option value="">Cargando...</option>';
             selectDistrito.disabled = true;
             const rd = await fetch(`api/listar_distritos.php?idCanton=${selectCanton.value}`);
@@ -554,15 +535,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectDistrito.appendChild(opcion);
             });
             selectDistrito.disabled = false;
-
+ 
             seleccionarOpcionPorTexto(selectDistrito, nombreDistrito);
-
+ 
             return true;
         } catch (e) {
             return false;
         }
     }
-
+ 
     document.getElementById('btn-gps-local')?.addEventListener('click', async () => {
         if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'Obteniendo ubicación...';
         try {
@@ -570,9 +551,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (inputLatitudLocal) inputLatitudLocal.value = coords.lat;
             if (inputLongitudLocal) inputLongitudLocal.value = coords.lng;
             if (mensajeGpsLocal) mensajeGpsLocal.textContent = `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). Buscando provincia, cantón y distrito...`;
-
+ 
             const completado = await autocompletarUbicacionPorGPS(coords.lat, coords.lng, selectProvinciaLocal, selectCantonLocal, selectDistritoLocal);
-
+ 
             if (mensajeGpsLocal) {
                 mensajeGpsLocal.textContent = completado
                     ? `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). Provincia, cantón y distrito rellenados automáticamente — revísalos antes de guardar.`
@@ -582,16 +563,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'No se pudo obtener tu ubicación. Puedes registrar el local sin GPS.';
         }
     });
-
+ 
     formLocal.addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const datos = new FormData();
         datos.append('nombreTipoLocal', document.getElementById('l-tipoLocal').value);
         datos.append('nombreLocal', inputNombreLocal.value);
         datos.append('descripcion', document.getElementById('l-descripcion').value);
         datos.append('telefono', document.getElementById('l-telefono').value);
-        datos.append('correo', document.getElementById('l-correo').value);
         datos.append('idProvincia', selectProvinciaLocal.value);
         datos.append('idCanton', selectCantonLocal.value);
         datos.append('idDistrito', selectDistritoLocal.value);
@@ -599,21 +579,21 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('referencia', document.getElementById('l-referencia').value);
         datos.append('latitud', inputLatitudLocal ? inputLatitudLocal.value : '');
         datos.append('longitud', inputLongitudLocal ? inputLongitudLocal.value : '');
-
+ 
         const archivoLogo = document.getElementById('l-logo').files[0];
         if (archivoLogo) {
             datos.append('logo', archivoLogo);
         }
-
+ 
         try {
             const r = await fetch('api/registrar_local.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 formLocal.reset();
                 mensajeNombreLocal.textContent = '';
@@ -627,18 +607,18 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     const inputIdentificacionCliente = document.getElementById('cl-numeroIdentificacion');
     const mensajeIdentificacionCliente = document.getElementById('cl-identificacion-msg');
     const inputCorreoCliente = document.getElementById('cl-correo');
     const mensajeCorreoCliente = document.getElementById('cl-correo-msg');
-
+ 
     const verificarIdentificacionClienteDebounced = debounce(async () => {
         const numeroIdentificacion = inputIdentificacionCliente.value.trim();
         mensajeIdentificacionCliente.textContent = '';
         mensajeIdentificacionCliente.className = 'ayuda';
         if (numeroIdentificacion.length < 5) return;
-
+ 
         try {
             const r = await fetch(`api/verificar_identificacion_cliente.php?numeroIdentificacion=${encodeURIComponent(numeroIdentificacion)}`);
             const res = await r.json();
@@ -646,15 +626,15 @@ document.addEventListener('DOMContentLoaded', () => {
             mensajeIdentificacionCliente.className = res.existe ? 'ayuda error' : 'ayuda exito';
         } catch (e) {}
     }, 400);
-
+ 
     inputIdentificacionCliente.addEventListener('input', verificarIdentificacionClienteDebounced);
-
+ 
     const verificarCorreoClienteDebounced = debounce(async () => {
         const correo = inputCorreoCliente.value.trim();
         mensajeCorreoCliente.textContent = '';
         mensajeCorreoCliente.className = 'ayuda';
         if (!correo.includes('@') || !correo.includes('.')) return;
-
+ 
         try {
             const r = await fetch(`api/verificar_correo_cliente.php?correo=${encodeURIComponent(correo)}`);
             const res = await r.json();
@@ -662,12 +642,12 @@ document.addEventListener('DOMContentLoaded', () => {
             mensajeCorreoCliente.className = res.existe ? 'ayuda error' : 'ayuda exito';
         } catch (e) {}
     }, 500);
-
+ 
     inputCorreoCliente.addEventListener('input', verificarCorreoClienteDebounced);
-
+ 
     const inputNombreCliente = document.getElementById('cl-nombreCompleto');
     const inputPasswordCliente = document.getElementById('cl-password');
-
+ 
     const validarNombreCliente = activarValidacionRequerida(
         inputNombreCliente,
         document.getElementById('cl-nombreCompleto-msg'),
@@ -677,20 +657,20 @@ document.addEventListener('DOMContentLoaded', () => {
         inputPasswordCliente,
         document.getElementById('cl-password-msg')
     );
-
+ 
     document.getElementById('form-cliente').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const camposValidosCliente = [
             validarNombreCliente(),
             validarPasswordCliente()
         ];
-
+ 
         if (camposValidosCliente.includes(false)) {
             mostrarMensaje('Revisa los campos marcados en el formulario', 'error');
             return;
         }
-
+ 
         const datos = new FormData();
         datos.append('nombreCompleto', document.getElementById('cl-nombreCompleto').value);
         datos.append('tipoIdentificacion', document.getElementById('cl-tipoIdentificacion').value);
@@ -702,21 +682,21 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('idDistrito', selectDistritoCliente.value);
         datos.append('direccionExacta', document.getElementById('cl-direccion').value);
         datos.append('referencia', document.getElementById('cl-referencia').value);
-
+ 
         const archivoFoto = document.getElementById('cl-fotoPerfil').files[0];
         if (archivoFoto) {
             datos.append('fotoPerfil', archivoFoto);
         }
-
+ 
         try {
             const r = await fetch('api/registrar_cliente.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 evento.target.reset();
                 mensajeIdentificacionCliente.textContent = '';
@@ -735,37 +715,37 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     const panelLista = document.getElementById('panel-lista-locales');
     const panelDetalle = document.getElementById('panel-detalle-local');
-
+ 
     function mostrarListaLocales() {
         panelDetalle.classList.add('oculto');
         panelLista.classList.remove('oculto');
     }
-
+ 
     async function cargarLocales() {
         const contenedor = document.getElementById('lista-locales');
         contenedor.innerHTML = '<p>Cargando...</p>';
-
+ 
         const parametros = new URLSearchParams();
-
+ 
         const nombre = document.getElementById('f-nombre').value.trim();
         if (nombre) parametros.set('nombre', nombre);
-
+ 
         const idProvincia = document.getElementById('f-provincia').value;
         if (idProvincia) parametros.set('idProvincia', idProvincia);
-
+ 
         const idCanton = document.getElementById('f-canton').value;
         if (idCanton) parametros.set('idCanton', idCanton);
-
+ 
         const idDistrito = document.getElementById('f-distrito').value;
         if (idDistrito) parametros.set('idDistrito', idDistrito);
-
+ 
         try {
             const r = await fetch(`api/listar_locales.php?${parametros.toString()}`);
             const res = await r.json();
-
+ 
             if (!res.exito || res.locales.length === 0) {
                 if (nombre) {
                     await mostrarSugerenciasBusqueda(nombre, contenedor);
@@ -777,9 +757,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             res.locales.forEach(local => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
@@ -788,7 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3>${local.nombreLocal}</h3>
                     <p class="etiqueta-tipo">${local.tipoLocal ?? ''}</p>
                     <p>${local.descripcion ?? ''}</p>
-                    <p>📞 ${local.telefono} &nbsp; ✉️ ${local.correo}</p>
+                    <p>📞 ${local.telefono}</p>
                 `;
                 tarjeta.addEventListener('click', () => abrirDetalleLocal(local.idLocal));
                 contenedor.appendChild(tarjeta);
@@ -797,10 +777,10 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p>Error al cargar los locales.</p>';
         }
     }
-
+ 
     async function mostrarSugerenciasBusqueda(nombre, contenedor) {
         contenedor.innerHTML = '<p>Buscando algo parecido...</p>';
-
+ 
         try {
             const [rLocales, rProductos] = await Promise.all([
                 fetch(`api/buscar_locales_similares.php?nombre=${encodeURIComponent(nombre)}`),
@@ -808,22 +788,22 @@ document.addEventListener('DOMContentLoaded', () => {
             ]);
             const resLocales = await rLocales.json();
             const resProductos = await rProductos.json();
-
+ 
             const localesSimilares = resLocales.exito ? resLocales.similares : [];
             const productosSimilares = resProductos.exito ? resProductos.similares : [];
-
+ 
             if (localesSimilares.length === 0 && productosSimilares.length === 0) {
                 contenedor.innerHTML = '<p>No se encontró ningún local ni producto parecido a tu búsqueda.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             const titulo = document.createElement('p');
             titulo.className = 'similares-titulo';
             titulo.textContent = '¿Quisiste decir...?';
             contenedor.appendChild(titulo);
-
+ 
             localesSimilares.slice(0, 5).forEach(item => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
@@ -835,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tarjeta.addEventListener('click', () => abrirDetalleLocal(item.idLocal));
                 contenedor.appendChild(tarjeta);
             });
-
+ 
             productosSimilares.slice(0, 5).forEach(item => {
                 item.locales.forEach(loc => {
                     const tarjeta = document.createElement('div');
@@ -852,44 +832,42 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p>Error al buscar sugerencias.</p>';
         }
     }
-
+ 
     async function abrirDetalleLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 mostrarMensaje(res.mensaje || 'No se pudo cargar el local', 'error');
                 return;
             }
-
+ 
             const { local, ubicacion } = res;
-
+ 
             const esComerciante = usuarioSesionActual?.tipo === 'Comerciante';
             const formEditarLocal = document.getElementById('form-editar-local');
             const infoSoloLectura = document.getElementById('e-info-solo-lectura');
-
+ 
             if (esComerciante) {
                 formEditarLocal.classList.remove('oculto');
                 infoSoloLectura.classList.add('oculto');
-
+ 
                 document.getElementById('e-idLocal').value = local.idLocal;
                 document.getElementById('e-tipoLocal').value = local.tipoLocal ?? '';
                 document.getElementById('e-nombreLocal').value = local.nombreLocal;
                 document.getElementById('e-descripcion').value = local.descripcion ?? '';
                 document.getElementById('e-telefono').value = local.telefono;
-                document.getElementById('e-correo').value = local.correo;
             } else {
                 formEditarLocal.classList.add('oculto');
                 infoSoloLectura.classList.remove('oculto');
-
+ 
                 document.getElementById('e-solo-tipo').textContent = local.tipoLocal ?? '';
                 document.getElementById('e-solo-nombre').textContent = local.nombreLocal;
                 document.getElementById('e-solo-descripcion').textContent = local.descripcion ?? 'Sin descripción';
                 document.getElementById('e-solo-telefono').textContent = local.telefono;
-                document.getElementById('e-solo-correo').textContent = local.correo;
             }
-
+ 
             const imgLogo = document.getElementById('e-logo-actual');
             if (local.logo) {
                 imgLogo.src = `imagenes/${local.logo}`;
@@ -897,16 +875,16 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 imgLogo.classList.add('oculto');
             } 
-
+ 
             document.getElementById('e-ubicacion-texto').textContent =
                 `${ubicacion.provincia}, ${ubicacion.canton}, ${ubicacion.distrito} — ${ubicacion.direccionExacta}` +
                 (ubicacion.referencia ? ` (${ubicacion.referencia})` : '');
-
+ 
             panelLista.classList.add('oculto');
             panelDetalle.classList.remove('oculto');
-
+ 
                         cargarProductosDelLocal(idLocal);
-
+ 
             document.getElementById('e-panel-actividad-local').classList.toggle('oculto', !esComerciante);
             if (esComerciante) {
                 cargarHistorialActividadLocal(idLocal);
@@ -915,30 +893,30 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error al cargar el detalle del local', 'error');
         }
     }
-
+ 
     async function cargarProductosDelLocal(idLocal) {
         const contenedor = document.getElementById('e-productos-lista');
         contenedor.innerHTML = '<p>Cargando productos...</p>';
-
+ 
         try {
             const r = await fetch(`api/listar_productos_local.php?idLocal=${idLocal}`);
             const res = await r.json();
-
+ 
             if (!res.exito || res.productos.length === 0) {
                 contenedor.innerHTML = '<p>Este local todavía no tiene productos registrados.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             res.productos.forEach(producto => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta';
-
+ 
                 const precioHtml = producto.porcentajeDescuento
                     ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
                     : `₡${producto.precioOriginal}`;
-
+ 
                     tarjeta.innerHTML = `
                     ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${producto.nombre}" class="imagen-producto">` : ''}
                     <h4>${producto.nombre} ${producto.compartido ? '<span class="etiqueta-tipo">Compartido</span>' : ''}</h4>
@@ -959,34 +937,33 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p>Error al cargar los productos.</p>';
         }
     }
-
+ 
     document.getElementById('btn-volver-lista').addEventListener('click', mostrarListaLocales);
-
+ 
     document.getElementById('form-editar-local').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const datos = new FormData();
         datos.append('idLocal', document.getElementById('e-idLocal').value);
         datos.append('nombreTipoLocal', document.getElementById('e-tipoLocal').value);
         datos.append('nombreLocal', document.getElementById('e-nombreLocal').value);
         datos.append('descripcion', document.getElementById('e-descripcion').value);
         datos.append('telefono', document.getElementById('e-telefono').value);
-        datos.append('correo', document.getElementById('e-correo').value);
-
+ 
         const archivoLogo = document.getElementById('e-logo').files[0];
         if (archivoLogo) {
             datos.append('logo', archivoLogo);
         }
-
+ 
         try {
             const r = await fetch('api/editar_local.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 mostrarListaLocales();
                 cargarLocales();
@@ -999,17 +976,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputNombreLocalProducto = document.getElementById('p-nombreLocal');
     const infoLocalProducto = document.getElementById('p-local-info');
     const inputIdLocalProducto = document.getElementById('p-idLocal');
-
+ 
     const buscarLocalDebounced = debounce(async () => {
         const nombre = inputNombreLocalProducto.value.trim();
         infoLocalProducto.textContent = '';
         infoLocalProducto.className = 'ayuda';
         if (nombre.length < 3) return;
-
+ 
         try {
             const r = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombre)}`);
             const res = await r.json();
-
+ 
             if (res.encontrado) {
                 inputIdLocalProducto.value = res.idLocal;
                 infoLocalProducto.textContent = 'Local encontrado';
@@ -1021,33 +998,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (e) {}
     }, 400);
-
+ 
     inputNombreLocalProducto.addEventListener('input', () => {
         inputIdLocalProducto.value = '';
         buscarLocalDebounced();
     });
-
+ 
     activarAutocompletadoTipo(
         document.getElementById('p-tipoProducto'),
         document.getElementById('p-tipo-sugerencias'),
         'api/buscar_tipos_producto.php'
     );
-
+ 
     activarAlertaSimilares(
         document.getElementById('p-nombre'),
         document.getElementById('p-similares'),
         'api/buscar_productos_similares.php',
         (item) => `${item.nombre} — ${Math.round(item.similitud)}% (en ${item.locales.map(l => l.nombreLocal).join(', ')})`
     );
-
+ 
     document.getElementById('form-producto').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         if (!inputIdLocalProducto.value) {
             mostrarMensaje('Ingresa el nombre exacto de un local válido antes de continuar', 'error');
             return;
         }
-
+ 
         const datos = new FormData();
         datos.append('idLocal', inputIdLocalProducto.value);
         datos.append('nombreTipoProducto', document.getElementById('p-tipoProducto').value);
@@ -1056,21 +1033,21 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('porcentajeDescuento', document.getElementById('p-descuento').value);
         datos.append('descripcion', document.getElementById('p-descripcion').value);
         datos.append('cantidadDisponible', document.getElementById('p-cantidad').value);
-
+ 
         const archivoImagen = document.getElementById('p-imagen').files[0];
         if (archivoImagen) {
             datos.append('imagen', archivoImagen);
         }
-
+ 
         try {
             const r = await fetch('api/registrar_producto.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 evento.target.reset();
                 infoLocalProducto.textContent = '';
@@ -1080,29 +1057,29 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     const panelEditarProducto = document.getElementById('panel-editar-producto');
     let idLocalProductoEditando = null;
-
+ 
     activarAutocompletadoTipo(
         document.getElementById('ep-tipoProducto'),
         document.getElementById('ep-tipo-sugerencias'),
         'api/buscar_tipos_producto.php'
     );
-
+ 
     async function abrirEditarProducto(idProducto, idLocal) {
         try {
             const r = await fetch(`api/buscar_producto.php?id=${idProducto}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 mostrarMensaje(res.mensaje || 'No se pudo cargar el producto', 'error');
                 return;
             }
-
+ 
             const p = res.producto;
             idLocalProductoEditando = idLocal;
-
+ 
             document.getElementById('ep-idProducto').value = p.idProducto;
             document.getElementById('ep-tipoProducto').value = p.tipoProducto ?? '';
             document.getElementById('ep-nombre').value = p.nombre;
@@ -1110,24 +1087,24 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('ep-precio').value = p.precioOriginal;
             document.getElementById('ep-descuento').value = p.porcentajeDescuento ?? '';
             document.getElementById('ep-cantidad').value = p.cantidadDisponible;
-
+ 
             panelDetalle.classList.add('oculto');
             panelEditarProducto.classList.remove('oculto');
-
+ 
             cargarOtrosLocalesDelProducto(p.idProducto);
         } catch (e) {
             mostrarMensaje('Error al cargar el producto', 'error');
         }
     }
-
+ 
     document.getElementById('btn-cerrar-editar-producto').addEventListener('click', () => {
         panelEditarProducto.classList.add('oculto');
         panelDetalle.classList.remove('oculto');
     });
-
+ 
     document.getElementById('form-editar-producto').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const datos = new FormData();
         datos.append('idProducto', document.getElementById('ep-idProducto').value);
         datos.append('nombreTipoProducto', document.getElementById('ep-tipoProducto').value);
@@ -1136,21 +1113,21 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('porcentajeDescuento', document.getElementById('ep-descuento').value);
         datos.append('descripcion', document.getElementById('ep-descripcion').value);
         datos.append('cantidadDisponible', document.getElementById('ep-cantidad').value);
-
+ 
         const archivoImagen = document.getElementById('ep-imagen').files[0];
         if (archivoImagen) {
             datos.append('imagen', archivoImagen);
         }
-
+ 
         try {
             const r = await fetch('api/editar_producto.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 panelEditarProducto.classList.add('oculto');
                 panelDetalle.classList.remove('oculto');
@@ -1160,32 +1137,32 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     const panelListaComerciantes = document.getElementById('panel-lista-comerciantes');
     const panelDetalleComerciante = document.getElementById('panel-detalle-comerciante');
-
+ 
     function mostrarListaComerciantes() {
         panelDetalleComerciante.classList.add('oculto');
         panelListaComerciantes.classList.remove('oculto');
     }
-
+ 
     async function cargarComerciantes() {
         const contenedor = document.getElementById('lista-comerciantes');
         contenedor.innerHTML = '<p>Cargando...</p>';
-
+ 
         const soloActivos = !document.getElementById('chk-inactivos-comerciantes').checked;
-
+ 
         try {
             const r = await fetch(`api/listar_comerciantes.php?soloActivos=${soloActivos ? '1' : '0'}`);
             const res = await r.json();
-
+ 
             if (!res.exito || res.comerciantes.length === 0) {
                 contenedor.innerHTML = '<p>No hay comerciantes registrados todavía.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             res.comerciantes.forEach(c => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
@@ -1202,28 +1179,28 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p>Error al cargar los comerciantes.</p>';
         }
     }
-
+ 
     document.getElementById('chk-inactivos-comerciantes').addEventListener('change', cargarComerciantes);
-
+ 
     async function abrirDetalleComerciante(idComerciante) {
         try {
             const r = await fetch(`api/buscar_comerciante.php?id=${idComerciante}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 mostrarMensaje(res.mensaje || 'No se pudo cargar el comerciante', 'error');
                 return;
             }
-
+ 
             const c = res.comerciante;
-
+ 
             document.getElementById('dc-idComerciante').value = c.idComerciante;
             document.getElementById('dc-nombre').value = c.nombre;
             document.getElementById('dc-alias').value = c.alias;
             document.getElementById('dc-correo').value = c.correo;
             document.getElementById('dc-identificacion').textContent = c.numeroIdentificacion;
             document.getElementById('dc-password').value = '';
-
+ 
             const imgFoto = document.getElementById('dc-foto-actual');
             if (c.fotoPerfil) {
                 imgFoto.src = `imagenes/${c.fotoPerfil}`;
@@ -1231,10 +1208,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 imgFoto.classList.add('oculto');
             }
-
+ 
             const btnDesactivar = document.getElementById('btn-desactivar-comerciante');
             const btnActivar = document.getElementById('btn-activar-comerciante');
-
+ 
             if (c.activo) {
                 btnDesactivar.classList.remove('oculto');
                 btnActivar.classList.add('oculto');
@@ -1242,40 +1219,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnDesactivar.classList.add('oculto');
                 btnActivar.classList.remove('oculto');
             }
-
+ 
             panelListaComerciantes.classList.add('oculto');
             panelDetalleComerciante.classList.remove('oculto');
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del comerciante', 'error');
         }
     }
-
+ 
     document.getElementById('btn-volver-comerciantes').addEventListener('click', mostrarListaComerciantes);
-
+ 
     document.getElementById('form-editar-comerciante').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const datos = new FormData();
         datos.append('idComerciante', document.getElementById('dc-idComerciante').value);
         datos.append('nombre', document.getElementById('dc-nombre').value);
         datos.append('alias', document.getElementById('dc-alias').value);
         datos.append('correo', document.getElementById('dc-correo').value);
         datos.append('password', document.getElementById('dc-password').value);
-
+ 
         const archivoFoto = document.getElementById('dc-fotoPerfil').files[0];
         if (archivoFoto) {
             datos.append('fotoPerfil', archivoFoto);
         }
-
+ 
         try {
             const r = await fetch('api/editar_comerciante.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 mostrarListaComerciantes();
                 cargarComerciantes();
@@ -1284,15 +1261,15 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     document.getElementById('btn-desactivar-comerciante').addEventListener('click', async () => {
         const idComerciante = document.getElementById('dc-idComerciante').value;
         const nombre = document.getElementById('dc-nombre').value;
-
+ 
         if (!confirm(`¿Seguro que querés desactivar a "${nombre}"? Sus locales seguirán existiendo, pero no podrá ingresar más.`)) {
             return;
         }
-
+ 
         try {
             const r = await fetch('api/eliminar_comerciante.php', {
                 method: 'POST',
@@ -1300,9 +1277,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ idComerciante })
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 mostrarListaComerciantes();
                 cargarComerciantes();
@@ -1311,10 +1288,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     document.getElementById('btn-activar-comerciante').addEventListener('click', async () => {
         const idComerciante = document.getElementById('dc-idComerciante').value;
-
+ 
         try {
             const r = await fetch('api/activar_comerciante.php', {
                 method: 'POST',
@@ -1322,9 +1299,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ idComerciante })
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 mostrarListaComerciantes();
                 cargarComerciantes();
@@ -1333,32 +1310,32 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     const panelListaClientes = document.getElementById('panel-lista-clientes');
     const panelDetalleCliente = document.getElementById('panel-detalle-cliente');
-
+ 
     function mostrarListaClientes() {
         panelDetalleCliente.classList.add('oculto');
         panelListaClientes.classList.remove('oculto');
     }
-
+ 
     async function cargarClientes() {
         const contenedor = document.getElementById('lista-clientes');
         contenedor.innerHTML = '<p>Cargando...</p>';
-
+ 
         const soloActivos = !document.getElementById('chk-inactivos-clientes').checked;
-
+ 
         try {
             const r = await fetch(`api/listar_clientes.php?soloActivos=${soloActivos ? '1' : '0'}`);
             const res = await r.json();
-
+ 
             if (!res.exito || res.clientes.length === 0) {
                 contenedor.innerHTML = '<p>No hay clientes registrados todavía.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             res.clientes.forEach(c => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
@@ -1374,22 +1351,22 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p>Error al cargar los clientes.</p>';
         }
     }
-
+ 
     document.getElementById('chk-inactivos-clientes').addEventListener('change', cargarClientes);
-
+ 
     async function abrirDetalleCliente(idCliente) {
         try {
             const r = await fetch(`api/buscar_cliente.php?id=${idCliente}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 mostrarMensaje(res.mensaje || 'No se pudo cargar el cliente', 'error');
                 return;
             }
-
+ 
             const c = res.cliente;
             const u = res.ubicacion;
-
+ 
             document.getElementById('dcl-idCliente').value = c.idCliente;
             document.getElementById('dcl-nombreCompleto').value = c.nombreCompleto;
             document.getElementById('dcl-correo').value = c.correo;
@@ -1397,7 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dcl-direccion').textContent =
                 u.direccionExacta + (u.referencia ? ` (${u.referencia})` : '');
             document.getElementById('dcl-password').value = '';
-
+ 
             const imgFoto = document.getElementById('dcl-foto-actual');
             if (c.fotoPerfil) {
                 imgFoto.src = `imagenes/${c.fotoPerfil}`;
@@ -1405,10 +1382,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 imgFoto.classList.add('oculto');
             }
-
+ 
             const btnDesactivarCl = document.getElementById('btn-desactivar-cliente');
             const btnActivarCl = document.getElementById('btn-activar-cliente');
-
+ 
             if (c.activo) {
                 btnDesactivarCl.classList.remove('oculto');
                 btnActivarCl.classList.add('oculto');
@@ -1416,41 +1393,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnDesactivarCl.classList.add('oculto');
                 btnActivarCl.classList.remove('oculto');
             }
-
+ 
             panelListaClientes.classList.add('oculto');
             panelDetalleCliente.classList.remove('oculto');
-
+ 
             cargarLocalesQueSigueCliente(c.idCliente);
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del cliente', 'error');
         }
     }
-
+ 
     document.getElementById('btn-volver-clientes').addEventListener('click', mostrarListaClientes);
-
+ 
     document.getElementById('form-editar-cliente').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const datos = new FormData();
         datos.append('idCliente', document.getElementById('dcl-idCliente').value);
         datos.append('nombreCompleto', document.getElementById('dcl-nombreCompleto').value);
         datos.append('correo', document.getElementById('dcl-correo').value);
         datos.append('password', document.getElementById('dcl-password').value);
-
+ 
         const archivoFoto = document.getElementById('dcl-fotoPerfil').files[0];
         if (archivoFoto) {
             datos.append('fotoPerfil', archivoFoto);
         }
-
+ 
         try {
             const r = await fetch('api/editar_cliente.php', {
                 method: 'POST',
                 body: datos
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 mostrarListaClientes();
                 cargarClientes();
@@ -1459,15 +1436,15 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     document.getElementById('btn-desactivar-cliente').addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
         const nombre = document.getElementById('dcl-nombreCompleto').value;
-
+ 
         if (!confirm(`¿Seguro que querés desactivar a "${nombre}"?`)) {
             return;
         }
-
+ 
         try {
             const r = await fetch('api/eliminar_cliente.php', {
                 method: 'POST',
@@ -1475,9 +1452,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ idCliente })
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 mostrarListaClientes();
                 cargarClientes();
@@ -1486,10 +1463,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     document.getElementById('btn-activar-cliente').addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
-
+ 
         try {
             const r = await fetch('api/activar_cliente.php', {
                 method: 'POST',
@@ -1497,9 +1474,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ idCliente })
             });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 mostrarListaClientes();
                 cargarClientes();
@@ -1508,76 +1485,76 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     const reglasIdentificacion = {
         Cedula: { patron: /^\d{9}$/, maxlength: 9, placeholder: 'Ej: 118760512', ayuda: '9 dígitos numéricos' },
         DIMEX: { patron: /^\d{11,12}$/, maxlength: 12, placeholder: 'Ej: 155812345678', ayuda: '11 o 12 dígitos numéricos' },
         Pasaporte: { patron: /^[A-Za-z0-9]{6,15}$/, maxlength: 15, placeholder: 'Ej: AB1234567', ayuda: 'Entre 6 y 15 caracteres, letras y números' }
     };
-
+ 
     function activarValidacionIdentificacion(selectTipoEl, inputNumeroEl, mensajeFormatoEl) {
         function aplicarReglasDelTipo() {
             const regla = reglasIdentificacion[selectTipoEl.value];
             if (!regla) return;
-
+ 
             inputNumeroEl.maxLength = regla.maxlength;
             inputNumeroEl.placeholder = regla.placeholder;
             mensajeFormatoEl.textContent = regla.ayuda;
             mensajeFormatoEl.className = 'ayuda';
-
+ 
             if (selectTipoEl.value === 'Cedula' || selectTipoEl.value === 'DIMEX') {
                 inputNumeroEl.setAttribute('inputmode', 'numeric');
             } else {
                 inputNumeroEl.removeAttribute('inputmode');
             }
         }
-
+ 
         function validarFormato() {
             const regla = reglasIdentificacion[selectTipoEl.value];
             if (!regla || inputNumeroEl.value.trim() === '') return;
-
+ 
             const valido = regla.patron.test(inputNumeroEl.value.trim());
             if (!valido) {
                 mensajeFormatoEl.textContent = `Formato inválido: se espera ${regla.ayuda.toLowerCase()}`;
                 mensajeFormatoEl.className = 'ayuda error';
             }
         }
-
+ 
         selectTipoEl.addEventListener('change', () => {
             inputNumeroEl.value = '';
             aplicarReglasDelTipo();
         });
-
+ 
         inputNumeroEl.addEventListener('blur', validarFormato);
-
+ 
         aplicarReglasDelTipo();
     }
-
+ 
     activarValidacionIdentificacion(
         document.getElementById('c-tipoIdentificacion'),
         document.getElementById('c-numeroIdentificacion'),
         document.getElementById('c-identificacion-msg')
     );
-
+ 
     activarValidacionIdentificacion(
         document.getElementById('cl-tipoIdentificacion'),
         document.getElementById('cl-numeroIdentificacion'),
         document.getElementById('cl-identificacion-msg')
     );
-
+ 
     const selectProvinciaFiltro = document.getElementById('f-provincia');
     const selectCantonFiltro = document.getElementById('f-canton');
     const selectDistritoFiltro = document.getElementById('f-distrito');
-
+ 
     activarCascadaUbicacion(selectProvinciaFiltro, selectCantonFiltro, selectDistritoFiltro);
-
+ 
     const buscarLocalesDebounced = debounce(cargarLocales, 400);
-
+ 
     document.getElementById('f-nombre').addEventListener('input', buscarLocalesDebounced);
     selectProvinciaFiltro.addEventListener('change', cargarLocales);
     selectCantonFiltro.addEventListener('change', cargarLocales);
     selectDistritoFiltro.addEventListener('change', cargarLocales);
-
+ 
     document.getElementById('btn-limpiar-filtros').addEventListener('click', () => {
         document.getElementById('f-nombre').value = '';
         selectProvinciaFiltro.value = '';
@@ -1587,22 +1564,22 @@ document.addEventListener('DOMContentLoaded', () => {
         selectDistritoFiltro.disabled = true;
         cargarLocales();
     });
-
+ 
     async function cargarOtrosLocalesDelProducto(idProducto) {
         const contenedor = document.getElementById('ep-otros-locales-lista');
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
+ 
         try {
             const r = await fetch(`api/listar_locales_producto.php?idProducto=${idProducto}`);
             const res = await r.json();
-
+ 
             if (!res.exito || res.locales.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">Por ahora solo se ofrece en su local original.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             res.locales.forEach(loc => {
                 const fila = document.createElement('div');
                 fila.className = 'fila-relacion';
@@ -1633,37 +1610,37 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error al cargar los locales.</p>';
         }
     }
-
+ 
     document.getElementById('btn-agregar-local-producto').addEventListener('click', async () => {
         const idProducto = document.getElementById('ep-idProducto').value;
         const nombreLocal = document.getElementById('ep-agregar-local-nombre').value.trim();
         const mensaje = document.getElementById('ep-agregar-local-msg');
-
+ 
         if (!nombreLocal) return;
-
+ 
         mensaje.textContent = 'Buscando local...';
         mensaje.className = 'ayuda';
-
+ 
         try {
             const rBuscar = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombreLocal)}`);
             const resBuscar = await rBuscar.json();
-
+ 
             if (!resBuscar.encontrado) {
                 mensaje.textContent = 'No existe un local con ese nombre exacto';
                 mensaje.className = 'ayuda error';
                 return;
             }
-
+ 
             const rAgregar = await fetch('api/agregar_producto_local.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idProducto, idLocal: resBuscar.idLocal })
             });
             const resAgregar = await rAgregar.json();
-
+ 
             mensaje.textContent = resAgregar.mensaje;
             mensaje.className = resAgregar.exito ? 'ayuda exito' : 'ayuda error';
-
+ 
             if (resAgregar.exito) {
                 document.getElementById('ep-agregar-local-nombre').value = '';
                 cargarOtrosLocalesDelProducto(idProducto);
@@ -1673,22 +1650,22 @@ document.addEventListener('DOMContentLoaded', () => {
             mensaje.className = 'ayuda error';
         }
     });
-
+ 
     async function cargarLocalesQueSigueCliente(idCliente) {
         const contenedor = document.getElementById('dcl-locales-lista');
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
+ 
         try {
             const r = await fetch(`api/listar_locales_cliente.php?idCliente=${idCliente}`);
             const res = await r.json();
-
+ 
             if (!res.exito || res.locales.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">Este cliente todavía no sigue ningún local.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             res.locales.forEach(loc => {
                 const fila = document.createElement('div');
                 fila.className = 'fila-relacion';
@@ -1719,37 +1696,37 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error al cargar los locales.</p>';
         }
     }
-
+ 
     document.getElementById('btn-seguir-local').addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
         const nombreLocal = document.getElementById('dcl-agregar-local-nombre').value.trim();
         const mensaje = document.getElementById('dcl-seguir-local-msg');
-
+ 
         if (!nombreLocal) return;
-
+ 
         mensaje.textContent = 'Buscando local...';
         mensaje.className = 'ayuda';
-
+ 
         try {
             const rBuscar = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombreLocal)}`);
             const resBuscar = await rBuscar.json();
-
+ 
             if (!resBuscar.encontrado) {
                 mensaje.textContent = 'No existe un local con ese nombre exacto';
                 mensaje.className = 'ayuda error';
                 return;
             }
-
+ 
             const rSeguir = await fetch('api/seguir_local_cliente.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idCliente, idLocal: resBuscar.idLocal })
             });
             const resSeguir = await rSeguir.json();
-
+ 
             mensaje.textContent = resSeguir.mensaje;
             mensaje.className = resSeguir.exito ? 'ayuda exito' : 'ayuda error';
-
+ 
             if (resSeguir.exito) {
                 document.getElementById('dcl-agregar-local-nombre').value = '';
                 cargarLocalesQueSigueCliente(idCliente);
@@ -1759,8 +1736,8 @@ document.addEventListener('DOMContentLoaded', () => {
             mensaje.className = 'ayuda error';
         }
     });
-
-
+ 
+ 
     function escaparHtml(texto) {
         return String(texto ?? '')
             .replaceAll('&', '&amp;')
@@ -1769,25 +1746,25 @@ document.addEventListener('DOMContentLoaded', () => {
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
-
+ 
     function formatearFecha(fecha) {
         if (!fecha) return 'Fecha no disponible';
         const valor = new Date(fecha.replace(' ', 'T'));
         return Number.isNaN(valor.getTime()) ? fecha : valor.toLocaleString('es-CR');
     }
-
+ 
     async function obtenerClientesActivos() {
         const r = await fetch('api/listar_clientes.php?soloActivos=1');
         const res = await r.json();
         return res.exito ? res.clientes : [];
     }
-
+ 
     async function obtenerLocalesActivos() {
         const r = await fetch('api/listar_locales.php');
         const res = await r.json();
         return res.exito ? res.locales : [];
     }
-
+ 
     function llenarSelect(select, elementos, valorKey, textoKey) {
         const valorActual = select.value;
         select.innerHTML = '<option value="">Seleccione...</option>';
@@ -1801,14 +1778,14 @@ document.addEventListener('DOMContentLoaded', () => {
             select.value = valorActual;
         }
     }
-
+ 
     async function cargarDatosResenas() {
         try {
             const [clientes, locales] = await Promise.all([
                 obtenerClientesActivos(),
                 obtenerLocalesActivos()
             ]);
-
+ 
             llenarSelect(document.getElementById('resena-cliente'), clientes, 'idCliente', 'nombreCompleto');
             llenarSelect(document.getElementById('resena-local'), locales, 'idLocal', 'nombreLocal');
             llenarSelect(document.getElementById('resena-filtro-local'), locales, 'idLocal', 'nombreLocal');
@@ -1817,15 +1794,15 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('No se pudieron cargar los datos de reseñas', 'error');
         }
     }
-
+ 
     document.getElementById('form-resena').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const idCliente = document.getElementById('resena-cliente').value;
         const idLocal = document.getElementById('resena-local').value;
         const puntuacion = document.getElementById('resena-puntuacion').value;
         const comentario = document.getElementById('resena-comentario').value.trim();
-
+ 
         try {
             const r = await fetch('api/registrar_resenia.php', {
                 method: 'POST',
@@ -1834,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const res = await r.json();
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 document.getElementById('resena-comentario').value = '';
                 document.getElementById('resena-filtro-local').value = idLocal;
@@ -1844,48 +1821,48 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión al publicar la reseña', 'error');
         }
     });
-
+ 
     async function cargarResenasLocal() {
         const idLocal = document.getElementById('resena-filtro-local').value;
         const contenedor = document.getElementById('lista-resenas');
         const resumen = document.getElementById('resena-resumen');
-
+ 
         if (!idLocal) {
             resumen.textContent = 'Selecciona un local para ver su calificación.';
             contenedor.innerHTML = '';
             return;
         }
-
+ 
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
+ 
         try {
             const r = await fetch(`api/listar_resenias_local.php?idLocal=${encodeURIComponent(idLocal)}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 resumen.textContent = 'No se pudo obtener la calificación.';
                 contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'Error al cargar reseñas')}</p>`;
                 return;
             }
-
+ 
             const promedio = res.promedio === null ? 'Sin calificación' : `${Number(res.promedio).toFixed(1)} / 5`;
             resumen.textContent = `Promedio: ${promedio} · ${res.total} reseña${res.total === 1 ? '' : 's'}`;
-
+ 
             if (res.resenias.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">Este local todavía no tiene reseñas.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
             res.resenias.forEach(resenia => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta';
                 const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
-
+ 
                 const esPropia = usuarioSesionActual
                     && usuarioSesionActual.tipo === 'Cliente'
                     && Number(usuarioSesionActual.id) === Number(resenia.idCliente);
-
+ 
                 tarjeta.innerHTML = `
                     <h3>${escaparHtml(resenia.nombreCliente)}</h3>
                     <p class="estrellas" aria-label="${resenia.puntuacion} de 5">${estrellas}</p>
@@ -1898,7 +1875,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     ` : ''}
                 `;
-
+ 
                 if (esPropia) {
                     tarjeta.querySelector('.btn-editar-resena').addEventListener('click', () => editarResenaDesdeLista(resenia));
                     tarjeta.querySelector('.btn-eliminar-resena').addEventListener('click', () => eliminarResenaDesdeLista(resenia.idResenia));
@@ -1910,22 +1887,22 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar reseñas.</p>';
         }
     }
-
+ 
     document.getElementById('btn-cargar-resenas').addEventListener('click', cargarResenasLocal);
-
+ 
     async function editarResenaDesdeLista(resenia) {
         const comentario = prompt('Edita el comentario:', resenia.comentario);
         if (comentario === null) return;
-
+ 
         const puntuacionTexto = prompt('Nueva puntuación del 1 al 5:', String(resenia.puntuacion));
         if (puntuacionTexto === null) return;
-
+ 
         const puntuacion = Number(puntuacionTexto);
         if (!Number.isInteger(puntuacion) || puntuacion < 1 || puntuacion > 5) {
             mostrarMensaje('La puntuación debe ser un número entero del 1 al 5', 'error');
             return;
         }
-
+ 
         try {
             const r = await fetch('api/editar_resenia.php', {
                 method: 'POST',
@@ -1939,10 +1916,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión al editar la reseña', 'error');
         }
     }
-
+ 
     async function eliminarResenaDesdeLista(idResenia) {
         if (!confirm('¿Seguro que querés eliminar esta reseña?')) return;
-
+ 
         try {
             const r = await fetch('api/eliminar_resenia.php', {
                 method: 'POST',
@@ -1956,12 +1933,12 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión al eliminar la reseña', 'error');
         }
     }
-
+ 
     async function cargarUsuariosHistorial() {
         const tipo = document.getElementById('historial-tipo').value;
         const select = document.getElementById('historial-usuario');
         select.innerHTML = '<option value="">Cargando...</option>';
-
+ 
         try {
             if (tipo === 'Cliente') {
                 const clientes = await obtenerClientesActivos();
@@ -1971,41 +1948,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await r.json();
                 llenarSelect(select, res.exito ? res.comerciantes : [], 'idComerciante', 'nombre');
             }
-
+ 
             document.getElementById('historial-password-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
             document.getElementById('historial-fotos-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
         } catch (e) {
             select.innerHTML = '<option value="">No se pudieron cargar usuarios</option>';
         }
     }
-
+ 
     document.getElementById('historial-tipo').addEventListener('change', cargarUsuariosHistorial);
-
+ 
     async function consultarHistorialUsuario() {
         const tipoUsuario = document.getElementById('historial-tipo').value;
         const idUsuario = document.getElementById('historial-usuario').value;
         const listaPassword = document.getElementById('historial-password-lista');
         const listaFotos = document.getElementById('historial-fotos-lista');
-
+ 
         if (!idUsuario) {
             mostrarMensaje('Selecciona un usuario para consultar el historial', 'error');
             return;
         }
-
+ 
         listaPassword.innerHTML = '<p class="ayuda">Cargando...</p>';
         listaFotos.innerHTML = '<p class="ayuda">Cargando...</p>';
-
+ 
         try {
             const parametros = new URLSearchParams({ idUsuario, tipoUsuario });
             const r = await fetch(`api/listar_historial_usuario.php?${parametros.toString()}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 listaPassword.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
                 listaFotos.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
                 return;
             }
-
+ 
             if (res.passwords.length === 0) {
                 listaPassword.innerHTML = '<p class="ayuda">No hay cambios de contraseña registrados.</p>';
             } else {
@@ -2014,13 +1991,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'tarjeta';
                     tarjeta.innerHTML = `
-                        <h3>${item.exitoso ? 'Cambio exitoso' : 'Intento fallido'}</h3>
+                        <h3>Contraseña actualizada</h3>
                         <p>${escaparHtml(formatearFecha(item.fecha))}</p>
                     `;
                     listaPassword.appendChild(tarjeta);
                 });
             }
-
+ 
             if (res.fotos.length === 0) {
                 listaFotos.innerHTML = '<p class="ayuda">No hay cambios de foto registrados.</p>';
             } else {
@@ -2041,22 +2018,22 @@ document.addEventListener('DOMContentLoaded', () => {
             listaFotos.innerHTML = '<p class="ayuda error">Error de conexión.</p>';
         }
     }
-
+ 
     document.getElementById('btn-ver-historial').addEventListener('click', consultarHistorialUsuario);
-
+ 
     document.getElementById('form-cambiar-password').addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const tipoUsuario = document.getElementById('historial-tipo').value;
         const idUsuario = document.getElementById('historial-usuario').value;
         const passwordActual = document.getElementById('historial-password-actual').value;
         const passwordNueva = document.getElementById('historial-password-nueva').value;
-
+ 
         if (!idUsuario) {
             mostrarMensaje('Selecciona un usuario antes de cambiar la contraseña', 'error');
             return;
         }
-
+ 
         try {
             const r = await fetch('api/cambiar_password_usuario.php', {
                 method: 'POST',
@@ -2065,7 +2042,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const res = await r.json();
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             document.getElementById('historial-password-actual').value = '';
             document.getElementById('historial-password-nueva').value = '';
             await consultarHistorialUsuario();
@@ -2073,7 +2050,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión al cambiar la contraseña', 'error');
         }
     });
-
+ 
     function obtenerCoordenadasGPS() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
@@ -2090,33 +2067,33 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         });
     }
-
+ 
     function mostrarVistaLogin(idVista) {
         vistas.forEach(v => v.classList.add('oculto'));
         const destino = document.getElementById(idVista);
         if (destino) destino.classList.remove('oculto');
-
+ 
         botonesMenu.forEach(b => b.classList.remove('activo'));
         const boton = document.querySelector(`.menu-boton[data-vista="${idVista}"]`);
         if (boton) boton.classList.add('activo');
-
+ 
         const menuPrincipal = document.getElementById('menu-principal');
         if (menuPrincipal) {
             const esRegistro = idVista === 'vista-comerciante' || idVista === 'vista-cliente';
             menuPrincipal.classList.toggle('oculto', esRegistro);
         }
-
+ 
         if (idVista === 'vista-listado' && typeof mostrarListaLocales === 'function') {
             mostrarListaLocales();
             cargarLocales();
         }
     }
-
+ 
         async function verificarSesionActual() {
         try {
             const r = await fetch('api/sesion_actual.php');
             const res = await r.json();
-
+ 
             if (res.autenticado) {
                 actualizarIndicadorSesion(res.usuario);
                 if (res.usuario.tipo === 'Cliente') {
@@ -2144,37 +2121,37 @@ document.addEventListener('DOMContentLoaded', () => {
             boton.classList.toggle('oculto', rol !== tipoUsuario);
         });
     }
-
+ 
     function actualizarIndicadorSesion(usuario) {
         usuarioSesionActual = usuario;
-
+ 
         const indicador = document.getElementById('sesion-indicador');
         const texto = document.getElementById('sesion-texto');
-
+ 
         actualizarMenuPorRol(usuario ? usuario.tipo : null);
-
+ 
                 const barraLateral = document.getElementById('barra-lateral');
         const topbarPublica = document.getElementById('topbar-publica');
         if (barraLateral) barraLateral.classList.toggle('oculto', !usuario);
         if (topbarPublica) topbarPublica.classList.toggle('oculto', !!usuario);
-
+ 
                 const menuSecundario = document.getElementById('menu-secundario');
         if (menuSecundario) {
             menuSecundario.style.display = usuario ? 'flex' : 'none';
         }
-
+ 
         const botonLoginHeader = document.getElementById('btn-ir-login');
         if (botonLoginHeader) {
             botonLoginHeader.style.display = usuario ? 'none' : 'inline-flex';
         }
-
+ 
         const botonLogin = document.querySelector('.menu-boton[data-vista="vista-login"]');
         if (botonLogin) {
             botonLogin.classList.toggle('oculto', !!usuario);
         }
-
+ 
         if (!indicador || !texto) return;
-
+ 
         if (usuario) {
             texto.textContent = `Sesión: ${usuario.nombre} (${usuario.tipo})`;
             indicador.classList.remove('oculto');
@@ -2182,20 +2159,20 @@ document.addEventListener('DOMContentLoaded', () => {
             indicador.classList.add('oculto');
         }
     }
-
+ 
     document.getElementById('form-login')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const tabActivo = document.querySelector('.login-tab.activo');
         const tipo = tabActivo ? tabActivo.dataset.rol : 'cliente';
         const correo = document.getElementById('login-correo').value.trim();
         const password = document.getElementById('login-password').value;
-
+ 
         if (correo === '' || password === '') {
             mostrarMensaje('Ingresa tu correo y tu contraseña', 'error');
             return;
         }
-
+ 
         const formatoCorreoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
         if (!formatoCorreoValido) {
             mostrarMensaje('El correo no tiene un formato válido', 'error');
@@ -2206,21 +2183,21 @@ document.addEventListener('DOMContentLoaded', () => {
     : tipo === 'comerciante'
         ? 'api/login_comerciante.php'
         : 'api/login_superadmin.php';
-
+ 
         const datos = new FormData();
         datos.append('correo', correo);
         datos.append('password', password);
-
+ 
         try {
             const r = await fetch(endpoint, { method: 'POST', body: datos });
             const res = await r.json();
-
+ 
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
+ 
             if (res.exito) {
                 actualizarIndicadorSesion(res.usuario);
                 evento.target.reset();
-
+ 
                 try {
                     const coords = await obtenerCoordenadasGPS();
                     await fetch('api/registrar_ubicacion_login.php', {
@@ -2230,7 +2207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 } catch (e) {
                 }
-
+ 
                           if (res.usuario.tipo === 'Cliente') {
                     mostrarVistaLogin('vista-listado');
                 } else if (res.usuario.tipo === 'Comerciante') {
@@ -2244,7 +2221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
-
+ 
     document.getElementById('btn-cerrar-sesion')?.addEventListener('click', async () => {
         try {
             await fetch('api/cerrar_sesion.php', { method: 'POST' });
@@ -2254,22 +2231,22 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarPanelEntrar();
         mostrarVistaLogin('vista-login');
     });
-
+ 
     verificarSesionActual();
-
+ 
     const panelEntrar = document.getElementById('login-panel-entrar');
     const panelElegirTipo = document.getElementById('login-panel-elegir-tipo');
-
+ 
     function mostrarPanelEntrar() {
         panelElegirTipo?.classList.add('oculto');
         panelEntrar?.classList.remove('oculto');
     }
-
+ 
     function mostrarPanelElegirTipo() {
         panelEntrar?.classList.add('oculto');
         panelElegirTipo?.classList.remove('oculto');
     }
-
+ 
         document.getElementById('btn-registro')?.addEventListener('click', (evento) => {
         evento.preventDefault();
         Swal.fire({
@@ -2289,47 +2266,47 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
+ 
     document.getElementById('link-volver-login')?.addEventListener('click', (evento) => {
         evento.preventDefault();
         mostrarPanelEntrar();
     });
-
+ 
     document.getElementById('btn-elegir-cliente')?.addEventListener('click', () => {
         mostrarVistaLogin('vista-cliente');
     });
-
+ 
     document.getElementById('btn-elegir-comerciante')?.addEventListener('click', () => {
         mostrarVistaLogin('vista-comerciante');
     });
-
+ 
     document.getElementById('btn-volver-login-comerciante')?.addEventListener('click', () => {
         mostrarPanelEntrar();
         mostrarVistaLogin('vista-login');
     });
-
+ 
     document.getElementById('btn-volver-login-cliente')?.addEventListener('click', () => {
         mostrarPanelEntrar();
         mostrarVistaLogin('vista-login');
     });
-
+ 
     async function mostrarSelectorPerfilesLocal() {
         mostrarVistaLogin('vista-seleccionar-local');
-
+ 
         const contenedor = document.getElementById('grid-perfiles-local');
         contenedor.innerHTML = '<p class="ayuda">Cargando tus locales...</p>';
-
+ 
         try {
             const r = await fetch('api/listar_locales_comerciante.php');
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 contenedor.innerHTML = `<p class="ayuda error">${res.mensaje || 'No se pudieron cargar tus locales'}</p>`;
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
-
+ 
             res.locales.forEach(local => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta-perfil';
@@ -2343,7 +2320,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tarjeta.addEventListener('click', () => entrarPerfilLocal(local.idLocal));
                 contenedor.appendChild(tarjeta);
             });
-
+ 
             const tarjetaNueva = document.createElement('div');
             tarjetaNueva.className = 'tarjeta-perfil crear-nuevo';
             tarjetaNueva.textContent = '+ Crear nuevo local';
@@ -2353,7 +2330,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar tus locales.</p>';
         }
     }
-
+ 
     async function entrarPerfilLocal(idLocal) {
         try {
             const r = await fetch('api/entrar_perfil_local.php', {
@@ -2362,12 +2339,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ idLocal })
             });
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 mostrarMensaje(res.mensaje || 'No se pudo entrar a ese local', 'error');
                 return;
             }
-
+ 
             mostrarVistaLogin('vista-listado');
             if (typeof abrirDetalleLocal === 'function') {
                 abrirDetalleLocal(idLocal);
@@ -2376,7 +2353,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     }
-
+ 
        //Validacion para frontend 
     function soloLetras(inputEl) {
         if (!inputEl) return;
@@ -2389,7 +2366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
+ 
     // Se aplica a los mismos campos que el backend valida con validarSoloLetras()
     soloLetras(document.getElementById('c-nombre'));
     soloLetras(document.getElementById('c-alias'));
@@ -2397,15 +2374,15 @@ document.addEventListener('DOMContentLoaded', () => {
     soloLetras(document.getElementById('dc-nombre'));
     soloLetras(document.getElementById('dc-alias'));
     soloLetras(document.getElementById('dcl-nombreCompleto'));
-
+ 
     function soloAlfanumerico(valor) {
         return valor.replace(/[^A-Za-z0-9]/g, '');
     }
-
+ 
     // Rellena el pie de página
     const pieAnio = document.getElementById('pie-anio');
     if (pieAnio) pieAnio.textContent = new Date().getFullYear();
-
+ 
     document.querySelectorAll('.pie-enlaces a[data-vista-footer]').forEach(enlace => {
         enlace.addEventListener('click', (evento) => {
             evento.preventDefault();
@@ -2419,25 +2396,25 @@ document.addEventListener('DOMContentLoaded', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
-
+ 
     //GPS
     document.getElementById('btn-cerc-ubicacion')?.addEventListener('click', async () => {
         const msg = document.getElementById('cerc-ubicacion-msg');
         msg.textContent = 'Obteniendo tu ubicación...';
         msg.className = 'ayuda';
-
+ 
         try {
             const coords = await obtenerCoordenadasGPS();
             document.getElementById('cerc-latitud').value = coords.lat;
             document.getElementById('cerc-longitud').value = coords.lng;
-
+ 
             const r = await fetch('api/actualizar_ubicacion_cliente.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
             });
             const res = await r.json();
-
+ 
             if (res.exito) {
                 msg.textContent = 'Ubicación obtenida correctamente ✅';
                 msg.className = 'ayuda exito';
@@ -2450,16 +2427,16 @@ document.addEventListener('DOMContentLoaded', () => {
             msg.className = 'ayuda error';
         }
     });
-
+ 
     document.getElementById('form-cercanos')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
-
+ 
         const termino = document.getElementById('cerc-termino').value.trim();
         const lat = document.getElementById('cerc-latitud').value;
         const lng = document.getElementById('cerc-longitud').value;
         const radio = document.getElementById('cerc-radio').value;
         const contenedor = document.getElementById('lista-cercanos');
-
+ 
         if (!termino) {
             mostrarMensaje('Escribe qué producto o tipo de local buscas', 'error');
             return;
@@ -2468,30 +2445,30 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Primero presiona "Usar mi ubicación GPS"', 'error');
             return;
         }
-
+ 
         contenedor.innerHTML = '<p class="ayuda">Buscando locales cercanos...</p>';
-
+ 
         try {
             const parametros = new URLSearchParams({ q: termino, lat, lng, radio });
             const r = await fetch(`api/buscar_locales_cercanos.php?${parametros.toString()}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudo completar la búsqueda')}</p>`;
                 return;
             }
-
+ 
             if (res.resultados.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">No se encontraron locales cercanos con ese producto.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
             res.resultados.forEach(item => {
                 const precioHtml = item.descuento
                     ? `<s>₡${item.precio}</s> ₡${(item.precio - (item.precio * item.descuento / 100)).toFixed(2)} <span class="etiqueta-tipo">-${item.descuento}%</span>`
                     : `₡${item.precio}`;
-
+ 
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
                 tarjeta.innerHTML = `
@@ -2512,37 +2489,37 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error de conexión al buscar locales cercanos.</p>';
         }
     });
-
+ 
    //Buscar comerciante por ID 
     const inputBuscarIdentComerciante = document.getElementById('admin-buscar-identificacion');
-
+ 
     inputBuscarIdentComerciante?.addEventListener('input', () => {
         inputBuscarIdentComerciante.value = soloAlfanumerico(inputBuscarIdentComerciante.value);
     });
-
+ 
     document.getElementById('btn-buscar-comerciante-identificacion')?.addEventListener('click', async () => {
         const numero = inputBuscarIdentComerciante.value.trim();
         const msg = document.getElementById('admin-buscar-identificacion-msg');
-
+ 
         if (!numero) {
             msg.textContent = 'Escribe un número de identificación';
             msg.className = 'ayuda error';
             return;
         }
-
+ 
         msg.textContent = 'Buscando...';
         msg.className = 'ayuda';
-
+ 
         try {
             const r = await fetch(`api/buscar_comerciante_por_identificacion.php?numeroIdentificacion=${encodeURIComponent(numero)}`);
             const res = await r.json();
-
+ 
             if (!res.encontrado) {
                 msg.textContent = 'No se encontró ningún comerciante con esa identificación';
                 msg.className = 'ayuda error';
                 return;
             }
-
+ 
             msg.textContent = '';
             abrirDetalleComerciante(res.idComerciante);
         } catch (e) {
@@ -2550,39 +2527,40 @@ document.addEventListener('DOMContentLoaded', () => {
             msg.className = 'ayuda error';
         }
     });
-
-
+ 
+ 
     async function cargarHistorialActividadLocal(idLocal) {
         const contenedor = document.getElementById('e-actividad-lista');
         const estado = document.getElementById('e-actividad-estado');
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
+ 
         try {
             const r = await fetch(`api/listar_sesion_activo_historico.php?idLocal=${idLocal}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 estado.textContent = '';
                 contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudo cargar el historial')}</p>`;
                 return;
             }
-
+ 
             estado.textContent = res.activoPorActividad
                 ? '✅ Este local está activo por actividad reciente.'
                 : '⚠️ Este local lleva más de 7 días sin actividad.';
             estado.className = res.activoPorActividad ? 'ayuda exito' : 'ayuda error';
-
+ 
             if (res.historial.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">Todavía no hay actividad registrada.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
             res.historial.forEach(item => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta';
+                const cambio = item.valorNuevo ? 'Local activado' : 'Local desactivado';
                 tarjeta.innerHTML = `
-                    <h3>${escaparHtml(item.tipo)}</h3>
+                    <h3>${escaparHtml(cambio)}</h3>
                     <p class="ayuda">${escaparHtml(formatearFecha(item.fecha))}</p>
                 `;
                 contenedor.appendChild(tarjeta);
@@ -2591,33 +2569,33 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar la actividad.</p>';
         }
     }
-
+ 
 // resenias escritas por un cliente 
     document.getElementById('btn-ver-resenas-cliente')?.addEventListener('click', async () => {
         const idCliente = document.getElementById('resena-filtro-cliente').value;
         const contenedor = document.getElementById('lista-resenas-cliente');
-
+ 
         if (!idCliente) {
             mostrarMensaje('Selecciona un cliente', 'error');
             return;
         }
-
+ 
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
-
+ 
         try {
             const r = await fetch(`api/listar_resenias_cliente.php?idCliente=${idCliente}`);
             const res = await r.json();
-
+ 
             if (!res.exito) {
                 contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron cargar las reseñas')}</p>`;
                 return;
             }
-
+ 
             if (res.resenias.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">Este cliente todavía no ha escrito reseñas.</p>';
                 return;
             }
-
+ 
             contenedor.innerHTML = '';
             res.resenias.forEach(resenia => {
                 const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
@@ -2635,9 +2613,9 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar las reseñas.</p>';
         }
     });
-
-
-
+ 
+ 
+ 
         // ============================================================
     // Dashboard de SuperAdmin
     // ============================================================
@@ -2646,14 +2624,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const statClientes = document.getElementById('stat-clientes');
         const statComerciantes = document.getElementById('stat-comerciantes');
         const statComerciantesInactivos = document.getElementById('stat-comerciantes-inactivos');
-
+ 
         if (!statLocales) return; // la vista del dashboard todavía no existe en el HTML
-
+ 
         statLocales.textContent = '—';
         statClientes.textContent = '—';
         statComerciantes.textContent = '—';
         statComerciantesInactivos.textContent = '—';
-
+ 
         try {
             const [locales, clientes, rComerciantesActivos, rComerciantesTodos] = await Promise.all([
                 obtenerLocalesActivos(),
@@ -2661,29 +2639,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetch('api/listar_comerciantes.php?soloActivos=1').then(r => r.json()),
                 fetch('api/listar_comerciantes.php?soloActivos=0').then(r => r.json())
             ]);
-
+ 
             statLocales.textContent = locales.length;
             statClientes.textContent = clientes.length;
-
+ 
             const comerciantesActivos = rComerciantesActivos.exito ? rComerciantesActivos.comerciantes.length : 0;
             const comerciantesTodos = rComerciantesTodos.exito ? rComerciantesTodos.comerciantes.length : 0;
-
+ 
             statComerciantes.textContent = comerciantesActivos;
             statComerciantesInactivos.textContent = Math.max(comerciantesTodos - comerciantesActivos, 0);
-
+ 
             if (window.lucide) lucide.createIcons();
         } catch (e) {
             mostrarMensaje('No se pudo cargar el resumen del dashboard', 'error');
         }
     }
-
+ 
     document.querySelectorAll('.acceso-dashboard-boton[data-vista]').forEach(boton => {
         boton.addEventListener('click', () => {
             const destino = document.querySelector(`.menu-boton[data-vista="${boton.dataset.vista}"]`);
             if (destino) destino.click();
         });
     });
-
+ 
         // ============================================================
     // Vista: Inicio (catálogo público + carrusel)
     // ============================================================
@@ -2691,18 +2669,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let carruselIndice = 0;
     let carruselIntervalo = null;
     let localesInicioCache = [];
-
+ 
     function renderizarCarrusel() {
         const pista = document.getElementById('carrusel-pista');
         const puntos = document.getElementById('carrusel-puntos');
         if (!pista) return;
-
+ 
         if (carruselLocales.length === 0) {
             pista.innerHTML = '<div class="carrusel-slide"><p class="ayuda">Todavía no hay locales registrados.</p></div>';
             puntos.innerHTML = '';
             return;
         }
-
+ 
         pista.innerHTML = carruselLocales.map(local => `
             <div class="carrusel-slide">
                 ${local.logo
@@ -2716,13 +2694,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `).join('');
-
+ 
         pista.style.transform = `translateX(-${carruselIndice * 100}%)`;
-
+ 
         puntos.innerHTML = carruselLocales.map((_, i) =>
             `<button type="button" class="carrusel-punto ${i === carruselIndice ? 'activo' : ''}" data-indice="${i}" aria-label="Ir al local ${i + 1}"></button>`
         ).join('');
-
+ 
         puntos.querySelectorAll('.carrusel-punto').forEach(punto => {
             punto.addEventListener('click', () => {
                 carruselIndice = Number(punto.dataset.indice);
@@ -2730,7 +2708,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 iniciarAutoplayCarrusel();
             });
         });
-
+ 
         pista.querySelectorAll('.carrusel-ver-local').forEach(boton => {
             boton.addEventListener('click', () => {
                 mostrarVistaLogin('vista-listado');
@@ -2738,13 +2716,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
+ 
     function moverCarrusel(direccion) {
         if (carruselLocales.length === 0) return;
         carruselIndice = (carruselIndice + direccion + carruselLocales.length) % carruselLocales.length;
         renderizarCarrusel();
     }
-
+ 
     document.getElementById('carrusel-prev')?.addEventListener('click', () => {
         moverCarrusel(-1);
         iniciarAutoplayCarrusel();
@@ -2753,27 +2731,27 @@ document.addEventListener('DOMContentLoaded', () => {
         moverCarrusel(1);
         iniciarAutoplayCarrusel();
     });
-
+ 
     function iniciarAutoplayCarrusel() {
         clearInterval(carruselIntervalo);
         carruselIntervalo = setInterval(() => moverCarrusel(1), 5000);
     }
-
+ 
     function renderizarCatalogoInicio(locales) {
         const contenedor = document.getElementById('catalogo-inicio');
         const termino = (document.getElementById('inicio-buscar')?.value || '').trim().toLowerCase();
-
+ 
         const filtrados = termino
             ? locales.filter(l =>
                 l.nombreLocal.toLowerCase().includes(termino) ||
                 (l.tipoLocal ?? '').toLowerCase().includes(termino))
             : locales;
-
+ 
         if (filtrados.length === 0) {
             contenedor.innerHTML = '<p class="ayuda">No se encontraron locales.</p>';
             return;
         }
-
+ 
         contenedor.innerHTML = '';
         filtrados.forEach(local => {
             const tarjeta = document.createElement('div');
@@ -2791,35 +2769,35 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.appendChild(tarjeta);
         });
     }
-
+ 
     document.getElementById('inicio-buscar')?.addEventListener('input', debounce(() => {
         renderizarCatalogoInicio(localesInicioCache);
     }, 300));
-
+ 
     async function cargarInicio() {
         const contenedorCatalogo = document.getElementById('catalogo-inicio');
         if (!contenedorCatalogo) return;
-
+ 
         contenedorCatalogo.innerHTML = '<p class="ayuda">Cargando locales...</p>';
-
+ 
         try {
             const locales = await obtenerLocalesActivos();
             localesInicioCache = locales;
-
+ 
             carruselLocales = locales.slice(0, 8);
             carruselIndice = 0;
             renderizarCarrusel();
             iniciarAutoplayCarrusel();
-
+ 
             renderizarCatalogoInicio(locales);
         } catch (e) {
             contenedorCatalogo.innerHTML = '<p class="ayuda error">No se pudieron cargar los locales.</p>';
         }
     }
-
+ 
     cargarInicio();
-
-
+ 
+ 
     // ============================================================
 // BOTÓN LOGIN - Redirige al login
 // ============================================================
@@ -2828,7 +2806,7 @@ document.getElementById('btn-ir-login')?.addEventListener('click', function() {
     document.getElementById('vista-login')?.classList.remove('oculto');
     document.querySelectorAll('.menu-boton').forEach(b => b.classList.remove('activo'));
 });
-
+ 
 // ============================================================
 // TABS DE LOGIN
 // ============================================================
@@ -2838,7 +2816,7 @@ document.querySelectorAll('.login-tab').forEach(tab => {
         this.classList.add('activo');
     });
 });
-
+ 
 // ============================================================
 // TOGGLE PASSWORD
 // ============================================================
@@ -2852,7 +2830,7 @@ document.getElementById('toggle-password')?.addEventListener('click', function()
         this.textContent = '👁️';
     }
 });
-
+ 
 // Mostrar menú secundario al iniciar sesión
 function mostrarMenuSecundario(rol) {
     const menuSec = document.getElementById('menu-secundario');
@@ -2864,10 +2842,11 @@ function mostrarMenuSecundario(rol) {
         boton.style.display = (rol === rolRequerido || !rolRequerido) ? 'inline-block' : 'none';
     });
 }
-
+ 
 // Ocultar menú secundario al cerrar sesión
 function ocultarMenuSecundario() {
     document.getElementById('menu-secundario').style.display = 'none';
 }
-
+ 
 });
+ 
