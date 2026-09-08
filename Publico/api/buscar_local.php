@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../Aplicacion/Controladoras/ProvinciaController.php'
 require_once __DIR__ . '/../../Aplicacion/Controladoras/CantonController.php';
 require_once __DIR__ . '/../../Aplicacion/Controladoras/DistritoController.php';
 
-$idLocal = (int)($_GET['id'] ?? 0);
+$idLocal = (int) ($_GET['id'] ?? 0);
 
 try {
     $localControlador = new LocalController();
@@ -34,7 +34,6 @@ try {
             'nombreLocal' => $local->getNombreLocal(),
             'descripcion' => $local->getDescripcion(),
             'telefono' => $local->getTelefono(),
-            'correo' => $local->getCorreo(),
             'logo' => $local->getLogo()
         ],
         'ubicacion' => [

@@ -19,10 +19,6 @@ class RegistrarLocalHandler
         if ($controlador->existeNombreLocal($nombreLocal)) {
             return ['exito' => false, 'mensaje' => 'Ya existe un local con ese nombre'];
         }
-//BORRAR CORREO
-        if ($controlador->existeCorreoLocal($_POST['correo'] ?? '')) {
-            return ['exito' => false, 'mensaje' => 'Ya existe un local registrado con ese correo'];
-        }
 
         $nombreLogo = $this->subirImagenPerfil($_FILES['logo'] ?? null, 'local');
 
@@ -31,7 +27,6 @@ class RegistrarLocalHandler
             $_POST['nombreTipoLocal'] ?? '',
             $nombreLocal,
             preg_replace('/\D/', '', $_POST['telefono'] ?? ''),
-            $_POST['correo'] ?? '',
             $_POST['descripcion'] ?? null,
             $nombreLogo !== false ? $nombreLogo : null,
             (int) ($_POST['idProvincia'] ?? 0),

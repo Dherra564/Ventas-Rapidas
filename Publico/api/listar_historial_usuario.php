@@ -1,7 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/HistorialController.php';
-require_once __DIR__ . '/../../Aplicacion/Modelos/PasswordHistorial.php';
 
 try {
     $idUsuario = (int) ($_GET['idUsuario'] ?? 0);
@@ -12,17 +11,18 @@ try {
     }
 
     $controlador = new HistorialController();
+
     $passwords = array_map(fn($h) => [
-        'idHistorial' => $h->getIdHistorialPassword(),
-        'fecha' => $h->getFechaCambio()?->format('Y-m-d H:i:s'),
-        'exitoso' => $h->isExitoso()
+        'idHistorial' => $h->getIdHistorial(),
+        'fecha' => $h->getFecha()?->format('Y-m-d H:i:s')
+
     ], $controlador->listarPasswords($idUsuario, $tipoUsuario));
 
     $fotos = array_map(fn($h) => [
-        'idHistorial' => $h->getIdHistorialFotoPerfil(),
-        'fecha' => $h->getFechaCambio()?->format('Y-m-d H:i:s'),
-        'rutaAnterior' => $h->getRutaAnterior(),
-        'rutaNueva' => $h->getRutaNueva()
+        'idHistorial' => $h->getIdHistorial(),
+        'fecha' => $h->getFecha()?->format('Y-m-d H:i:s'),
+        'rutaAnterior' => $h->getValorAnterior(),
+        'rutaNueva' => $h->getValorNuevo()
     ], $controlador->listarFotos($idUsuario, $tipoUsuario));
 
     echo json_encode(['exito' => true, 'passwords' => $passwords, 'fotos' => $fotos]);

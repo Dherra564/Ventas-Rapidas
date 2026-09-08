@@ -13,10 +13,10 @@ try {
     $historial = $controlador->obtenerHistorialActividad($idLocal);
 
     $datos = array_map(fn($h) => [
-        'idHistorialActividadSesionLocal' => $h->getIdHistorialActividadSesionLocal(),
-        'idUsuario' => $h->getIdUsuario(),
-        'tipoUsuario' => $h->getTipoUsuario(),
-        'tipo' => $h->getTipo(),
+        'idSesionActivoHistorico' => $h->getIdSesionActivoHistorico(),
+        'idSesion' => $h->getIdSesion(),
+        'valorAnterior' => $h->isValorAnterior(),
+        'valorNuevo' => $h->isValorNuevo(),
         'fecha' => $h->getFecha()?->format('Y-m-d H:i:s')
     ], $historial);
 

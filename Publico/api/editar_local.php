@@ -42,7 +42,6 @@ class EditarLocalHandler
             $idTipoLocal,
             $_POST['nombreLocal'] ?? '',
             preg_replace('/\D/', '', $_POST['telefono'] ?? ''),
-            $_POST['correo'] ?? '',
             $_POST['descripcion'] ?? null,
             $logoFinal,
             true,
