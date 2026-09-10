@@ -2661,9 +2661,135 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
  
+        // ------------------------------------------------------------
+    // Cronómetro de vencimiento (tarjetas + modal)
+    // ------------------------------------------------------------
+    function formatearTiempoRestante(ms) {
+        const totalSegundos = Math.floor(ms / 1000);
+        const horas = Math.floor(totalSegundos / 3600);
+        const minutos = Math.floor((totalSegundos % 3600) / 60);
+        const segundos = totalSegundos % 60;
+
+        return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+    }
+
+    function actualizarCronometros() {
+        const ahora = Date.now();
+        document.querySelectorAll('[data-vence]').forEach(elemento => {
+            const vence = new Date(elemento.dataset.vence).getTime();
+            const restante = vence - ahora;
+            const textoSpan = elemento.querySelector('.cronometro-texto') || elemento;
+
+            if (isNaN(vence) || restante <= 0) {
+                textoSpan.textContent = 'Vencido';
+                elemento.classList.add('cronometro-vencido');
+                return;
+            }
+
+            elemento.classList.remove('cronometro-vencido');
+            textoSpan.textContent = formatearTiempoRestante(restante);
+        });
+    }
+
+    setInterval(actualizarCronometros, 1000);
         // ============================================================
     // Vista: Inicio (catálogo público + carrusel)
     // ============================================================
+        function crearEstadoVacio(mensaje, icono = 'package-open') {
+        return `
+            <div class="estado-vacio">
+                <i data-lucide="${icono}"></i>
+                <p>${escaparHtml(mensaje)}</p>
+            </div>
+        `;
+    }
+
+        // ------------------------------------------------------------
+    // Modal de detalle de producto
+    // ------------------------------------------------------------
+    function abrirModalProducto(p) {
+        const modal = document.getElementById('modal-producto');
+        if (!modal) return;
+
+                const imagen = document.getElementById('modal-producto-imagen');
+        const sinImagen = document.getElementById('modal-producto-sin-imagen');
+        if (p.imagen) {
+            imagen.src = `imagenes/${p.imagen}`;
+            imagen.alt = p.nombre;
+            imagen.classList.remove('oculto');
+            sinImagen.classList.add('oculto');
+        } else {
+            imagen.classList.add('oculto');
+            sinImagen.classList.remove('oculto');
+        }
+
+        const badge = document.getElementById('modal-producto-badge');
+        if (p.porcentajeDescuento) {
+            badge.textContent = `-${p.porcentajeDescuento}%`;
+            badge.classList.remove('oculto');
+        } else {
+            badge.classList.add('oculto');
+        }
+
+        const logoLocal = document.getElementById('modal-producto-logo-local');
+        if (p.logoLocal) {
+            logoLocal.src = `imagenes/${p.logoLocal}`;
+            logoLocal.classList.remove('oculto');
+        } else {
+            logoLocal.classList.add('oculto');
+        }
+        document.getElementById('modal-producto-nombre-local').textContent = p.nombreLocal;
+
+        document.getElementById('modal-producto-nombre').textContent = p.nombre;
+        document.getElementById('modal-producto-categoria').textContent = p.categoria || '';
+        document.getElementById('modal-producto-descripcion').textContent = p.descripcion || 'Sin descripción.';
+        document.getElementById('modal-producto-disponibles').textContent = `Disponibles: ${p.cantidadDisponible}`;
+        const cronometroModal = document.getElementById('modal-producto-cronometro');
+        if (p.fechaVencimiento) {
+            cronometroModal.dataset.vence = p.fechaVencimiento;
+            cronometroModal.classList.remove('oculto');
+        } else {
+            cronometroModal.classList.add('oculto');
+        }
+        actualizarCronometros();
+
+        const precioOriginal = document.getElementById('modal-producto-precio-original');
+        if (p.porcentajeDescuento) {
+            precioOriginal.textContent = `₡${p.precioOriginal}`;
+            precioOriginal.classList.remove('oculto');
+        } else {
+            precioOriginal.classList.add('oculto');
+        }
+        document.getElementById('modal-producto-precio-final').textContent = `₡${p.precioFinal}`;
+
+        modal.classList.remove('oculto');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalProducto() {
+        document.getElementById('modal-producto')?.classList.add('oculto');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('modal-producto-cerrar')?.addEventListener('click', cerrarModalProducto);
+    document.getElementById('modal-producto')?.addEventListener('click', (e) => {
+        if (e.target.id === 'modal-producto') cerrarModalProducto();
+    });
+    
+    
+
+        document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            cerrarModalProducto();
+            cerrarModalPermisoUbicacion();
+        }
+    });
+
+    // El botón "Comprar" todavía no tiene funcionalidad — se conecta en el próximo paso.
+    document.getElementById('modal-producto-comprar')?.addEventListener('click', () => {
+        // Pendiente: aquí conectamos la acción real de compra/reserva.
+    });
+    
     let carruselLocales = [];
     let carruselIndice = 0;
     let carruselIntervalo = null;
@@ -2672,11 +2798,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarCarrusel() {
         const pista = document.getElementById('carrusel-pista');
         const puntos = document.getElementById('carrusel-puntos');
-        if (!pista) return;
- 
+        if (!pista) return;   
+        
         if (carruselLocales.length === 0) {
-            pista.innerHTML = '<div class="carrusel-slide"><p class="ayuda">Todavía no hay locales registrados.</p></div>';
+            pista.innerHTML = `<div class="carrusel-slide">${crearEstadoVacio('Todavía no hay locales registrados.', 'store')}</div>`;
             puntos.innerHTML = '';
+            if (window.lucide) lucide.createIcons();
             return;
         }
  
@@ -2736,65 +2863,272 @@ document.addEventListener('DOMContentLoaded', () => {
         carruselIntervalo = setInterval(() => moverCarrusel(1), 5000);
     }
  
-    function renderizarCatalogoInicio(locales) {
-        const contenedor = document.getElementById('catalogo-inicio');
-        const termino = (document.getElementById('inicio-buscar')?.value || '').trim().toLowerCase();
- 
-        const filtrados = termino
-            ? locales.filter(l =>
-                l.nombreLocal.toLowerCase().includes(termino) ||
-                (l.tipoLocal ?? '').toLowerCase().includes(termino))
-            : locales;
- 
-        if (filtrados.length === 0) {
-            contenedor.innerHTML = '<p class="ayuda">No se encontraron locales.</p>';
+        let productosInicioCache = [];
+
+    function agruparProductosPorCategoria(productos) {
+        const grupos = {};
+        productos.forEach(p => {
+            const cat = p.categoria || 'Otros';
+            if (!grupos[cat]) grupos[cat] = [];
+            grupos[cat].push(p);
+        });
+        return grupos;
+    }
+
+    function crearTarjetaProducto(p) {
+        const div = document.createElement('div');
+        div.className = 'tarjeta-producto';
+        div.innerHTML = `
+            <div class="tarjeta-producto-imagen">
+                ${p.imagen
+                    ? `<img src="imagenes/${p.imagen}" alt="${escaparHtml(p.nombre)}">`
+                    : `<div class="tarjeta-producto-sin-imagen">🍽️</div>`}
+                ${p.porcentajeDescuento ? `<span class="tarjeta-producto-badge">-${p.porcentajeDescuento}%</span>` : ''}
+                ${p.logoLocal ? `<img class="tarjeta-producto-logo-local" src="imagenes/${p.logoLocal}" alt="${escaparHtml(p.nombreLocal)}">` : ''}
+            </div>
+            <div class="tarjeta-producto-info">
+                <span class="tarjeta-producto-local">${escaparHtml(p.nombreLocal)}</span>
+                <h4>${escaparHtml(p.nombre)}</h4>
+                <p class="tarjeta-producto-disponibles">Disponibles: ${p.cantidadDisponible}</p>
+                ${p.fechaVencimiento ? `
+                <p class="tarjeta-producto-cronometro" data-vence="${p.fechaVencimiento}">
+                    <i data-lucide="timer" class="icon-sm"></i> <span class="cronometro-texto">--:--:--</span>
+                </p>` : ''}
+                <p class="tarjeta-producto-precio">
+                    ${p.porcentajeDescuento ? `<s>₡${p.precioOriginal}</s>` : ''}
+                    <strong>₡${p.precioFinal}</strong>
+                </p>
+            </div>
+        `;
+        div.addEventListener('click', () => {
+             abrirModalProducto(p);
+        });
+        return div;
+    }
+
+    function renderizarSeccionesProductos(productos) {
+        const contenedor = document.getElementById('secciones-productos-inicio');
+        if (!contenedor) return;
+
+        if (productos.length === 0) {
+            contenedor.innerHTML = crearEstadoVacio('No hay productos disponibles en este momento.', 'package-open');
+            if (window.lucide) lucide.createIcons();
             return;
         }
- 
+
+        const grupos = agruparProductosPorCategoria(productos);
         contenedor.innerHTML = '';
-        filtrados.forEach(local => {
-            const tarjeta = document.createElement('div');
-            tarjeta.className = 'tarjeta tarjeta-clic';
-            tarjeta.innerHTML = `
-                ${local.logo ? `<img src="imagenes/${local.logo}" alt="${escaparHtml(local.nombreLocal)}" class="imagen-producto">` : ''}
-                <h3>${escaparHtml(local.nombreLocal)}</h3>
-                <p class="etiqueta-tipo">${escaparHtml(local.tipoLocal ?? '')}</p>
-                <p>${escaparHtml(local.descripcion ?? '')}</p>
+
+        Object.keys(grupos).sort().forEach(categoria => {
+            const seccion = document.createElement('section');
+            seccion.className = 'seccion-categoria';
+            seccion.innerHTML = `
+                <div class="seccion-categoria-encabezado">
+                    <h3>${escaparHtml(categoria)}</h3>
+                    <div class="seccion-categoria-flechas">
+                        <button type="button" class="carrusel-flecha-mini" data-dir="-1" aria-label="Anterior">&#10094;</button>
+                        <button type="button" class="carrusel-flecha-mini" data-dir="1" aria-label="Siguiente">&#10095;</button>
+                    </div>
+                </div>
+                <div class="fila-productos-carrusel"></div>
             `;
-            tarjeta.addEventListener('click', () => {
-                mostrarVistaLogin('vista-listado');
-                abrirDetalleLocal(local.idLocal);
+
+            const fila = seccion.querySelector('.fila-productos-carrusel');
+            grupos[categoria].forEach(p => fila.appendChild(crearTarjetaProducto(p)));
+
+            seccion.querySelectorAll('.carrusel-flecha-mini').forEach(boton => {
+                boton.addEventListener('click', () => {
+                    const direccion = Number(boton.dataset.dir);
+                    fila.scrollBy({ left: direccion * 240, behavior: 'smooth' });
+                });
             });
-            contenedor.appendChild(tarjeta);
+
+            contenedor.appendChild(seccion);
         });
+
+        if (window.lucide) lucide.createIcons();
+        actualizarCronometros();
     }
- 
+
     document.getElementById('inicio-buscar')?.addEventListener('input', debounce(() => {
-        renderizarCatalogoInicio(localesInicioCache);
+        const termino = (document.getElementById('inicio-buscar').value || '').trim().toLowerCase();
+        const filtrados = termino
+            ? productosInicioCache.filter(p =>
+                p.nombre.toLowerCase().includes(termino) ||
+                p.nombreLocal.toLowerCase().includes(termino) ||
+                p.categoria.toLowerCase().includes(termino))
+            : productosInicioCache;
+        renderizarSeccionesProductos(filtrados);
     }, 300));
- 
+
     async function cargarInicio() {
-        const contenedorCatalogo = document.getElementById('catalogo-inicio');
-        if (!contenedorCatalogo) return;
- 
-        contenedorCatalogo.innerHTML = '<p class="ayuda">Cargando locales...</p>';
- 
+        const contenedorProductos = document.getElementById('secciones-productos-inicio');
+        if (!contenedorProductos) return;
+
+        contenedorProductos.innerHTML = '<p class="ayuda">Cargando productos...</p>';
+
         try {
             const locales = await obtenerLocalesActivos();
             localesInicioCache = locales;
- 
             carruselLocales = locales.slice(0, 8);
             carruselIndice = 0;
             renderizarCarrusel();
             iniciarAutoplayCarrusel();
- 
-            renderizarCatalogoInicio(locales);
+
+            const respuesta = await fetch('api/listar_productos_publicos.php');
+            const datos = await respuesta.json();
+
+            if (!datos.exito) throw new Error(datos.mensaje);
+
+            productosInicioCache = datos.productos;
+            renderizarSeccionesProductos(productosInicioCache);
         } catch (e) {
-            contenedorCatalogo.innerHTML = '<p class="ayuda error">No se pudieron cargar los locales.</p>';
+            contenedorProductos.innerHTML = '<p class="ayuda error">No se pudieron cargar los productos.</p>';
         }
     }
- 
+
     cargarInicio();
+        // ------------------------------------------------------------
+    // Buscador de ubicación del hero (texto + GPS)
+    // ------------------------------------------------------------
+    let ubicacionesCache = []; // { idProvincia, idCanton|null, nombre }
+
+    async function cargarUbicacionesParaBuscador() {
+        try {
+            const rProvincias = await fetch('api/listar_provincias.php');
+            const dataProvincias = await rProvincias.json();
+            if (!dataProvincias.exito) return;
+
+            ubicacionesCache = dataProvincias.provincias.map(p => ({
+                idProvincia: p.idProvincia,
+                idCanton: null,
+                nombre: p.nombre
+            }));
+
+            const listaCantones = await Promise.all(
+                dataProvincias.provincias.map(p =>
+                    fetch(`api/listar_cantones.php?idProvincia=${p.idProvincia}`).then(r => r.json())
+                )
+            );
+
+            dataProvincias.provincias.forEach((p, i) => {
+                const resultado = listaCantones[i];
+                if (resultado.exito) {
+                    resultado.cantones.forEach(c => {
+                        ubicacionesCache.push({
+                            idProvincia: p.idProvincia,
+                            idCanton: c.idCanton,
+                            nombre: `${c.nombre}, ${p.nombre}`
+                        });
+                    });
+                }
+            });
+
+            const datalist = document.getElementById('hero-ubicacion-sugerencias');
+            if (datalist) {
+                datalist.innerHTML = ubicacionesCache
+                    .map(u => `<option value="${escaparHtml(u.nombre)}">`)
+                    .join('');
+            }
+        } catch (e) {
+            // Si falla, el buscador simplemente no sugiere nada; no es crítico.
+        }
+    }
+
+    function mostrarUbicacionActiva(texto) {
+        const contenedor = document.getElementById('hero-ubicacion-activa');
+        const span = document.getElementById('hero-ubicacion-activa-texto');
+        if (!contenedor || !span) return;
+        span.textContent = texto;
+        contenedor.classList.remove('oculto');
+    }
+
+    function ocultarUbicacionActiva() {
+        document.getElementById('hero-ubicacion-activa')?.classList.add('oculto');
+    }
+
+    function filtrarProductosPorLocales(idsLocales) {
+        const set = new Set(idsLocales.map(Number));
+        const filtrados = productosInicioCache.filter(p => set.has(Number(p.idLocal)));
+        renderizarSeccionesProductos(filtrados);
+    }
+
+    async function buscarPorTextoUbicacion() {
+        const input = document.getElementById('hero-ubicacion-texto');
+        const texto = (input?.value || '').trim();
+        if (!texto) return;
+
+        const coincidencia = ubicacionesCache.find(u => u.nombre.toLowerCase() === texto.toLowerCase());
+
+        if (!coincidencia) {
+            mostrarMensaje('No encontramos esa provincia o cantón. Elige una sugerencia de la lista.', 'error');
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.set('idProvincia', coincidencia.idProvincia);
+            if (coincidencia.idCanton) params.set('idCanton', coincidencia.idCanton);
+
+            const r = await fetch(`api/listar_locales_publicos.php?${params.toString()}`);
+            const res = await r.json();
+            if (!res.exito) throw new Error(res.mensaje);
+
+            filtrarProductosPorLocales(res.locales.map(l => l.idLocal));
+            mostrarUbicacionActiva(`Resultados en: ${coincidencia.nombre}`);
+        } catch (e) {
+            mostrarMensaje('No se pudo filtrar por esa ubicación', 'error');
+        }
+    }
+
+    async function buscarPorUbicacionActual() {
+        try {
+            const coords = await obtenerCoordenadasGPS();
+            const r = await fetch(`api/buscar_locales_por_coordenadas.php?lat=${coords.lat}&lng=${coords.lng}&radio=15`);
+            const res = await r.json();
+            if (!res.exito) throw new Error(res.mensaje);
+
+            filtrarProductosPorLocales(res.locales.map(l => l.idLocal));
+            mostrarUbicacionActiva('Resultados cerca de tu ubicación actual');
+        } catch (e) {
+            mostrarMensaje('No se pudo obtener tu ubicación. Revisa los permisos del navegador.', 'error');
+        }
+    }
+
+    document.getElementById('hero-ubicacion-buscar')?.addEventListener('click', buscarPorTextoUbicacion);
+    document.getElementById('hero-ubicacion-texto')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') buscarPorTextoUbicacion();
+    });
+        function abrirModalPermisoUbicacion() {
+        document.getElementById('modal-permiso-ubicacion')?.classList.remove('oculto');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalPermisoUbicacion() {
+        document.getElementById('modal-permiso-ubicacion')?.classList.add('oculto');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('hero-ubicacion-actual')?.addEventListener('click', abrirModalPermisoUbicacion);
+
+    document.getElementById('permiso-ubicacion-cerrar')?.addEventListener('click', cerrarModalPermisoUbicacion);
+    document.getElementById('permiso-ubicacion-cancelar')?.addEventListener('click', cerrarModalPermisoUbicacion);
+    document.getElementById('modal-permiso-ubicacion')?.addEventListener('click', (e) => {
+        if (e.target.id === 'modal-permiso-ubicacion') cerrarModalPermisoUbicacion();
+    });
+
+    document.getElementById('permiso-ubicacion-continuar')?.addEventListener('click', () => {
+        cerrarModalPermisoUbicacion();
+        buscarPorUbicacionActual();
+    });
+    document.getElementById('hero-ubicacion-limpiar')?.addEventListener('click', () => {
+        const input = document.getElementById('hero-ubicacion-texto');
+        if (input) input.value = '';
+        ocultarUbicacionActiva();
+        renderizarSeccionesProductos(productosInicioCache);
+    });
+
+    cargarUbicacionesParaBuscador();
  
  
     // ============================================================

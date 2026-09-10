@@ -38,7 +38,8 @@ class ProductoRepository
                     tbproductoprecio,
                     tbproductodescuentoporcentaje,
                     tbproductoimagen,
-                    tbproductoactivo
+                    tbproductoactivo,
+                    tbproductofechavencimiento
                 )
                 VALUES
                 (
@@ -51,7 +52,8 @@ class ProductoRepository
                     :precio,
                     :porcentajeDescuento,
                     :imagen,
-                    :activo
+                    :activo,
+                    :fechaVencimiento
                 )";
 
         $consulta = $this->conexion->prepare($sql);
@@ -66,7 +68,8 @@ class ProductoRepository
             ":precio" => $producto->getPrecioOriginal(),
             ":porcentajeDescuento" => $producto->getPorcentajeDescuento(),
             ":imagen" => $producto->getImagen(),
-            ":activo" => $producto->isActivo()
+            ":activo" => $producto->isActivo(),
+            ":fechaVencimiento" => $producto->getFechaVencimiento()?->format('Y-m-d H:i:s')
         ]);
 
         return $exito ? $id : false;
@@ -200,7 +203,8 @@ class ProductoRepository
                 tbproductoprecio = :precio,
                 tbproductodescuentoporcentaje = :porcentajeDescuento,
                 tbproductoimagen = :imagen,
-                tbproductoactivo = :activo
+                tbproductoactivo = :activo,
+                tbproductofechavencimiento = :fechaVencimiento
             WHERE tbproductoid = :id";
 
         $consulta = $this->conexion->prepare($sql);
@@ -214,6 +218,7 @@ class ProductoRepository
             ":porcentajeDescuento" => $producto->getPorcentajeDescuento(),
             ":imagen" => $producto->getImagen(),
             ":activo" => $producto->isActivo(),
+            ":fechaVencimiento" => $producto->getFechaVencimiento()?->format('Y-m-d H:i:s'),
             ":id" => $producto->getIdProducto()
         ]);
 
@@ -366,6 +371,9 @@ class ProductoRepository
             (int) $fila["tbproductoid"],
             $fila["tbproductoregistrofecha"] != null
             ? new DateTime($fila["tbproductoregistrofecha"])
+            : null,
+            isset($fila["tbproductofechavencimiento"]) && $fila["tbproductofechavencimiento"] != null
+            ? new DateTime($fila["tbproductofechavencimiento"])
             : null
         );
     }

@@ -27,7 +27,8 @@ class ProductoController
         ?float $porcentajeDescuento,
         ?string $descripcion,
         int $cantidadDisponible,
-        ?string $imagen
+        ?string $imagen,
+        ?DateTime $fechaVencimiento = null
     ): int|false {
 
         $idTipoProducto = $this->resolverOCrearTipoProducto($nombreTipoProducto);
@@ -40,7 +41,11 @@ class ProductoController
             $porcentajeDescuento,
             $descripcion,
             $cantidadDisponible,
-            $imagen
+            $imagen,
+            true,
+            0,
+            null,
+            $fechaVencimiento
         );
 
         return $this->productoRepository->insertar($producto);

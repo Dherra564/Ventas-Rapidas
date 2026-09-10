@@ -59,11 +59,36 @@
                         aria-label="Cerrar mensaje">&times;</button>
                 </div>
 
-                <!-- Vista: Inicio (catálogo público) -->
+               
+                                    <!-- Vista: Inicio (catálogo público) -->
                 <section id="vista-inicio" class="vista">
                     <div class="hero-inicio">
-                        <h2>Encuentra los mejores locales cerca de ti</h2>
-                        <p class="ayuda">Sodas, ferias, reposterías y más — todo en un solo lugar.</p>
+                        <div class="hero-inicio-texto">
+                            <h2>Encuentra los mejores locales cerca de ti</h2>
+                            <p class="ayuda">Sodas, ferias, reposterías y más — todo en un solo lugar.</p>
+
+                            <div class="hero-buscador-ubicacion">
+                                <div class="hero-buscador-caja">
+                                    <input type="text" id="hero-ubicacion-texto" list="hero-ubicacion-sugerencias"
+                                        placeholder="Buscar por cantón o provincia...">
+                                    <datalist id="hero-ubicacion-sugerencias"></datalist>
+                                    <button type="button" id="hero-ubicacion-buscar" aria-label="Buscar">
+    <i data-lucide="search" class="icon-sm"></i>
+</button>
+                                </div>
+                                <button type="button" id="hero-ubicacion-actual" class="hero-ubicacion-actual">
+                                    <i data-lucide="map-pin" class="icon-sm"></i> Usar mi ubicación actual
+                                </button>
+                                <div id="hero-ubicacion-activa" class="hero-ubicacion-activa oculto">
+                                    <span id="hero-ubicacion-activa-texto"></span>
+                                    <button type="button" id="hero-ubicacion-limpiar" aria-label="Quitar filtro de ubicación">&times;</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hero-inicio-imagen">
+                            <img src="imagenes/hero-ilustracion.svg" alt="Ilustración de una bolsa de compras con productos de RapiVentas">
+                        </div>
                     </div>
 
                     <div class="carrusel" id="carrusel-locales">
@@ -75,13 +100,12 @@
                     </div>
                     <div class="carrusel-puntos" id="carrusel-puntos"></div>
 
-                    <h3 class="bloque-separado">Todos los locales</h3>
+                    <h3 class="bloque-separado">Productos disponibles ahora</h3>
                     <div class="filtros-busqueda">
-                        <input type="text" id="inicio-buscar" placeholder="Buscar por nombre o tipo...">
+                        <input type="text" id="inicio-buscar" placeholder="Buscar producto, local o categoría...">
                     </div>
-                    <div id="catalogo-inicio" class="tarjetas"></div>
+                    <div id="secciones-productos-inicio" class="secciones-productos"></div>
                 </section>
-
 
                 <!-- Vista: Iniciar Sesión / Crear cuenta -->
                 <section id="vista-login" class="vista oculto">
@@ -809,6 +833,66 @@
             </footer>
         </div> <!-- cierra .area-principal -->
     </div> <!-- cierra .app-shell -->
+        <div id="modal-permiso-ubicacion" class="modal-overlay oculto">
+        <div class="modal-contenido modal-permiso-contenido">
+            <button type="button" id="permiso-ubicacion-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <div class="modal-permiso-icono">
+                <i data-lucide="map-pin"></i>
+            </div>
+
+            <h3>Vamos a pedirte tu ubicación</h3>
+            <p class="modal-permiso-texto">
+                Para mostrarte los locales y productos más cercanos a ti, tu navegador te va a pedir permiso de
+                ubicación en un momento. Solo la usamos para calcular distancias nunca se guarda ni se comparte.
+            </p>
+
+            <div class="modal-permiso-botones">
+                <button type="button" id="permiso-ubicacion-cancelar" class="boton-secundario">Ahora no</button>
+                <button type="button" id="permiso-ubicacion-continuar" class="btn-comprar-producto">Continuar</button>
+            </div>
+        </div>
+    </div>
+
+
+        <div id="modal-producto" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="modal-producto-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+                        <div class="modal-producto-imagen">
+                <img id="modal-producto-imagen" src="" alt="">
+                <div id="modal-producto-sin-imagen" class="modal-producto-sin-imagen oculto">
+                    <i data-lucide="image-off"></i>
+                </div>
+                <span id="modal-producto-badge" class="tarjeta-producto-badge oculto"></span>
+            </div>
+
+            <div class="modal-producto-info">
+                <div class="modal-producto-local">
+                    <img id="modal-producto-logo-local" src="" alt="" class="oculto">
+                    <span id="modal-producto-nombre-local"></span>
+                </div>
+
+                <h3 id="modal-producto-nombre"></h3>
+                <span id="modal-producto-categoria" class="etiqueta-tipo"></span>
+
+                <p id="modal-producto-descripcion" class="modal-producto-descripcion"></p>
+
+                <p id="modal-producto-disponibles" class="ayuda"></p>
+
+                <p id="modal-producto-cronometro" class="modal-producto-cronometro oculto" data-vence="">
+                    <i data-lucide="timer" class="icon-sm"></i> <span class="cronometro-texto">--:--:--</span>
+                </p>
+
+                <div class="modal-producto-precio">
+                    <s id="modal-producto-precio-original" class="oculto"></s>
+                    <strong id="modal-producto-precio-final"></strong>
+                </div>
+
+                <button type="button" id="modal-producto-comprar" class="btn-comprar-producto">Comprar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

@@ -405,4 +405,36 @@ class LocalRepository
         $consulta->execute([":nombre" => $nombreLocal]);
         return (int) $consulta->fetchColumn() > 0;
     }
+
+
+
+
+    public function buscarCercanos(float $latitud, float $longitud, float $radioKm = 15): array
+    {
+        $sql = "SELECT
+                    l.tblocalid AS idLocal,
+                    l.tblocalnombre AS nombreLocal,
+                    l.tblocallogo AS logo,
+                    ROUND(
+                        ST_Distance_Sphere(
+                            POINT(u.tbubicacionlongitud, u.tbubicacionlatitud),
+                            POINT(:longitud, :latitud)
+                        ) / 1000, 2
+                    ) AS distanciaKm
+                FROM tblocal l
+                INNER JOIN tbubicacion u ON u.tblocalid = l.tblocalid
+                WHERE l.tblocalactivo = 1
+                    AND u.tbubicacionlatitud IS NOT NULL
+                    AND u.tbubicacionlongitud IS NOT NULL
+                HAVING distanciaKm <= :radioKm
+                ORDER BY distanciaKm ASC";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->bindValue(":longitud", $longitud);
+        $consulta->bindValue(":latitud", $latitud);
+        $consulta->bindValue(":radioKm", $radioKm);
+        $consulta->execute();
+
+        return $consulta->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

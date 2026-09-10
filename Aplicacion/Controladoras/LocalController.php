@@ -218,6 +218,11 @@ class LocalController
         return $this->tipoLocalRepository->obtenerPorId($idTipoLocal);
     }
 
+    public function buscarCercanos(float $latitud, float $longitud, float $radioKm = 15): array
+    {
+        return $this->localRepository->buscarCercanos($latitud, $longitud, $radioKm);
+    }
+
     public function resolverTipoLocal(string $nombreTipoLocal): int
     {
         return $this->resolverOCrearTipoLocal($nombreTipoLocal);

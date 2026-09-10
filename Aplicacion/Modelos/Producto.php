@@ -14,6 +14,7 @@ class Producto
     private ?string $imagen;
     private bool $activo;
     private ?DateTime $fechaCreacion;
+    private ?DateTime $fechaVencimiento;
 
     public function __construct(
         int $idLocal,
@@ -26,13 +27,15 @@ class Producto
         ?string $imagen = null,
         bool $activo = true,
         int $idProducto = 0,
-        ?DateTime $fechaCreacion = null
+        ?DateTime $fechaCreacion = null,
+        ?DateTime $fechaVencimiento = null
     ) {
         $this->idLocal = $idLocal;
         $this->idTipoProducto = $idTipoProducto;
         $this->idProducto = $idProducto;
         $this->activo = $activo;
         $this->fechaCreacion = $fechaCreacion;
+        $this->fechaVencimiento = $fechaVencimiento;
 
         $this->setNombre($nombre);
         $this->setDescripcion($descripcion);
@@ -106,6 +109,21 @@ class Producto
     public function getFechaCreacion(): ?DateTime
     {
         return $this->fechaCreacion;
+    }
+    public function getFechaVencimiento(): ?DateTime
+    {
+        return $this->fechaVencimiento;
+    }
+    public function isVencido(): bool
+    {
+        if ($this->fechaVencimiento === null) {
+            return false;
+        }
+        return $this->fechaVencimiento < new DateTime();
+    }
+    public function setFechaVencimiento(?DateTime $fechaVencimiento): void
+    {
+        $this->fechaVencimiento = $fechaVencimiento;
     }
 
     public function setNombre(string $nombre): void
