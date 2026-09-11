@@ -44,19 +44,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
  
                        if (boton.dataset.vista === 'vista-historiales') {
-                cargarUsuariosHistorial();
+                cargarHistorialGlobal();
             }
  
             if (boton.dataset.vista === 'vista-dashboard-admin') {
                 cargarDashboardAdmin();
             }
-
             if (boton.dataset.vista === 'vista-producto') {
                 cargarLocalesComercianteParaProducto();
             }
+
+            if (boton.dataset.vista === 'vista-productos-admin') {
+                cargarProductosAdmin();
+            }
         });
     });
- 
     let temporizadorMensaje = null;
  
     function posicionarMensaje() {
@@ -548,24 +550,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
  
-    document.getElementById('btn-gps-local')?.addEventListener('click', async () => {
-        if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'Obteniendo ubicación...';
+        async function capturarGpsCercanos() {
+        const msg = document.getElementById('cerc-ubicacion-msg');
+        msg.textContent = 'Obteniendo tu ubicación...';
+        msg.className = 'ayuda';
+
         try {
             const coords = await obtenerCoordenadasGPS();
-            if (inputLatitudLocal) inputLatitudLocal.value = coords.lat;
-            if (inputLongitudLocal) inputLongitudLocal.value = coords.lng;
-            if (mensajeGpsLocal) mensajeGpsLocal.textContent = `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). Buscando provincia, cantón y distrito...`;
- 
-            const completado = await autocompletarUbicacionPorGPS(coords.lat, coords.lng, selectProvinciaLocal, selectCantonLocal, selectDistritoLocal);
- 
-            if (mensajeGpsLocal) {
-                mensajeGpsLocal.textContent = completado
-                    ? `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). Provincia, cantón y distrito rellenados automáticamente — revísalos antes de guardar.`
-                    : `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). No se pudo identificar provincia/cantón/distrito automáticamente, selecciónalos a mano.`;
+            document.getElementById('cerc-latitud').value = coords.lat;
+            document.getElementById('cerc-longitud').value = coords.lng;
+
+            const r = await fetch('api/actualizar_ubicacion_cliente.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
+            });
+            const res = await r.json();
+
+            if (res.exito) {
+                msg.textContent = 'Ubicación obtenida correctamente ✅';
+                msg.className = 'ayuda exito';
+            } else {
+                msg.textContent = res.mensaje || 'No se pudo guardar tu ubicación';
+                msg.className = 'ayuda error';
             }
         } catch (e) {
-            if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'No se pudo obtener tu ubicación. Puedes registrar el local sin GPS.';
+            msg.textContent = 'No se pudo obtener tu ubicación GPS. Revisa los permisos del navegador.';
+            msg.className = 'ayuda error';
         }
+    }
+
+    document.getElementById('btn-cerc-ubicacion')?.addEventListener('click', () => {
+        abrirModalPermisoUbicacion(capturarGpsCercanos);
     });
  
     formLocal.addEventListener('submit', async (evento) => {
@@ -730,6 +746,39 @@ document.addEventListener('DOMContentLoaded', () => {
         panelDetalle.classList.add('oculto');
         panelLista.classList.remove('oculto');
     }
+
+        function confirmarEliminarLocal(idLocal, nombreLocal, tarjeta) {
+        Swal.fire({
+            title: `¿Eliminar "${nombreLocal}"?`,
+            text: 'Este local se marcará como inactivo y dejará de verse en la app.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/eliminar_local.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idLocal })
+                });
+                const res = await r.json();
+
+                if (res.exito) {
+                    tarjeta.remove();
+                    mostrarMensaje('Local eliminado correctamente', 'exito');
+                } else {
+                    mostrarMensaje(res.mensaje || 'No se pudo eliminar el local', 'error');
+                }
+            } catch (e) {
+                mostrarMensaje('Error al eliminar el local', 'error');
+            }
+        });
+    }
  
     async function cargarLocales() {
         const contenedor = document.getElementById('lista-locales');
@@ -767,19 +816,35 @@ document.addEventListener('DOMContentLoaded', () => {
  
             contenedor.innerHTML = '';
  
-            res.locales.forEach(local => {
+                        
+                        res.locales.forEach(local => {
+                const esAdmin = usuarioSesionActual?.tipo === 'SuperAdmin';
+
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
+                if (esAdmin) tarjeta.classList.add('tarjeta-con-borrar');
                 tarjeta.innerHTML = `
-                    ${local.logo ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}" class="imagen-producto">` : ''}
+                    ${esAdmin ? `<button type="button" class="tarjeta-local-btn-eliminar" aria-label="Eliminar local"><i data-lucide="trash-2"></i></button>` : ''}
+                    ${local.logo
+                        ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}" class="imagen-producto">`
+                        : `<div class="imagen-producto imagen-producto-vacia"><i data-lucide="store"></i></div>`}
                     <h3>${local.nombreLocal}</h3>
                     <p class="etiqueta-tipo">${local.tipoLocal ?? ''}</p>
                     <p>${local.descripcion ?? ''}</p>
                     <p>📞 ${local.telefono}</p>
                 `;
                 tarjeta.addEventListener('click', () => abrirDetalleLocal(local.idLocal));
+
+                if (esAdmin) {
+                    tarjeta.querySelector('.tarjeta-local-btn-eliminar').addEventListener('click', (evento) => {
+                        evento.stopPropagation();
+                        confirmarEliminarLocal(local.idLocal, local.nombreLocal, tarjeta);
+                    });
+                }
                 contenedor.appendChild(tarjeta);
             });
+
+            if (window.lucide) lucide.createIcons();
         } catch (e) {
             contenedor.innerHTML = '<p>Error al cargar los locales.</p>';
         }
@@ -840,58 +905,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
  
-    async function abrirDetalleLocal(idLocal) {
+       async function abrirDetalleLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
             const res = await r.json();
- 
+
             if (!res.exito) {
                 mostrarMensaje(res.mensaje || 'No se pudo cargar el local', 'error');
                 return;
             }
- 
+
             const { local, ubicacion } = res;
- 
+
             const esComerciante = usuarioSesionActual?.tipo === 'Comerciante';
+            const esAdmin = usuarioSesionActual?.tipo === 'SuperAdmin';
+            const puedeEditar = esComerciante;
+
             const formEditarLocal = document.getElementById('form-editar-local');
             const infoSoloLectura = document.getElementById('e-info-solo-lectura');
- 
-            if (esComerciante) {
-                formEditarLocal.classList.remove('oculto');
-                infoSoloLectura.classList.add('oculto');
- 
+            const btnEditarLocal = document.getElementById('btn-editar-local');
+
+            function llenarFormularioEdicion() {
                 document.getElementById('e-idLocal').value = local.idLocal;
                 document.getElementById('e-tipoLocal').value = local.tipoLocal ?? '';
                 document.getElementById('e-nombreLocal').value = local.nombreLocal;
                 document.getElementById('e-descripcion').value = local.descripcion ?? '';
                 document.getElementById('e-telefono').value = local.telefono;
-            } else {
-                formEditarLocal.classList.add('oculto');
-                infoSoloLectura.classList.remove('oculto');
- 
-                document.getElementById('e-solo-tipo').textContent = local.tipoLocal ?? '';
-                document.getElementById('e-solo-nombre').textContent = local.nombreLocal;
-                document.getElementById('e-solo-descripcion').textContent = local.descripcion ?? 'Sin descripción';
-                document.getElementById('e-solo-telefono').textContent = local.telefono;
             }
- 
+
+            formEditarLocal.classList.add('oculto');
+            infoSoloLectura.classList.remove('oculto');
+
+            document.getElementById('e-solo-tipo').textContent = local.tipoLocal ?? '';
+            document.getElementById('e-solo-nombre').textContent = local.nombreLocal;
+            document.getElementById('e-solo-descripcion').textContent = local.descripcion ?? 'Sin descripción';
+            document.getElementById('e-solo-telefono').textContent = local.telefono;
+
+            if (btnEditarLocal) {
+                btnEditarLocal.classList.toggle('oculto', !puedeEditar);
+                btnEditarLocal.onclick = () => {
+                    llenarFormularioEdicion();
+                    infoSoloLectura.classList.add('oculto');
+                    formEditarLocal.classList.remove('oculto');
+                };
+            }
+
             const imgLogo = document.getElementById('e-logo-actual');
             if (local.logo) {
                 imgLogo.src = `imagenes/${local.logo}`;
                 imgLogo.classList.remove('oculto');
             } else {
                 imgLogo.classList.add('oculto');
-            } 
- 
+            }
+
             document.getElementById('e-ubicacion-texto').textContent =
                 `${ubicacion.provincia}, ${ubicacion.canton}, ${ubicacion.distrito} — ${ubicacion.direccionExacta}` +
                 (ubicacion.referencia ? ` (${ubicacion.referencia})` : '');
- 
+
             panelLista.classList.add('oculto');
             panelDetalle.classList.remove('oculto');
- 
-                        cargarProductosDelLocal(idLocal);
- 
+
+            cargarProductosDelLocal(idLocal);
+
             document.getElementById('e-panel-actividad-local').classList.toggle('oculto', !esComerciante);
             if (esComerciante) {
                 cargarHistorialActividadLocal(idLocal);
@@ -901,6 +976,104 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
  
+
+
+        async function cargarProductosAdmin() {
+        const contenedor = document.getElementById('lista-productos-admin');
+        contenedor.innerHTML = '<p>Cargando productos...</p>';
+
+        const parametros = new URLSearchParams();
+
+        const nombre = document.getElementById('pa-buscar').value.trim();
+        if (nombre) parametros.set('nombre', nombre);
+
+        const soloActivos = document.getElementById('pa-inactivos').checked ? '0' : '1';
+        parametros.set('soloActivos', soloActivos);
+
+        try {
+            const r = await fetch(`api/listar_productos_admin.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito || res.productos.length === 0) {
+                contenedor.innerHTML = crearEstadoVacio('No se encontraron productos.', 'package-open');
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+                      res.productos.forEach(producto => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-con-borrar';
+
+                const precioFinal = producto.porcentajeDescuento
+                    ? (producto.precioOriginal * (1 - producto.porcentajeDescuento / 100)).toFixed(2)
+                    : producto.precioOriginal;
+
+                const precioHtml = producto.porcentajeDescuento
+                    ? `<s>₡${producto.precioOriginal}</s> ₡${precioFinal}`
+                    : `₡${producto.precioOriginal}`;
+
+                tarjeta.innerHTML = `
+                    <button type="button" class="tarjeta-local-btn-eliminar" aria-label="Eliminar producto"><i data-lucide="trash-2"></i></button>
+                    ${producto.imagen
+                        ? `<img src="imagenes/${producto.imagen}" alt="${producto.nombre}" class="imagen-producto">`
+                        : `<div class="imagen-producto imagen-producto-vacia"><i data-lucide="package"></i></div>`}
+                    <h4>${producto.nombre}</h4>
+                    <p class="etiqueta-tipo">${producto.categoria}</p>
+                    <p>Local: ${producto.nombreLocal}</p>
+                    <p>${precioHtml}</p>
+                    ${producto.activo ? '' : '<p><span class="etiqueta-inactivo">Inactivo</span></p>'}
+                `;
+
+                contenedor.appendChild(tarjeta);
+
+                tarjeta.querySelector('.tarjeta-local-btn-eliminar').addEventListener('click', (evento) => {
+                    evento.stopPropagation();
+                    confirmarEliminarProducto(producto.idProducto, producto.nombre, tarjeta);
+                });
+            });
+
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            contenedor.innerHTML = '<p>Error al cargar los productos.</p>';
+        }
+    }
+
+    document.getElementById('pa-buscar')?.addEventListener('input', debounce(() => cargarProductosAdmin(), 300));
+    document.getElementById('pa-inactivos')?.addEventListener('change', () => cargarProductosAdmin());
+        function confirmarEliminarProducto(idProducto, nombreProducto, tarjeta) {
+        Swal.fire({
+            title: `¿Eliminar "${nombreProducto}"?`,
+            text: 'Este producto se marcará como inactivo y dejará de verse en la app.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/eliminar_producto.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idProducto })
+                });
+                const res = await r.json();
+
+                if (res.exito) {
+                    tarjeta.remove();
+                    mostrarMensaje('Producto eliminado correctamente', 'exito');
+                } else {
+                    mostrarMensaje(res.mensaje || 'No se pudo eliminar el producto', 'error');
+                }
+            } catch (e) {
+                mostrarMensaje('Error al eliminar el producto', 'error');
+            }
+        });
+    }
     async function cargarProductosDelLocal(idLocal) {
         const contenedor = document.getElementById('e-productos-lista');
         contenedor.innerHTML = '<p>Cargando productos...</p>';
@@ -916,21 +1089,24 @@ document.addEventListener('DOMContentLoaded', () => {
  
             contenedor.innerHTML = '';
  
-            res.productos.forEach(producto => {
+                        res.productos.forEach(producto => {
+                const esAdmin = usuarioSesionActual?.tipo === 'SuperAdmin';
+
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta';
- 
+
                 const precioHtml = producto.porcentajeDescuento
                     ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
                     : `₡${producto.precioOriginal}`;
- 
-                    tarjeta.innerHTML = `
+
+                tarjeta.innerHTML = `
                     ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${producto.nombre}" class="imagen-producto">` : ''}
                     <h4>${producto.nombre} ${producto.compartido ? '<span class="etiqueta-tipo">Compartido</span>' : ''}</h4>
                     <p>${producto.descripcion ?? ''}</p>
                     <p>${precioHtml}</p>
                     <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
                     ${usuarioSesionActual?.tipo === 'Comerciante' ? `<button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>` : ''}
+                    ${esAdmin ? `<button type="button" class="btn-eliminar-icono" aria-label="Eliminar producto"><i data-lucide="trash-2"></i></button>` : ''}
                 `;
                 contenedor.appendChild(tarjeta);
                 const btnEditar = tarjeta.querySelector('.btn-editar-producto');
@@ -939,45 +1115,94 @@ document.addEventListener('DOMContentLoaded', () => {
                         abrirEditarProducto(producto.idProducto, idLocal);
                     });
                 }
+                const btnEliminar = tarjeta.querySelector('.btn-eliminar-icono');
+                if (btnEliminar) {
+                    btnEliminar.addEventListener('click', () => {
+                        confirmarEliminarProducto(producto.idProducto, producto.nombre, tarjeta);
+                    });
+                }
             });
+
+            if (window.lucide) lucide.createIcons();
         } catch (e) {
             contenedor.innerHTML = '<p>Error al cargar los productos.</p>';
         }
     }
+    
  
-    document.getElementById('btn-volver-lista').addEventListener('click', mostrarListaLocales);
- 
-    document.getElementById('form-editar-local').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
- 
-        const datos = new FormData();
-        datos.append('idLocal', document.getElementById('e-idLocal').value);
-        datos.append('nombreTipoLocal', document.getElementById('e-tipoLocal').value);
-        datos.append('nombreLocal', document.getElementById('e-nombreLocal').value);
-        datos.append('descripcion', document.getElementById('e-descripcion').value);
-        datos.append('telefono', document.getElementById('e-telefono').value);
- 
-        const archivoLogo = document.getElementById('e-logo').files[0];
-        if (archivoLogo) {
-            datos.append('logo', archivoLogo);
+       let formLocalTieneCambios = false;
+    document.getElementById('form-editar-local').addEventListener('input', () => {
+        formLocalTieneCambios = true;
+    });
+
+    document.getElementById('btn-volver-lista').addEventListener('click', () => {
+        if (!formLocalTieneCambios) {
+            mostrarListaLocales();
+            return;
         }
- 
-        try {
-            const r = await fetch('api/editar_local.php', {
-                method: 'POST',
-                body: datos
-            });
-            const res = await r.json();
- 
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
-            if (res.exito) {
+
+        Swal.fire({
+            title: '¿Salir sin guardar?',
+            text: 'Tienes cambios en este local que todavía no se han guardado. Se perderán si sales ahora.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, salir sin guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then((resultado) => {
+            if (resultado.isConfirmed) {
+                formLocalTieneCambios = false;
                 mostrarListaLocales();
-                cargarLocales();
             }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
+        });
+    });
+
+    document.getElementById('form-editar-local').addEventListener('submit', (evento) => {
+        evento.preventDefault();
+
+        Swal.fire({
+            title: '¿Guardar estos cambios?',
+            text: 'Se van a actualizar los datos de este local.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            const datos = new FormData();
+            datos.append('idLocal', document.getElementById('e-idLocal').value);
+            datos.append('nombreTipoLocal', document.getElementById('e-tipoLocal').value);
+            datos.append('nombreLocal', document.getElementById('e-nombreLocal').value);
+            datos.append('descripcion', document.getElementById('e-descripcion').value);
+            datos.append('telefono', document.getElementById('e-telefono').value);
+
+            const archivoLogo = document.getElementById('e-logo').files[0];
+            if (archivoLogo) {
+                datos.append('logo', archivoLogo);
+            }
+
+            try {
+                const r = await fetch('api/editar_local.php', {
+                    method: 'POST',
+                    body: datos
+                });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    formLocalTieneCambios = false;
+                    mostrarListaLocales();
+                    cargarLocales();
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para guardar los cambios del local. Revisa tu conexión e intenta de nuevo.', 'error');
+            }
+        });
     });
     
        const selectIdLocalProducto = document.getElementById('p-idLocal');
@@ -1096,110 +1321,177 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
  
-    document.getElementById('btn-cerrar-editar-producto').addEventListener('click', () => {
-        panelEditarProducto.classList.add('oculto');
-        panelDetalle.classList.remove('oculto');
+       let formProductoTieneCambios = false;
+    document.getElementById('form-editar-producto').addEventListener('input', () => {
+        formProductoTieneCambios = true;
     });
- 
-    document.getElementById('form-editar-producto').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
- 
-        const datos = new FormData();
-        datos.append('idProducto', document.getElementById('ep-idProducto').value);
-        datos.append('nombreTipoProducto', document.getElementById('ep-tipoProducto').value);
-        datos.append('nombre', document.getElementById('ep-nombre').value);
-        datos.append('precioOriginal', document.getElementById('ep-precio').value);
-        datos.append('porcentajeDescuento', document.getElementById('ep-descuento').value);
-        datos.append('descripcion', document.getElementById('ep-descripcion').value);
-        datos.append('cantidadDisponible', document.getElementById('ep-cantidad').value);
- 
-        const archivoImagen = document.getElementById('ep-imagen').files[0];
-        if (archivoImagen) {
-            datos.append('imagen', archivoImagen);
+
+    document.getElementById('btn-cerrar-editar-producto').addEventListener('click', () => {
+        if (!formProductoTieneCambios) {
+            panelEditarProducto.classList.add('oculto');
+            panelDetalle.classList.remove('oculto');
+            return;
         }
- 
-        try {
-            const r = await fetch('api/editar_producto.php', {
-                method: 'POST',
-                body: datos
-            });
-            const res = await r.json();
- 
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
-            if (res.exito) {
+
+        Swal.fire({
+            title: '¿Salir sin guardar?',
+            text: 'Tienes cambios en este producto que todavía no se han guardado. Se perderán si sales ahora.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, salir sin guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then((resultado) => {
+            if (resultado.isConfirmed) {
+                formProductoTieneCambios = false;
                 panelEditarProducto.classList.add('oculto');
                 panelDetalle.classList.remove('oculto');
-                cargarProductosDelLocal(idLocalProductoEditando);
             }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
+        });
+    });
+
+    document.getElementById('form-editar-producto').addEventListener('submit', (evento) => {
+        evento.preventDefault();
+
+        Swal.fire({
+            title: '¿Guardar estos cambios?',
+            text: 'Se van a actualizar los datos de este producto.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            const datos = new FormData();
+            datos.append('idProducto', document.getElementById('ep-idProducto').value);
+            datos.append('nombreTipoProducto', document.getElementById('ep-tipoProducto').value);
+            datos.append('nombre', document.getElementById('ep-nombre').value);
+            datos.append('precioOriginal', document.getElementById('ep-precio').value);
+            datos.append('porcentajeDescuento', document.getElementById('ep-descuento').value);
+            datos.append('descripcion', document.getElementById('ep-descripcion').value);
+            datos.append('cantidadDisponible', document.getElementById('ep-cantidad').value);
+            datos.append('fechaVencimiento', document.getElementById('ep-fechaVencimiento').value);
+
+            const archivoImagen = document.getElementById('ep-imagen').files[0];
+            if (archivoImagen) {
+                datos.append('imagen', archivoImagen);
+            }
+
+            try {
+                const r = await fetch('api/editar_producto.php', {
+                    method: 'POST',
+                    body: datos
+                });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    formProductoTieneCambios = false;
+                    panelEditarProducto.classList.add('oculto');
+                    panelDetalle.classList.remove('oculto');
+                    cargarProductosDelLocal(idLocalProductoEditando);
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para guardar los cambios del producto. Revisa tu conexión e intenta de nuevo.', 'error');
+            }
+        });
     });
  
-    const panelListaComerciantes = document.getElementById('panel-lista-comerciantes');
+       const panelListaComerciantes = document.getElementById('panel-lista-comerciantes');
     const panelDetalleComerciante = document.getElementById('panel-detalle-comerciante');
- 
+
     function mostrarListaComerciantes() {
         panelDetalleComerciante.classList.add('oculto');
         panelListaComerciantes.classList.remove('oculto');
     }
- 
+
+    let comerciantesAdminCache = [];
+
     async function cargarComerciantes() {
         const contenedor = document.getElementById('lista-comerciantes');
-        contenedor.innerHTML = '<p>Cargando...</p>';
- 
-        const soloActivos = !document.getElementById('chk-inactivos-comerciantes').checked;
- 
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
         try {
-            const r = await fetch(`api/listar_comerciantes.php?soloActivos=${soloActivos ? '1' : '0'}`);
+            const r = await fetch('api/listar_comerciantes.php?soloActivos=0');
             const res = await r.json();
- 
-            if (!res.exito || res.comerciantes.length === 0) {
-                contenedor.innerHTML = '<p>No hay comerciantes registrados todavía.</p>';
-                return;
-            }
- 
-            contenedor.innerHTML = '';
- 
-            res.comerciantes.forEach(c => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta tarjeta-clic';
-                tarjeta.innerHTML = `
-                    ${c.fotoPerfil ? `<img src="imagenes/${c.fotoPerfil}" alt="${c.nombre}" class="imagen-producto">` : ''}
-                    <h3>${c.nombre} ${!c.activo ? '<span class="ayuda error">(inactivo)</span>' : ''}</h3>
-                    <p class="etiqueta-tipo">${c.alias}</p>
-                    <p>✉️ ${c.correo}</p>
-                `;
-                tarjeta.addEventListener('click', () => abrirDetalleComerciante(c.idComerciante));
-                contenedor.appendChild(tarjeta);
-            });
+
+            comerciantesAdminCache = res.exito ? res.comerciantes : [];
+            renderizarListaComerciantesAdmin();
         } catch (e) {
-            contenedor.innerHTML = '<p>Error al cargar los comerciantes.</p>';
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los comerciantes.</p>';
         }
     }
- 
-    document.getElementById('chk-inactivos-comerciantes').addEventListener('change', cargarComerciantes);
- 
+
+    function renderizarListaComerciantesAdmin() {
+        const contenedor = document.getElementById('lista-comerciantes');
+        const termino = document.getElementById('com-admin-buscar').value.trim().toLowerCase();
+        const estado = document.getElementById('com-admin-filtro-estado').value;
+
+        let filtrados = comerciantesAdminCache;
+
+        if (estado === 'activos') filtrados = filtrados.filter(c => c.activo);
+        if (estado === 'inactivos') filtrados = filtrados.filter(c => !c.activo);
+
+        if (termino) {
+            filtrados = filtrados.filter(c =>
+                c.nombre.toLowerCase().includes(termino) ||
+                c.alias.toLowerCase().includes(termino) ||
+                c.correo.toLowerCase().includes(termino) ||
+                (c.numeroIdentificacion ?? '').toLowerCase().includes(termino)
+            );
+        }
+
+        if (filtrados.length === 0) {
+            contenedor.innerHTML = crearEstadoVacio('No se encontraron comerciantes.', 'briefcase');
+            if (window.lucide) lucide.createIcons();
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        filtrados.forEach(c => {
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'tarjeta tarjeta-clic tarjeta-persona';
+            tarjeta.innerHTML = `
+                ${c.fotoPerfil
+                    ? `<img src="imagenes/${c.fotoPerfil}" alt="${escaparHtml(c.nombre)}" class="avatar-persona">`
+                    : `<div class="avatar-persona avatar-iniciales">${escaparHtml(obtenerIniciales(c.nombre))}</div>`}
+                <h4>${escaparHtml(c.nombre)}</h4>
+                <p class="etiqueta-tipo">${escaparHtml(c.alias)}</p>
+                <span class="${c.activo ? 'etiqueta-activo' : 'etiqueta-inactivo'}">${c.activo ? 'Activo' : 'Inactivo'}</span>
+                <p class="ayuda">✉️ ${escaparHtml(c.correo)}</p>
+            `;
+            tarjeta.addEventListener('click', () => abrirDetalleComerciante(c.idComerciante));
+            contenedor.appendChild(tarjeta);
+        });
+    }
+
+    document.getElementById('com-admin-buscar')?.addEventListener('input', debounce(renderizarListaComerciantesAdmin, 300));
+    document.getElementById('com-admin-filtro-estado')?.addEventListener('change', renderizarListaComerciantesAdmin);
+
     async function abrirDetalleComerciante(idComerciante) {
         try {
             const r = await fetch(`api/buscar_comerciante.php?id=${idComerciante}`);
             const res = await r.json();
- 
+
             if (!res.exito) {
                 mostrarMensaje(res.mensaje || 'No se pudo cargar el comerciante', 'error');
                 return;
             }
- 
+
             const c = res.comerciante;
- 
+
             document.getElementById('dc-idComerciante').value = c.idComerciante;
-            document.getElementById('dc-nombre').value = c.nombre;
-            document.getElementById('dc-alias').value = c.alias;
-            document.getElementById('dc-correo').value = c.correo;
+            document.getElementById('dc-solo-nombre').textContent = c.nombre;
+            document.getElementById('dc-solo-alias').textContent = c.alias;
+            document.getElementById('dc-solo-correo').textContent = c.correo;
             document.getElementById('dc-identificacion').textContent = c.numeroIdentificacion;
-            document.getElementById('dc-password').value = '';
- 
+            document.getElementById('dc-solo-estado').textContent = c.activo ? 'Activo' : 'Inactivo';
+
             const imgFoto = document.getElementById('dc-foto-actual');
             if (c.fotoPerfil) {
                 imgFoto.src = `imagenes/${c.fotoPerfil}`;
@@ -1207,10 +1499,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 imgFoto.classList.add('oculto');
             }
- 
+
             const btnDesactivar = document.getElementById('btn-desactivar-comerciante');
             const btnActivar = document.getElementById('btn-activar-comerciante');
- 
+
             if (c.activo) {
                 btnDesactivar.classList.remove('oculto');
                 btnActivar.classList.add('oculto');
@@ -1218,79 +1510,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnDesactivar.classList.add('oculto');
                 btnActivar.classList.remove('oculto');
             }
- 
+
             panelListaComerciantes.classList.add('oculto');
             panelDetalleComerciante.classList.remove('oculto');
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del comerciante', 'error');
         }
     }
- 
+
     document.getElementById('btn-volver-comerciantes').addEventListener('click', mostrarListaComerciantes);
- 
-    document.getElementById('form-editar-comerciante').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
- 
-        const datos = new FormData();
-        datos.append('idComerciante', document.getElementById('dc-idComerciante').value);
-        datos.append('nombre', document.getElementById('dc-nombre').value);
-        datos.append('alias', document.getElementById('dc-alias').value);
-        datos.append('correo', document.getElementById('dc-correo').value);
-        datos.append('password', document.getElementById('dc-password').value);
- 
-        const archivoFoto = document.getElementById('dc-fotoPerfil').files[0];
-        if (archivoFoto) {
-            datos.append('fotoPerfil', archivoFoto);
-        }
- 
-        try {
-            const r = await fetch('api/editar_comerciante.php', {
-                method: 'POST',
-                body: datos
-            });
-            const res = await r.json();
- 
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
-            if (res.exito) {
-                mostrarListaComerciantes();
-                cargarComerciantes();
-            }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
-    });
- 
-    document.getElementById('btn-desactivar-comerciante').addEventListener('click', async () => {
+
+    document.getElementById('btn-desactivar-comerciante').addEventListener('click', () => {
         const idComerciante = document.getElementById('dc-idComerciante').value;
-        const nombre = document.getElementById('dc-nombre').value;
- 
-        if (!confirm(`¿Seguro que querés desactivar a "${nombre}"? Sus locales seguirán existiendo, pero no podrá ingresar más.`)) {
-            return;
-        }
- 
-        try {
-            const r = await fetch('api/eliminar_comerciante.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idComerciante })
-            });
-            const res = await r.json();
- 
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
-            if (res.exito) {
-                mostrarListaComerciantes();
-                cargarComerciantes();
+        const nombre = document.getElementById('dc-solo-nombre').textContent;
+
+        Swal.fire({
+            title: `¿Desactivar a "${nombre}"?`,
+            text: 'Sus locales seguirán existiendo, pero no podrá ingresar más hasta que lo reactives.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/eliminar_comerciante.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idComerciante })
+                });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    mostrarListaComerciantes();
+                    cargarComerciantes();
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para desactivar este comerciante. Revisa tu conexión e intenta de nuevo.', 'error');
             }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
+        });
     });
- 
+
     document.getElementById('btn-activar-comerciante').addEventListener('click', async () => {
         const idComerciante = document.getElementById('dc-idComerciante').value;
- 
+
         try {
             const r = await fetch('api/activar_comerciante.php', {
                 method: 'POST',
@@ -1298,15 +1566,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ idComerciante })
             });
             const res = await r.json();
- 
+
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
+
             if (res.exito) {
                 mostrarListaComerciantes();
                 cargarComerciantes();
             }
         } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
+            mostrarMensaje('No se pudo conectar con el servidor para activar este comerciante. Revisa tu conexión e intenta de nuevo.', 'error');
         }
     });
  
@@ -1318,40 +1586,72 @@ document.addEventListener('DOMContentLoaded', () => {
         panelListaClientes.classList.remove('oculto');
     }
  
+       let clientesAdminCache = [];
+
+    function obtenerIniciales(nombre) {
+        const partes = (nombre || '').trim().split(/\s+/);
+        const primera = partes[0]?.[0] ?? '';
+        const segunda = partes[1]?.[0] ?? '';
+        return (primera + segunda).toUpperCase();
+    }
+
     async function cargarClientes() {
         const contenedor = document.getElementById('lista-clientes');
-        contenedor.innerHTML = '<p>Cargando...</p>';
- 
-        const soloActivos = !document.getElementById('chk-inactivos-clientes').checked;
- 
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
         try {
-            const r = await fetch(`api/listar_clientes.php?soloActivos=${soloActivos ? '1' : '0'}`);
+            const r = await fetch('api/listar_clientes.php?soloActivos=0');
             const res = await r.json();
- 
-            if (!res.exito || res.clientes.length === 0) {
-                contenedor.innerHTML = '<p>No hay clientes registrados todavía.</p>';
-                return;
-            }
- 
-            contenedor.innerHTML = '';
- 
-            res.clientes.forEach(c => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta tarjeta-clic';
-                tarjeta.innerHTML = `
-                    ${c.fotoPerfil ? `<img src="imagenes/${c.fotoPerfil}" alt="${c.nombreCompleto}" class="imagen-producto">` : ''}
-                    <h3>${c.nombreCompleto} ${!c.activo ? '<span class="ayuda error">(inactivo)</span>' : ''}</h3>
-                    <p>✉️ ${c.correo}</p>
-                `;
-                tarjeta.addEventListener('click', () => abrirDetalleCliente(c.idCliente));
-                contenedor.appendChild(tarjeta);
-            });
+
+            clientesAdminCache = res.exito ? res.clientes : [];
+            renderizarListaClientesAdmin();
         } catch (e) {
-            contenedor.innerHTML = '<p>Error al cargar los clientes.</p>';
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los clientes.</p>';
         }
     }
- 
-    document.getElementById('chk-inactivos-clientes').addEventListener('change', cargarClientes);
+
+    function renderizarListaClientesAdmin() {
+        const contenedor = document.getElementById('lista-clientes');
+        const termino = document.getElementById('cl-admin-buscar').value.trim().toLowerCase();
+        const estado = document.getElementById('cl-admin-filtro-estado').value;
+
+        let filtrados = clientesAdminCache;
+
+        if (estado === 'activos') filtrados = filtrados.filter(c => c.activo);
+        if (estado === 'inactivos') filtrados = filtrados.filter(c => !c.activo);
+
+        if (termino) {
+            filtrados = filtrados.filter(c =>
+                c.nombreCompleto.toLowerCase().includes(termino) ||
+                c.correo.toLowerCase().includes(termino)
+            );
+        }
+
+        if (filtrados.length === 0) {
+            contenedor.innerHTML = crearEstadoVacio('No se encontraron clientes.', 'users');
+            if (window.lucide) lucide.createIcons();
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        filtrados.forEach(c => {
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'tarjeta tarjeta-clic tarjeta-persona';
+            tarjeta.innerHTML = `
+                ${c.fotoPerfil
+                    ? `<img src="imagenes/${c.fotoPerfil}" alt="${escaparHtml(c.nombreCompleto)}" class="avatar-persona">`
+                    : `<div class="avatar-persona avatar-iniciales">${escaparHtml(obtenerIniciales(c.nombreCompleto))}</div>`}
+                <h4>${escaparHtml(c.nombreCompleto)}</h4>
+                <span class="${c.activo ? 'etiqueta-activo' : 'etiqueta-inactivo'}">${c.activo ? 'Activo' : 'Inactivo'}</span>
+                <p class="ayuda">✉️ ${escaparHtml(c.correo)}</p>
+            `;
+            tarjeta.addEventListener('click', () => abrirDetalleCliente(c.idCliente));
+            contenedor.appendChild(tarjeta);
+        });
+    }
+
+    document.getElementById('cl-admin-buscar')?.addEventListener('input', debounce(renderizarListaClientesAdmin, 300));
+    document.getElementById('cl-admin-filtro-estado')?.addEventListener('change', renderizarListaClientesAdmin);
  
     async function abrirDetalleCliente(idCliente) {
         try {
@@ -1366,13 +1666,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const c = res.cliente;
             const u = res.ubicacion;
  
-            document.getElementById('dcl-idCliente').value = c.idCliente;
-            document.getElementById('dcl-nombreCompleto').value = c.nombreCompleto;
-            document.getElementById('dcl-correo').value = c.correo;
+                       document.getElementById('dcl-idCliente').value = c.idCliente;
+            document.getElementById('dcl-solo-nombre').textContent = c.nombreCompleto;
+            document.getElementById('dcl-solo-correo').textContent = c.correo;
             document.getElementById('dcl-identificacion').textContent = c.numeroIdentificacion;
             document.getElementById('dcl-direccion').textContent =
                 u.direccionExacta + (u.referencia ? ` (${u.referencia})` : '');
-            document.getElementById('dcl-password').value = '';
+            document.getElementById('dcl-solo-estado').textContent = c.activo ? 'Activo' : 'Inactivo';
  
             const imgFoto = document.getElementById('dcl-foto-actual');
             if (c.fotoPerfil) {
@@ -1396,71 +1696,47 @@ document.addEventListener('DOMContentLoaded', () => {
             panelListaClientes.classList.add('oculto');
             panelDetalleCliente.classList.remove('oculto');
  
-            cargarLocalesQueSigueCliente(c.idCliente);
-        } catch (e) {
+                } catch (e) {
             mostrarMensaje('Error al cargar el detalle del cliente', 'error');
         }
     }
  
     document.getElementById('btn-volver-clientes').addEventListener('click', mostrarListaClientes);
  
-    document.getElementById('form-editar-cliente').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
- 
-        const datos = new FormData();
-        datos.append('idCliente', document.getElementById('dcl-idCliente').value);
-        datos.append('nombreCompleto', document.getElementById('dcl-nombreCompleto').value);
-        datos.append('correo', document.getElementById('dcl-correo').value);
-        datos.append('password', document.getElementById('dcl-password').value);
- 
-        const archivoFoto = document.getElementById('dcl-fotoPerfil').files[0];
-        if (archivoFoto) {
-            datos.append('fotoPerfil', archivoFoto);
-        }
- 
-        try {
-            const r = await fetch('api/editar_cliente.php', {
-                method: 'POST',
-                body: datos
-            });
-            const res = await r.json();
- 
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
-            if (res.exito) {
-                mostrarListaClientes();
-                cargarClientes();
-            }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
-    });
- 
-    document.getElementById('btn-desactivar-cliente').addEventListener('click', async () => {
+       document.getElementById('btn-desactivar-cliente').addEventListener('click', () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
-        const nombre = document.getElementById('dcl-nombreCompleto').value;
- 
-        if (!confirm(`¿Seguro que querés desactivar a "${nombre}"?`)) {
-            return;
-        }
- 
-        try {
-            const r = await fetch('api/eliminar_cliente.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idCliente })
-            });
-            const res = await r.json();
- 
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
-            if (res.exito) {
-                mostrarListaClientes();
-                cargarClientes();
+        const nombre = document.getElementById('dcl-solo-nombre').textContent;
+
+        Swal.fire({
+            title: `¿Desactivar a "${nombre}"?`,
+            text: 'El cliente ya no podrá iniciar sesión hasta que lo reactives.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/eliminar_cliente.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idCliente })
+                });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    mostrarListaClientes();
+                    cargarClientes();
+                }
+            } catch (e) {
+                 mostrarMensaje('No se pudo conectar con el servidor para desactivar este cliente. Revisa tu conexión e intenta de nuevo.', 'error');
             }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
+        });
     });
  
     document.getElementById('btn-activar-cliente').addEventListener('click', async () => {
@@ -1481,7 +1757,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarClientes();
             }
         } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
+             mostrarMensaje('No se pudo conectar con el servidor para activar este cliente. Revisa tu conexión e intenta de nuevo.', 'error');
         }
     });
  
@@ -1600,7 +1876,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             mostrarMensaje('No se pudo quitar el local', 'error');
                         }
                     } catch (e) {
-                        mostrarMensaje('Error de conexión con el servidor', 'error');
+                        mostrarMensaje('No se pudo conectar con el servidor para desactivar este comerciante. Revisa tu conexión e intenta de nuevo.', 'error');
                     }
                 });
                 contenedor.appendChild(fila);
@@ -1650,92 +1926,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
  
-    async function cargarLocalesQueSigueCliente(idCliente) {
-        const contenedor = document.getElementById('dcl-locales-lista');
-        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
- 
-        try {
-            const r = await fetch(`api/listar_locales_cliente.php?idCliente=${idCliente}`);
-            const res = await r.json();
- 
-            if (!res.exito || res.locales.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">Este cliente todavía no sigue ningún local.</p>';
-                return;
-            }
- 
-            contenedor.innerHTML = '';
- 
-            res.locales.forEach(loc => {
-                const fila = document.createElement('div');
-                fila.className = 'fila-relacion';
-                fila.innerHTML = `
-                    <span>${loc.nombreLocal}</span>
-                    <button type="button" class="boton-peligro btn-dejar-seguir-local" data-id="${loc.idClienteLocal}">Dejar de seguir</button>
-                `;
-                fila.querySelector('.btn-dejar-seguir-local').addEventListener('click', async () => {
-                    try {
-                        const rq = await fetch('api/dejar_seguir_local_cliente.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ idClienteLocal: loc.idClienteLocal })
-                        });
-                        const resq = await rq.json();
-                        if (resq.exito) {
-                            cargarLocalesQueSigueCliente(idCliente);
-                        } else {
-                            mostrarMensaje('No se pudo quitar el local', 'error');
-                        }
-                    } catch (e) {
-                        mostrarMensaje('Error de conexión con el servidor', 'error');
-                    }
-                });
-                contenedor.appendChild(fila);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los locales.</p>';
-        }
-    }
- 
-    document.getElementById('btn-seguir-local').addEventListener('click', async () => {
-        const idCliente = document.getElementById('dcl-idCliente').value;
-        const nombreLocal = document.getElementById('dcl-agregar-local-nombre').value.trim();
-        const mensaje = document.getElementById('dcl-seguir-local-msg');
- 
-        if (!nombreLocal) return;
- 
-        mensaje.textContent = 'Buscando local...';
-        mensaje.className = 'ayuda';
- 
-        try {
-            const rBuscar = await fetch(`api/buscar_local_por_nombre.php?nombre=${encodeURIComponent(nombreLocal)}`);
-            const resBuscar = await rBuscar.json();
- 
-            if (!resBuscar.encontrado) {
-                mensaje.textContent = 'No existe un local con ese nombre exacto';
-                mensaje.className = 'ayuda error';
-                return;
-            }
- 
-            const rSeguir = await fetch('api/seguir_local_cliente.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idCliente, idLocal: resBuscar.idLocal })
-            });
-            const resSeguir = await rSeguir.json();
- 
-            mensaje.textContent = resSeguir.mensaje;
-            mensaje.className = resSeguir.exito ? 'ayuda exito' : 'ayuda error';
- 
-            if (resSeguir.exito) {
-                document.getElementById('dcl-agregar-local-nombre').value = '';
-                cargarLocalesQueSigueCliente(idCliente);
-            }
-        } catch (e) {
-            mensaje.textContent = 'Error de conexión con el servidor';
-            mensaje.className = 'ayuda error';
-        }
-    });
- 
  
     function escaparHtml(texto) {
         return String(texto ?? '')
@@ -1758,12 +1948,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return res.exito ? res.clientes : [];
     }
  
-    async function obtenerLocalesActivos() {
-        const r = await fetch('api/listar_locales.php');
+         async function obtenerLocalesActivos() {
+        const r = await fetch('api/listar_locales_publicos.php');
         const res = await r.json();
         return res.exito ? res.locales : [];
     }
- 
     function llenarSelect(select, elementos, valorKey, textoKey) {
         const valorActual = select.value;
         select.innerHTML = '<option value="">Seleccione...</option>';
@@ -1932,124 +2121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('Error de conexión al eliminar la reseña', 'error');
         }
     }
- 
-    async function cargarUsuariosHistorial() {
-        const tipo = document.getElementById('historial-tipo').value;
-        const select = document.getElementById('historial-usuario');
-        select.innerHTML = '<option value="">Cargando...</option>';
- 
-        try {
-            if (tipo === 'Cliente') {
-                const clientes = await obtenerClientesActivos();
-                llenarSelect(select, clientes, 'idCliente', 'nombreCompleto');
-            } else {
-                const r = await fetch('api/listar_comerciantes.php?soloActivos=1');
-                const res = await r.json();
-                llenarSelect(select, res.exito ? res.comerciantes : [], 'idComerciante', 'nombre');
-            }
- 
-            document.getElementById('historial-password-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
-            document.getElementById('historial-fotos-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
-        } catch (e) {
-            select.innerHTML = '<option value="">No se pudieron cargar usuarios</option>';
-        }
-    }
- 
-    document.getElementById('historial-tipo').addEventListener('change', cargarUsuariosHistorial);
- 
-    async function consultarHistorialUsuario() {
-        const tipoUsuario = document.getElementById('historial-tipo').value;
-        const idUsuario = document.getElementById('historial-usuario').value;
-        const listaPassword = document.getElementById('historial-password-lista');
-        const listaFotos = document.getElementById('historial-fotos-lista');
- 
-        if (!idUsuario) {
-            mostrarMensaje('Selecciona un usuario para consultar el historial', 'error');
-            return;
-        }
- 
-        listaPassword.innerHTML = '<p class="ayuda">Cargando...</p>';
-        listaFotos.innerHTML = '<p class="ayuda">Cargando...</p>';
- 
-        try {
-            const parametros = new URLSearchParams({ idUsuario, tipoUsuario });
-            const r = await fetch(`api/listar_historial_usuario.php?${parametros.toString()}`);
-            const res = await r.json();
- 
-            if (!res.exito) {
-                listaPassword.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
-                listaFotos.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
-                return;
-            }
- 
-            if (res.passwords.length === 0) {
-                listaPassword.innerHTML = '<p class="ayuda">No hay cambios de contraseña registrados.</p>';
-            } else {
-                listaPassword.innerHTML = '';
-                res.passwords.forEach(item => {
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'tarjeta';
-                    tarjeta.innerHTML = `
-                        <h3>Contraseña actualizada</h3>
-                        <p>${escaparHtml(formatearFecha(item.fecha))}</p>
-                    `;
-                    listaPassword.appendChild(tarjeta);
-                });
-            }
- 
-            if (res.fotos.length === 0) {
-                listaFotos.innerHTML = '<p class="ayuda">No hay cambios de foto registrados.</p>';
-            } else {
-                listaFotos.innerHTML = '';
-                res.fotos.forEach(item => {
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'tarjeta';
-                    tarjeta.innerHTML = `
-                        ${item.rutaNueva ? `<img src="imagenes/${encodeURIComponent(item.rutaNueva)}" alt="Nueva foto" class="imagen-producto">` : ''}
-                        <h3>Cambio de foto</h3>
-                        <p>${escaparHtml(formatearFecha(item.fecha))}</p>
-                    `;
-                    listaFotos.appendChild(tarjeta);
-                });
-            }
-        } catch (e) {
-            listaPassword.innerHTML = '<p class="ayuda error">Error de conexión.</p>';
-            listaFotos.innerHTML = '<p class="ayuda error">Error de conexión.</p>';
-        }
-    }
- 
-    document.getElementById('btn-ver-historial').addEventListener('click', consultarHistorialUsuario);
- 
-    document.getElementById('form-cambiar-password').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
- 
-        const tipoUsuario = document.getElementById('historial-tipo').value;
-        const idUsuario = document.getElementById('historial-usuario').value;
-        const passwordActual = document.getElementById('historial-password-actual').value;
-        const passwordNueva = document.getElementById('historial-password-nueva').value;
- 
-        if (!idUsuario) {
-            mostrarMensaje('Selecciona un usuario antes de cambiar la contraseña', 'error');
-            return;
-        }
- 
-        try {
-            const r = await fetch('api/cambiar_password_usuario.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idUsuario, tipoUsuario, passwordActual, passwordNueva })
-            });
-            const res = await r.json();
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
- 
-            document.getElementById('historial-password-actual').value = '';
-            document.getElementById('historial-password-nueva').value = '';
-            await consultarHistorialUsuario();
-        } catch (e) {
-            mostrarMensaje('Error de conexión al cambiar la contraseña', 'error');
-        }
-    });
- 
+
     function obtenerCoordenadasGPS() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
@@ -2110,16 +2182,26 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarIndicadorSesion(null);
         }
     }
-    function actualizarMenuPorRol(tipoUsuario) {
+
+    
+        function actualizarMenuPorRol(tipoUsuario) {
         botonesMenu.forEach(boton => {
+            if (boton.dataset.vista === 'vista-inicio') {
+                boton.classList.toggle('oculto', !!tipoUsuario);
+                return;
+            }
+
             const rol = boton.dataset.rol;
             if (!rol) {
                 boton.classList.remove('oculto');
                 return;
             }
-            boton.classList.toggle('oculto', rol !== tipoUsuario);
+            const rolesPermitidos = rol.split(',').map(r => r.trim());
+            boton.classList.toggle('oculto', !rolesPermitidos.includes(tipoUsuario));
         });
     }
+
+    
  
     function actualizarIndicadorSesion(usuario) {
         usuarioSesionActual = usuario;
@@ -2128,11 +2210,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const texto = document.getElementById('sesion-texto');
  
         actualizarMenuPorRol(usuario ? usuario.tipo : null);
- 
-                const barraLateral = document.getElementById('barra-lateral');
+
+        const botonMiPerfil = document.getElementById('btn-mi-perfil');
+        if (botonMiPerfil) {
+            botonMiPerfil.classList.toggle('oculto', usuario?.tipo !== 'SuperAdmin');
+        }
+                 const barraLateral = document.getElementById('barra-lateral');
         const topbarPublica = document.getElementById('topbar-publica');
+        const piePagina = document.getElementById('pie-pagina');
         if (barraLateral) barraLateral.classList.toggle('oculto', !usuario);
         if (topbarPublica) topbarPublica.classList.toggle('oculto', !!usuario);
+        if (piePagina) piePagina.classList.toggle('oculto', !!usuario);
  
                 const menuSecundario = document.getElementById('menu-secundario');
         if (menuSecundario) {
@@ -2193,21 +2281,11 @@ document.addEventListener('DOMContentLoaded', () => {
  
             mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
  
-            if (res.exito) {
+                        if (res.exito) {
                 actualizarIndicadorSesion(res.usuario);
                 evento.target.reset();
- 
-                try {
-                    const coords = await obtenerCoordenadasGPS();
-                    await fetch('api/registrar_ubicacion_login.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
-                    });
-                } catch (e) {
-                }
- 
-                          if (res.usuario.tipo === 'Cliente') {
+
+                if (res.usuario.tipo === 'Cliente') {
                     mostrarVistaLogin('vista-listado');
                 } else if (res.usuario.tipo === 'Comerciante') {
                     await mostrarSelectorPerfilesLocal();
@@ -2215,22 +2293,62 @@ document.addEventListener('DOMContentLoaded', () => {
                     mostrarVistaLogin('vista-dashboard-admin');
                     cargarDashboardAdmin();
                 }
+
+                abrirModalPermisoUbicacion(async () => {
+                    try {
+                        const coords = await obtenerCoordenadasGPS();
+                        await fetch('api/registrar_ubicacion_login.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
+                        });
+                    } catch (e) {
+                    }
+                });
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
  
-    document.getElementById('btn-cerrar-sesion')?.addEventListener('click', async () => {
-        try {
-            await fetch('api/cerrar_sesion.php', { method: 'POST' });
-        } catch (e) {}
-        actualizarIndicadorSesion(null);
-        mostrarMensaje('Sesión cerrada', 'exito');
-        mostrarPanelEntrar();
-        mostrarVistaLogin('vista-login');
+        document.getElementById('btn-cerrar-sesion')?.addEventListener('click', () => {
+        Swal.fire({
+            title: '¿Cerrar sesión?',
+            text: 'Vas a salir de tu cuenta.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cerrar sesión',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                await fetch('api/cerrar_sesion.php', { method: 'POST' });
+            } catch (e) {}
+            actualizarIndicadorSesion(null);
+            mostrarMensaje('Sesión cerrada', 'exito');
+            mostrarPanelEntrar();
+            mostrarVistaLogin('vista-login');
+        });
     });
  
+        const barraLateralEl = document.getElementById('barra-lateral');
+    const btnColapsarSidebar = document.getElementById('btn-colapsar-sidebar');
+
+    function aplicarEstadoSidebar() {
+        const colapsada = localStorage.getItem('sidebarColapsada') === '1';
+        barraLateralEl?.classList.toggle('colapsada', colapsada);
+    }
+
+    btnColapsarSidebar?.addEventListener('click', () => {
+        const estaColapsada = barraLateralEl.classList.toggle('colapsada');
+        localStorage.setItem('sidebarColapsada', estaColapsada ? '1' : '0');
+    });
+
+    aplicarEstadoSidebar();
+
     verificarSesionActual();
  
     const panelEntrar = document.getElementById('login-panel-entrar');
@@ -2489,44 +2607,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
  
-   //Buscar comerciante por ID 
-    const inputBuscarIdentComerciante = document.getElementById('admin-buscar-identificacion');
- 
-    inputBuscarIdentComerciante?.addEventListener('input', () => {
-        inputBuscarIdentComerciante.value = soloAlfanumerico(inputBuscarIdentComerciante.value);
-    });
- 
-    document.getElementById('btn-buscar-comerciante-identificacion')?.addEventListener('click', async () => {
-        const numero = inputBuscarIdentComerciante.value.trim();
-        const msg = document.getElementById('admin-buscar-identificacion-msg');
- 
-        if (!numero) {
-            msg.textContent = 'Escribe un número de identificación';
-            msg.className = 'ayuda error';
-            return;
-        }
- 
-        msg.textContent = 'Buscando...';
-        msg.className = 'ayuda';
- 
-        try {
-            const r = await fetch(`api/buscar_comerciante_por_identificacion.php?numeroIdentificacion=${encodeURIComponent(numero)}`);
-            const res = await r.json();
- 
-            if (!res.encontrado) {
-                msg.textContent = 'No se encontró ningún comerciante con esa identificación';
-                msg.className = 'ayuda error';
-                return;
-            }
- 
-            msg.textContent = '';
-            abrirDetalleComerciante(res.idComerciante);
-        } catch (e) {
-            msg.textContent = 'Error de conexión al buscar';
-            msg.className = 'ayuda error';
-        }
-    });
- 
+  
  
     async function cargarHistorialActividadLocal(idLocal) {
         const contenedor = document.getElementById('e-actividad-lista');
@@ -2645,12 +2726,80 @@ document.addEventListener('DOMContentLoaded', () => {
             const comerciantesActivos = rComerciantesActivos.exito ? rComerciantesActivos.comerciantes.length : 0;
             const comerciantesTodos = rComerciantesTodos.exito ? rComerciantesTodos.comerciantes.length : 0;
  
-            statComerciantes.textContent = comerciantesActivos;
+                       statComerciantes.textContent = comerciantesActivos;
             statComerciantesInactivos.textContent = Math.max(comerciantesTodos - comerciantesActivos, 0);
  
             if (window.lucide) lucide.createIcons();
+
+            cargarActividadRecienteDashboard();
         } catch (e) {
             mostrarMensaje('No se pudo cargar el resumen del dashboard', 'error');
+        }
+    }
+
+    async function cargarActividadRecienteDashboard() {
+        const contenedor = document.getElementById('dashboard-actividad-lista');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+
+        const iconosDashboard = {
+            password: 'lock',
+            perfilImagen: 'image',
+            nombre: 'user',
+            correo: 'mail',
+            telefono: 'phone',
+            logo: 'image',
+            precio: 'tag',
+            descuento: 'percent'
+        };
+
+        const accionesDashboard = {
+            password: 'cambió su contraseña',
+            perfilImagen: 'cambió su foto de perfil',
+            nombre: 'cambió su nombre',
+            correo: 'actualizó su correo',
+            telefono: 'actualizó su teléfono',
+            logo: 'actualizó su logo',
+            precio: 'modificó el precio de un producto',
+            descuento: 'modificó el descuento de un producto'
+        };
+
+        function tiempoRelativo(fechaTexto) {
+            const fecha = new Date(fechaTexto.replace(' ', 'T'));
+            const diffMin = Math.floor((Date.now() - fecha.getTime()) / 60000);
+
+            if (diffMin < 1) return 'Justo ahora';
+            if (diffMin < 60) return `Hace ${diffMin} min`;
+            const diffHoras = Math.floor(diffMin / 60);
+            if (diffHoras < 24) return `Hace ${diffHoras} h`;
+            const diffDias = Math.floor(diffHoras / 24);
+            return `Hace ${diffDias} d`;
+        }
+
+        try {
+            const r = await fetch('api/listar_historial_global.php?tipo=todos&entidadTipo=todos&limite=5');
+            const res = await r.json();
+
+            if (!res.exito || res.registros.length === 0) {
+                contenedor.innerHTML = crearEstadoVacio('Todavía no hay actividad registrada.', 'history');
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            contenedor.innerHTML = res.registros.map(item => `
+                <div class="dashboard-actividad-item">
+                    <span class="historial-icon"><i data-lucide="${iconosDashboard[item.tipo] ?? 'history'}"></i></span>
+                    <div>
+                        <p class="dashboard-actividad-texto">${escaparHtml(item.usuarioNombre)} ${escaparHtml(accionesDashboard[item.tipo] ?? 'actualizó un dato')}</p>
+                        <p class="ayuda">${tiempoRelativo(item.fecha)}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">No se pudo cargar la actividad reciente.</p>';
         }
     }
  
@@ -2766,6 +2915,98 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = 'hidden';
     }
 
+        async function abrirModalLocal(idLocal) {
+        const modal = document.getElementById('modal-local');
+        if (!modal) return;
+
+        try {
+            const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar el local', 'error');
+                return;
+            }
+
+            const { local, ubicacion } = res;
+
+            const imagen = document.getElementById('modal-local-imagen');
+            const sinImagen = document.getElementById('modal-local-sin-imagen');
+            if (local.logo) {
+                imagen.src = `imagenes/${local.logo}`;
+                imagen.alt = local.nombreLocal;
+                imagen.classList.remove('oculto');
+                sinImagen.classList.add('oculto');
+            } else {
+                imagen.classList.add('oculto');
+                sinImagen.classList.remove('oculto');
+            }
+
+                       document.getElementById('modal-local-categoria').textContent = local.tipoLocal ?? '';
+            document.getElementById('modal-local-nombre').textContent = local.nombreLocal;
+            document.getElementById('modal-local-descripcion').textContent = local.descripcion || 'Sin descripción.';
+            document.getElementById('modal-local-telefono').textContent = local.telefono || 'No disponible';
+            document.getElementById('modal-local-ubicacion').textContent =
+                `${ubicacion.provincia ?? ''}, ${ubicacion.canton ?? ''}, ${ubicacion.distrito ?? ''} — ${ubicacion.direccionExacta ?? ''}`;
+
+            const tabDetalles = document.getElementById('modal-local-tab-detalles');
+            const tabProductos = document.getElementById('modal-local-tab-productos');
+            const contenidoDetalles = document.getElementById('modal-local-detalles-contenido');
+            const contenidoProductos = document.getElementById('modal-local-productos-contenido');
+            const listaProductosLocal = document.getElementById('modal-local-productos-lista');
+
+            tabDetalles.classList.add('activo');
+            tabProductos.classList.remove('activo');
+            contenidoDetalles.classList.remove('oculto');
+            contenidoProductos.classList.add('oculto');
+
+            tabDetalles.onclick = () => {
+                tabDetalles.classList.add('activo');
+                tabProductos.classList.remove('activo');
+                contenidoDetalles.classList.remove('oculto');
+                contenidoProductos.classList.add('oculto');
+            };
+
+            tabProductos.onclick = () => {
+                tabProductos.classList.add('activo');
+                tabDetalles.classList.remove('activo');
+                contenidoProductos.classList.remove('oculto');
+                contenidoDetalles.classList.add('oculto');
+
+                const productosDeEsteLocal = productosInicioCache.filter(p => Number(p.idLocal) === Number(local.idLocal));
+
+                if (productosDeEsteLocal.length === 0) {
+                    listaProductosLocal.innerHTML = crearEstadoVacio('Este local todavía no tiene productos disponibles.', 'package-open');
+                } else {
+                    listaProductosLocal.innerHTML = '';
+                    productosDeEsteLocal.forEach(p => {
+                        const tarjeta = crearTarjetaProducto(p);
+                        tarjeta.classList.add('modal-local-producto-item');
+                        listaProductosLocal.appendChild(tarjeta);
+                    });
+                }
+                if (window.lucide) lucide.createIcons();
+            };
+
+            modal.classList.remove('oculto');
+            document.body.style.overflow = 'hidden';
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            mostrarMensaje('Error al cargar el local', 'error');
+        }
+    }
+
+    function cerrarModalLocal() {
+        document.getElementById('modal-local')?.classList.add('oculto');
+        document.body.style.overflow = '';
+    }
+
+       document.getElementById('modal-local-cerrar')?.addEventListener('click', cerrarModalLocal);
+    document.getElementById('modal-local')?.addEventListener('click', (e) => {
+        if (e.target.id === 'modal-local') cerrarModalLocal();
+    });
+    document.getElementById('modal-local-productos-lista')?.addEventListener('click', cerrarModalLocal, true);
+
     function cerrarModalProducto() {
         document.getElementById('modal-producto')?.classList.add('oculto');
         document.body.style.overflow = '';
@@ -2778,12 +3019,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
 
-        document.addEventListener('keydown', (e) => {
+           document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             cerrarModalProducto();
+            cerrarModalLocal();
             cerrarModalPermisoUbicacion();
+            cerrarPanelHistorial();
         }
     });
+    
 
     // El botón "Comprar" todavía no tiene funcionalidad — se conecta en el próximo paso.
     document.getElementById('modal-producto-comprar')?.addEventListener('click', () => {
@@ -2807,11 +3051,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
  
-        pista.innerHTML = carruselLocales.map(local => `
-            <div class="carrusel-slide">
+                pista.innerHTML = carruselLocales.map(local => `
+            <div class="carrusel-slide carrusel-slide-clic" data-id="${local.idLocal}">
                 ${local.logo
                     ? `<img src="imagenes/${local.logo}" alt="${escaparHtml(local.nombreLocal)}">`
-                    : `<div class="carrusel-slide-sin-logo">🏪</div>`}
+                    : `<div class="carrusel-slide-sin-logo"><i data-lucide="store"></i></div>`}
                 <div class="carrusel-slide-info">
                     <span class="etiqueta-tipo">${escaparHtml(local.tipoLocal ?? '')}</span>
                     <h3>${escaparHtml(local.nombreLocal)}</h3>
@@ -2835,14 +3079,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
  
-        pista.querySelectorAll('.carrusel-ver-local').forEach(boton => {
-            boton.addEventListener('click', () => {
-                mostrarVistaLogin('vista-listado');
-                abrirDetalleLocal(Number(boton.dataset.id));
+               pista.querySelectorAll('.carrusel-slide-clic').forEach(slide => {
+            slide.addEventListener('click', () => {
+                abrirModalLocal(Number(slide.dataset.id));
             });
         });
+
+        if (window.lucide) lucide.createIcons();
     }
- 
+    
     function moverCarrusel(direccion) {
         if (carruselLocales.length === 0) return;
         carruselIndice = (carruselIndice + direccion + carruselLocales.length) % carruselLocales.length;
@@ -3129,8 +3374,169 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     cargarUbicacionesParaBuscador();
- 
- 
+
+
+    // ------------------------------------------------------------
+    // Historiales (tabla unificada + panel lateral de detalle)
+    // ------------------------------------------------------------
+    const ETIQUETAS_TIPO_HISTORIAL = {
+        password: 'Contraseña',
+        perfilImagen: 'Foto de perfil',
+        nombre: 'Nombre',
+        correo: 'Correo',
+        telefono: 'Teléfono',
+        logo: 'Logo',
+        precio: 'Precio',
+        descuento: 'Descuento'
+    };
+
+    const ICONOS_TIPO_HISTORIAL = {
+        password: 'lock',
+        perfilImagen: 'image',
+        nombre: 'user',
+        correo: 'mail',
+        telefono: 'phone',
+        logo: 'image',
+        precio: 'tag',
+        descuento: 'percent'
+    };
+
+    const ACCION_TEXTO_HISTORIAL = {
+        password: 'Contraseña actualizada',
+        perfilImagen: 'Foto de perfil actualizada',
+        nombre: 'Nombre actualizado',
+        correo: 'Correo actualizado',
+        telefono: 'Teléfono actualizado',
+        logo: 'Logo actualizado',
+        precio: 'Precio modificado',
+        descuento: 'Descuento modificado'
+    };
+
+    let historialTabActual = 'todos';
+    let historialRegistrosCache = [];
+
+    async function cargarHistorialGlobal() {
+        const tabla = document.getElementById('hist-tabla');
+        tabla.innerHTML = '<p class="ayuda" style="padding: 1.2rem;">Cargando...</p>';
+
+        const parametros = new URLSearchParams();
+        parametros.set('tipo', historialTabActual);
+        parametros.set('entidadTipo', document.getElementById('hist-filtro-entidad').value);
+        const termino = document.getElementById('hist-buscar').value.trim();
+        if (termino) parametros.set('termino', termino);
+
+        try {
+            const r = await fetch(`api/listar_historial_global.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                tabla.innerHTML = `<p class="ayuda error" style="padding: 1.2rem;">${escaparHtml(res.mensaje)}</p>`;
+                return;
+            }
+
+            historialRegistrosCache = res.registros;
+            renderizarPestanasHistorial(res.conteos);
+            renderizarTablaHistorial(res.registros);
+        } catch (e) {
+            tabla.innerHTML = '<p class="ayuda error" style="padding: 1.2rem;">Error al cargar los historiales.</p>';
+        }
+    }
+
+    function renderizarPestanasHistorial(conteos) {
+        const contenedor = document.getElementById('hist-tabs');
+        const tipos = Object.keys(ETIQUETAS_TIPO_HISTORIAL);
+
+        let html = `<button type="button" class="historial-tab ${historialTabActual === 'todos' ? 'activo' : ''}" data-tipo="todos">Todos (${conteos.todos ?? 0})</button>`;
+        tipos.forEach(tipo => {
+            const cantidad = conteos[tipo] ?? 0;
+            html += `<button type="button" class="historial-tab ${historialTabActual === tipo ? 'activo' : ''}" data-tipo="${tipo}">${ETIQUETAS_TIPO_HISTORIAL[tipo]} (${cantidad})</button>`;
+        });
+
+        contenedor.innerHTML = html;
+
+        contenedor.querySelectorAll('.historial-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                historialTabActual = tab.dataset.tipo;
+                cargarHistorialGlobal();
+            });
+        });
+    }
+
+    function renderizarTablaHistorial(registros) {
+        const tabla = document.getElementById('hist-tabla');
+
+        if (registros.length === 0) {
+            tabla.innerHTML = crearEstadoVacio('No hay registros que coincidan con la búsqueda.', 'history');
+            if (window.lucide) lucide.createIcons();
+            return;
+        }
+
+        tabla.innerHTML = registros.map(item => `
+            <div class="historial-row" data-id="${item.id}">
+                <div class="historial-type">
+                    <span class="historial-icon"><i data-lucide="${ICONOS_TIPO_HISTORIAL[item.tipo] ?? 'history'}"></i></span>
+                    <span>${ETIQUETAS_TIPO_HISTORIAL[item.tipo] ?? item.tipo}</span>
+                </div>
+                <div>
+                    <div class="historial-usuario-nombre">${escaparHtml(item.usuarioNombre)}</div>
+                    <div class="historial-usuario-tipo">${escaparHtml(item.entidadTipo)}</div>
+                </div>
+                <div class="historial-detalle">${ACCION_TEXTO_HISTORIAL[item.tipo] ?? 'Actualizado'}</div>
+                <div class="historial-fecha historial-fecha-col">${escaparHtml(formatearFecha(item.fecha))}</div>
+                <div class="historial-flecha">&rsaquo;</div>
+            </div>
+        `).join('');
+
+        tabla.querySelectorAll('.historial-row').forEach(fila => {
+            fila.addEventListener('click', () => {
+                const registro = historialRegistrosCache.find(r => r.id === fila.dataset.id);
+                if (registro) abrirPanelHistorial(registro);
+            });
+        });
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function abrirPanelHistorial(item) {
+        document.getElementById('hist-panel-icono').innerHTML = `<i data-lucide="${ICONOS_TIPO_HISTORIAL[item.tipo] ?? 'history'}"></i>`;
+        document.getElementById('hist-panel-tipo-nombre').textContent = ETIQUETAS_TIPO_HISTORIAL[item.tipo] ?? item.tipo;
+        document.getElementById('hist-panel-entidad-badge').textContent = item.entidadTipo;
+        document.getElementById('hist-panel-usuario').textContent = item.usuarioNombre;
+        document.getElementById('hist-panel-entidad-tipo').textContent = item.entidadTipo;
+        document.getElementById('hist-panel-accion').textContent = ACCION_TEXTO_HISTORIAL[item.tipo] ?? 'Actualizado';
+        document.getElementById('hist-panel-fecha').textContent = formatearFecha(item.fecha);
+
+        const cambioWrap = document.getElementById('hist-panel-cambio-wrap');
+        const cambioTexto = document.getElementById('hist-panel-cambio');
+        if (item.tipo === 'password') {
+            cambioWrap.classList.add('oculto');
+        } else if (item.tipo === 'perfilImagen' || item.tipo === 'logo') {
+            cambioTexto.innerHTML = item.valorNuevo ? `<img src="imagenes/${encodeURIComponent(item.valorNuevo)}" alt="" class="imagen-producto">` : 'Sin imagen';
+            cambioWrap.classList.remove('oculto');
+        } else {
+            cambioTexto.textContent = `De "${item.valorAnterior ?? '(vacío)'}" a "${item.valorNuevo ?? '(vacío)'}"`;
+            cambioWrap.classList.remove('oculto');
+        }
+
+        document.getElementById('hist-panel-overlay').classList.remove('oculto');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarPanelHistorial() {
+        document.getElementById('hist-panel-overlay').classList.add('oculto');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('hist-panel-cerrar')?.addEventListener('click', cerrarPanelHistorial);
+    document.getElementById('hist-panel-overlay')?.addEventListener('click', (e) => {
+        if (e.target.id === 'hist-panel-overlay') cerrarPanelHistorial();
+    });
+
+    document.getElementById('hist-filtro-entidad')?.addEventListener('change', cargarHistorialGlobal);
+    document.getElementById('hist-buscar')?.addEventListener('input', debounce(cargarHistorialGlobal, 300));
+
+
     // ============================================================
 // BOTÓN LOGIN - Redirige al login
 // ============================================================
@@ -3180,6 +3586,103 @@ function mostrarMenuSecundario(rol) {
 function ocultarMenuSecundario() {
     document.getElementById('menu-secundario').style.display = 'none';
 }
+    document.getElementById('btn-mi-perfil')?.addEventListener('click', () => {
+        mostrarVistaLogin('vista-mi-perfil');
+        cargarMiPerfil();
+    });
+
+    async function cargarMiPerfil() {
+        const infoSoloLectura = document.getElementById('mp-info-solo-lectura');
+        const formEditar = document.getElementById('form-editar-mi-perfil');
+
+        formEditar.classList.add('oculto');
+        infoSoloLectura.classList.remove('oculto');
+
+        try {
+            const r = await fetch('api/buscar_superadmin.php');
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar tu perfil', 'error');
+                return;
+            }
+
+            const a = res.admin;
+            document.getElementById('mp-solo-nombre').textContent = a.nombreCompleto;
+            document.getElementById('mp-solo-correo').textContent = a.correo;
+            document.getElementById('mp-nombreCompleto').value = a.nombreCompleto;
+            document.getElementById('mp-correo').value = a.correo;
+        } catch (e) {
+            mostrarMensaje('Error al cargar tu perfil', 'error');
+        }
+    }
+
+    document.getElementById('btn-editar-mi-perfil')?.addEventListener('click', () => {
+        document.getElementById('mp-info-solo-lectura').classList.add('oculto');
+        document.getElementById('form-editar-mi-perfil').classList.remove('oculto');
+    });
+
+    document.getElementById('form-editar-mi-perfil')?.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const nombreCompleto = document.getElementById('mp-nombreCompleto').value.trim();
+        const correo = document.getElementById('mp-correo').value.trim();
+
+        try {
+            const r = await fetch('api/editar_superadmin.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombreCompleto, correo })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                actualizarIndicadorSesion({ ...usuarioSesionActual, nombre: nombreCompleto });
+                await cargarMiPerfil();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+       document.getElementById('form-cambiar-password-superadmin')?.addEventListener('submit', (evento) => {
+        evento.preventDefault();
+
+        const passwordActual = document.getElementById('mp-password-actual').value;
+        const passwordNueva = document.getElementById('mp-password-nueva').value;
+
+        Swal.fire({
+            title: '¿Cambiar tu contraseña?',
+            text: 'Vas a necesitar la nueva contraseña la próxima vez que inicies sesión.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cambiarla',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/cambiar_password_superadmin.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ passwordActual, passwordNueva })
+                });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    document.getElementById('mp-password-actual').value = '';
+                    document.getElementById('mp-password-nueva').value = '';
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para cambiar tu contraseña. Revisa tu conexión e intenta de nuevo.', 'error');
+            }
+        });
+    });
  
 });
- 

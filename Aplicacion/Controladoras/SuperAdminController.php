@@ -55,9 +55,14 @@ class SuperAdminController
         return $superAdmin;
     }
 
-    public function cambiarCorreo(int $idSuperAdmin, string $correoNuevo): bool
+        public function cambiarCorreo(int $idSuperAdmin, string $correoNuevo): bool
     {
         return $this->superAdminRepository->actualizarCorreo($idSuperAdmin, $correoNuevo);
+    }
+
+    public function cambiarNombre(int $idSuperAdmin, string $nombreNuevo): bool
+    {
+        return $this->superAdminRepository->actualizarNombre($idSuperAdmin, $nombreNuevo);
     }
 
     public function cambiarPassword(int $idSuperAdmin, string $passwordActual, string $passwordNueva): bool

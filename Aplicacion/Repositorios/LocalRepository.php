@@ -355,11 +355,13 @@ class LocalRepository
         );
     }
 
+    
     public function sincronizarActivoPorInactividad(int $dias = 7): int
     {
         $sql = "UPDATE tblocal l
                 SET l.tblocalactivo = 0
                 WHERE l.tblocalactivo = 1
+                  AND l.tblocalregistrofecha <= (NOW() - INTERVAL :dias DAY)
                   AND NOT EXISTS (
                       SELECT 1 FROM tbsesionactivohistorico h
                       WHERE h.tblocalid = l.tblocalid

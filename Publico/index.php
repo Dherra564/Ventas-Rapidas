@@ -21,32 +21,40 @@
     </header>
 
     <div class="app-shell">
-        <aside class="barra-lateral oculto" id="barra-lateral">
+                <aside class="barra-lateral oculto" id="barra-lateral">
             <div class="marca-sidebar">
                 <img src="imagenes/logo-rapiventas.png" alt="RapiVentas">
-                <h1>Rapi<span>Ventas</span></h1>
+                <h1 class="marca-sidebar-texto">Rapi<span>Ventas</span></h1>
+                <button type="button" id="btn-colapsar-sidebar" class="btn-colapsar-sidebar" aria-label="Colapsar menú" title="Colapsar menú">
+                    <i data-lucide="chevrons-left"></i>
+                </button>
             </div>
 
             <nav class="menu" id="menu-principal">
-                <button class="menu-boton activo" data-vista="vista-inicio">Inicio</button>
-                <button class="menu-boton" data-vista="vista-login">Iniciar Sesión</button>
-                <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
-                <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar
-                    Producto</button>
-                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
-                <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
-                <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente">Locales Cercanos</button>
-                <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
-                <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin">Dashboard</button>
-                <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin">Ver
-                    Comerciantes</button>
-                <button class="menu-boton" data-vista="vista-clientes" data-rol="SuperAdmin">Ver Clientes</button>
-                <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin">Historiales</button>
+                <button class="menu-boton activo" data-vista="vista-inicio"><i data-lucide="home"></i><span class="menu-boton-texto">Inicio</span></button>
+                <button class="menu-boton" data-vista="vista-login"><i data-lucide="log-in"></i><span class="menu-boton-texto">Iniciar Sesión</span></button>
+                <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin"><i data-lucide="layout-dashboard"></i><span class="menu-boton-texto">Dashboard</span></button>
+                <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante"><i data-lucide="plus-circle"></i><span class="menu-boton-texto">Registrar Local</span></button>
+                <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante"><i data-lucide="package-plus"></i><span class="menu-boton-texto">Registrar Producto</span></button>
+                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante"><i data-lucide="store"></i><span class="menu-boton-texto">Mi Local</span></button>
+                <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente,SuperAdmin"><i data-lucide="store"></i><span class="menu-boton-texto">Ver Locales</span></button>
+                <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente"><i data-lucide="map-pin"></i><span class="menu-boton-texto">Locales Cercanos</span></button>
+                <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente"><i data-lucide="star"></i><span class="menu-boton-texto">Reseñas</span></button>
+                <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin"><i data-lucide="briefcase"></i><span class="menu-boton-texto">Ver Comerciantes</span></button>
+                <button class="menu-boton" data-vista="vista-clientes" data-rol="SuperAdmin"><i data-lucide="users"></i><span class="menu-boton-texto">Ver Clientes</span></button>
+                <button class="menu-boton" data-vista="vista-productos-admin" data-rol="SuperAdmin"><i data-lucide="package"></i><span class="menu-boton-texto">Ver Productos</span></button>
+                <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin"><i data-lucide="history"></i><span class="menu-boton-texto">Historiales</span></button>
             </nav>
 
             <div id="sesion-indicador" class="sesion-indicador oculto">
-                <span id="sesion-texto"></span>
-                <button type="button" id="btn-cerrar-sesion" class="boton-secundario">Cerrar sesión</button>
+                <button type="button" id="btn-mi-perfil" class="btn-mi-perfil oculto" aria-label="Mi perfil" title="Mi perfil">
+                    <i data-lucide="user-circle"></i>
+                </button>
+                <span id="sesion-texto" class="sesion-texto-completo"></span>
+                <button type="button" id="btn-cerrar-sesion" class="boton-secundario">
+                    <i data-lucide="log-out" class="icon-sm"></i>
+                    <span class="menu-boton-texto">Cerrar sesión</span>
+                </button>
             </div>
         </aside>
 
@@ -421,8 +429,13 @@
                             <p class="ayuda" id="e-actividad-estado"></p>
                             <div id="e-actividad-lista" class="tarjetas"></div>
                         </div>
-                        <div class="campo-lectura" id="e-info-solo-lectura">
-                            <strong>Información del local</strong>
+                                               <div class="campo-lectura" id="e-info-solo-lectura">
+                            <div class="campo-lectura-encabezado">
+                                <strong>Información del local</strong>
+                                <button type="button" id="btn-editar-local" class="btn-editar-icono oculto" aria-label="Editar local">
+                                    <i data-lucide="pencil"></i>
+                                </button>
+                            </div>
                             <p><strong>Tipo:</strong> <span id="e-solo-tipo"></span></p>
                             <p><strong>Nombre:</strong> <span id="e-solo-nombre"></span></p>
                             <p><strong>Descripción:</strong> <span id="e-solo-descripcion"></span></p>
@@ -506,19 +519,19 @@
                 </section>
 
                 <!-- Vista: Listado de Comerciantes -->
+                                <!-- Vista: Listado de Comerciantes -->
                 <section id="vista-comerciantes" class="vista oculto">
 
                     <div id="panel-lista-comerciantes">
                         <h2>Comerciantes Registrados</h2>
                         <div class="filtros-busqueda">
-                            <input type="text" id="admin-buscar-identificacion" inputmode="numeric"
-                                placeholder="Buscar por número de identificación..." maxlength="15">
-                            <button type="button" id="btn-buscar-comerciante-identificacion"
-                                class="boton-secundario">Buscar</button>
+                            <input type="text" id="com-admin-buscar" placeholder="Buscar por nombre, alias, correo o identificación...">
+                            <select id="com-admin-filtro-estado">
+                                <option value="activos">Activos</option>
+                                <option value="todos">Todos</option>
+                                <option value="inactivos">Inactivos</option>
+                            </select>
                         </div>
-                        <span class="ayuda" id="admin-buscar-identificacion-msg"></span>
-                        <label class="ayuda"><input type="checkbox" id="chk-inactivos-comerciantes"> Mostrar también
-                            inactivos</label>
                         <div id="lista-comerciantes" class="tarjetas"></div>
                     </div>
 
@@ -527,31 +540,16 @@
                             listado</button>
                         <h2>Detalle del Comerciante</h2>
 
+                        <input type="hidden" id="dc-idComerciante">
+
                         <div class="campo-lectura">
                             <img id="dc-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                            <p><strong>Nombre:</strong> <span id="dc-solo-nombre"></span></p>
+                            <p><strong>Alias:</strong> <span id="dc-solo-alias"></span></p>
+                            <p><strong>Correo:</strong> <span id="dc-solo-correo"></span></p>
                             <p><strong>Número de identificación:</strong> <span id="dc-identificacion"></span></p>
+                            <p><strong>Estado:</strong> <span id="dc-solo-estado"></span></p>
                         </div>
-
-                        <form id="form-editar-comerciante" class="formulario" enctype="multipart/form-data">
-                            <input type="hidden" id="dc-idComerciante">
-
-                            <label for="dc-nombre">Nombre completo</label>
-                            <input type="text" id="dc-nombre" required>
-
-                            <label for="dc-alias">Alias</label>
-                            <input type="text" id="dc-alias" required>
-
-                            <label for="dc-correo">Correo</label>
-                            <input type="email" id="dc-correo" required>
-
-                            <label for="dc-password">Nueva contraseña (opcional, deja vacío para no cambiarla)</label>
-                            <input type="password" id="dc-password">
-
-                            <label for="dc-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la actual)</label>
-                            <input type="file" id="dc-fotoPerfil" accept="image/png, image/jpeg, image/webp">
-
-                            <button type="submit">Guardar Cambios</button>
-                        </form>
 
                         <button type="button" id="btn-desactivar-comerciante" class="boton-peligro">Desactivar
                             Comerciante</button>
@@ -561,13 +559,19 @@
 
                 </section>
 
-                <!-- Vista: listado de Clientes -->
+                                <!-- Vista: listado de Clientes -->
                 <section id="vista-clientes" class="vista oculto">
 
                     <div id="panel-lista-clientes">
                         <h2>Clientes Registrados</h2>
-                        <label class="ayuda"><input type="checkbox" id="chk-inactivos-clientes"> Mostrar también
-                            inactivos</label>
+                        <div class="filtros-busqueda">
+                            <input type="text" id="cl-admin-buscar" placeholder="Buscar por nombre o correo...">
+                            <select id="cl-admin-filtro-estado">
+                                <option value="activos">Activos</option>
+                                <option value="todos">Todos</option>
+                                <option value="inactivos">Inactivos</option>
+                            </select>
+                        </div>
                         <div id="lista-clientes" class="tarjetas"></div>
                     </div>
 
@@ -576,48 +580,22 @@
                             listado</button>
                         <h2>Detalle del Cliente</h2>
 
+                        <input type="hidden" id="dcl-idCliente">
+
                         <div class="campo-lectura">
                             <img id="dcl-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                            <p><strong>Nombre:</strong> <span id="dcl-solo-nombre"></span></p>
+                            <p><strong>Correo:</strong> <span id="dcl-solo-correo"></span></p>
                             <p><strong>Número de identificación:</strong> <span id="dcl-identificacion"></span></p>
                             <p><strong>Dirección:</strong> <span id="dcl-direccion"></span></p>
+                            <p><strong>Estado:</strong> <span id="dcl-solo-estado"></span></p>
                         </div>
-
-                        <form id="form-editar-cliente" class="formulario" enctype="multipart/form-data">
-                            <input type="hidden" id="dcl-idCliente">
-
-                            <label for="dcl-nombreCompleto">Nombre completo</label>
-                            <input type="text" id="dcl-nombreCompleto" required>
-
-                            <label for="dcl-correo">Correo</label>
-                            <input type="email" id="dcl-correo" required>
-
-                            <label for="dcl-password">Nueva contraseña (opcional, deja vacío para no cambiarla)</label>
-                            <input type="password" id="dcl-password">
-
-                            <label for="dcl-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la
-                                actual)</label>
-                            <input type="file" id="dcl-fotoPerfil" accept="image/png, image/jpeg, image/webp">
-
-                            <button type="submit">Guardar Cambios</button>
-                        </form>
 
                         <button type="button" id="btn-desactivar-cliente" class="boton-peligro">Desactivar
                             Cliente</button>
                         <button type="button" id="btn-activar-cliente" class="boton-secundario oculto">Reactivar
                             Cliente</button>
 
-                        <div class="campo-lectura">
-                            <strong>Locales que sigue este cliente:</strong>
-                            <div id="dcl-locales-lista"></div>
-
-                            <div class="filtros-busqueda">
-                                <input type="text" id="dcl-agregar-local-nombre"
-                                    placeholder="Nombre exacto de un local...">
-                                <button type="button" id="btn-seguir-local" class="boton-secundario">Seguir
-                                    local</button>
-                            </div>
-                            <span class="ayuda" id="dcl-seguir-local-msg"></span>
-                        </div>
                     </div>
 
                 </section>
@@ -685,61 +663,121 @@
                     </div>
                 </section>
 
-                <!-- Vista: Historiales de seguridad -->
-                <section id="vista-historiales" class="vista oculto">
-                    <h2>Historiales de Seguridad</h2>
-                    <p class="ayuda">Los historiales se generan automáticamente cuando un usuario cambia su foto o su
-                        contraseña.</p>
+                 <!-- Vista: Ver Productos (Admin) -->
+                <section id="vista-productos-admin" class="vista oculto">
+                    <h2>Productos Registrados</h2>
+                    <p class="ayuda">Todos los productos de todos los locales, para moderación.</p>
 
-                    <div class="rejilla-dos bloque-separado">
-                        <div>
-                            <h3>Consultar historial</h3>
-                            <div class="formulario">
-                                <label for="historial-tipo">Tipo de usuario</label>
-                                <select id="historial-tipo">
-                                    <option value="Cliente">Cliente</option>
-                                    <option value="Comerciante">Comerciante</option>
-                                </select>
-
-                                <label for="historial-usuario">Usuario</label>
-                                <select id="historial-usuario">
-                                    <option value="">Seleccione...</option>
-                                </select>
-
-                                <button type="button" id="btn-ver-historial">Ver Historial</button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3>Cambiar contraseña</h3>
-                            <form id="form-cambiar-password" class="formulario">
-                                <p class="ayuda">Usa el mismo usuario seleccionado a la izquierda.</p>
-
-                                <label for="historial-password-actual">Contraseña actual</label>
-                                <input type="password" id="historial-password-actual" required>
-
-                                <label for="historial-password-nueva">Nueva contraseña</label>
-                                <input type="password" id="historial-password-nueva" required>
-
-                                <button type="submit">Cambiar Contraseña</button>
-                            </form>
-                        </div>
+                    <div class="filtros-busqueda">
+                        <input type="text" id="pa-buscar" placeholder="Buscar por nombre...">
+                        <label class="ayuda"><input type="checkbox" id="pa-inactivos"> Mostrar también inactivos</label>
                     </div>
 
-                    <div class="rejilla-dos bloque-separado">
-                        <div class="campo-lectura">
-                            <strong>Historial de contraseñas</strong>
-                            <div id="historial-password-lista" class="tarjetas"></div>
-                        </div>
+                    <div id="lista-productos-admin" class="tarjetas"></div>
+                </section>
 
-                        <div class="campo-lectura">
-                            <strong>Historial de fotos de perfil</strong>
-                            <div id="historial-fotos-lista" class="tarjetas"></div>
+                              <section id="vista-historiales" class="vista oculto">
+                    <div class="historial-header">
+                        <h2>Historiales</h2>
+                        <p class="ayuda">Consulta todos los cambios realizados en el sistema.</p>
+                    </div>
+
+                    <div class="historial-tools">
+                        <select id="hist-filtro-entidad">
+                            <option value="todos">Todos los clientes / comerciantes</option>
+                            <option value="Cliente">Solo clientes</option>
+                            <option value="Comerciante">Solo comerciantes</option>
+                            <option value="Local">Solo locales</option>
+                            <option value="Producto">Solo productos</option>
+                        </select>
+                        <input type="text" id="hist-buscar" class="historial-search" placeholder="Buscar en historiales...">
+                    </div>
+
+                    <div class="historial-tabs" id="hist-tabs"></div>
+
+                    <div class="historial-table" id="hist-tabla">
+                        <p class="ayuda" style="padding: 1.2rem;">Cargando...</p>
+                    </div>
+
+                    <div id="hist-panel-overlay" class="modal-overlay historial-panel-overlay oculto">
+                        <div class="historial-panel">
+                            <div class="historial-panel-header">
+                                <h3>Detalle del historial</h3>
+                                <button type="button" id="hist-panel-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+                            </div>
+
+                            <div class="historial-panel-tipo">
+                                <span class="historial-icon" id="hist-panel-icono"></span>
+                                <div>
+                                    <strong id="hist-panel-tipo-nombre"></strong>
+                                    <span class="etiqueta-tipo" id="hist-panel-entidad-badge"></span>
+                                </div>
+                            </div>
+
+                            <div class="historial-panel-usuario">
+                                <strong id="hist-panel-usuario"></strong>
+                                <span class="ayuda" id="hist-panel-entidad-tipo"></span>
+                            </div>
+
+                            <div class="historial-panel-campo">
+                                <span class="ayuda">Acción</span>
+                                <p id="hist-panel-accion"></p>
+                            </div>
+
+                            <div class="historial-panel-campo">
+                                <span class="ayuda">Fecha</span>
+                                <p id="hist-panel-fecha"></p>
+                            </div>
+
+                            <div class="historial-panel-campo" id="hist-panel-cambio-wrap">
+                                <span class="ayuda">Cambio registrado</span>
+                                <p id="hist-panel-cambio"></p>
+                            </div>
                         </div>
                     </div>
                 </section>
+                                <!-- Vista: Mi Perfil (Admin) -->
+                <section id="vista-mi-perfil" class="vista oculto">
+                    <h2>Mi Perfil</h2>
+                    <p class="ayuda">Aquí puedes actualizar tus propios datos de acceso.</p>
+
+                    <div class="campo-lectura" id="mp-info-solo-lectura">
+                        <div class="campo-lectura-encabezado">
+                            <strong>Información de la cuenta</strong>
+                            <button type="button" id="btn-editar-mi-perfil" class="btn-editar-icono" aria-label="Editar mi perfil">
+                                <i data-lucide="pencil"></i>
+                            </button>
+                        </div>
+                        <p><strong>Nombre:</strong> <span id="mp-solo-nombre"></span></p>
+                        <p><strong>Correo:</strong> <span id="mp-solo-correo"></span></p>
+                    </div>
+
+                    <form id="form-editar-mi-perfil" class="formulario oculto">
+                        <label for="mp-nombreCompleto">Nombre completo</label>
+                        <input type="text" id="mp-nombreCompleto" required>
+
+                        <label for="mp-correo">Correo</label>
+                        <input type="email" id="mp-correo" required>
+
+                        <button type="submit">Guardar Cambios</button>
+                    </form>
+
+                    <h3 class="bloque-separado">Cambiar contraseña</h3>
+                    <form id="form-cambiar-password-superadmin" class="formulario">
+                        <label for="mp-password-actual">Contraseña actual</label>
+                        <input type="password" id="mp-password-actual" required>
+
+                        <label for="mp-password-nueva">Nueva contraseña</label>
+                        <input type="password" id="mp-password-nueva" required>
+                        <span class="ayuda" id="mp-password-msg">Mínimo 8 caracteres, con al menos una letra mayúscula.</span>
+
+                        <button type="submit">Cambiar Contraseña</button>
+                    </form>
+                </section>
+
+                
                 <!-- Vista: Dashboard de Administrador -->
-                <section id="vista-dashboard-admin" class="vista oculto">
+                                <section id="vista-dashboard-admin" class="vista oculto">
                     <h2>Panel de Administración</h2>
                     <p class="ayuda">Resumen general de la plataforma.</p>
 
@@ -750,35 +788,59 @@
                             <p class="stat-etiqueta">Locales activos</p>
                         </div>
                         <div class="stat-card">
-                            <div class="icon-container"><i data-lucide="users"></i></div>
+                            <div class="icon-container icono-azul"><i data-lucide="users"></i></div>
                             <p class="stat-numero" id="stat-clientes">—</p>
                             <p class="stat-etiqueta">Clientes activos</p>
                         </div>
                         <div class="stat-card">
-                            <div class="icon-container"><i data-lucide="briefcase"></i></div>
+                            <div class="icon-container icono-verde"><i data-lucide="briefcase"></i></div>
                             <p class="stat-numero" id="stat-comerciantes">—</p>
                             <p class="stat-etiqueta">Comerciantes activos</p>
                         </div>
                         <div class="stat-card">
-                            <div class="icon-container"><i data-lucide="user-x"></i></div>
+                            <div class="icon-container icono-ambar"><i data-lucide="user-x"></i></div>
                             <p class="stat-numero" id="stat-comerciantes-inactivos">—</p>
                             <p class="stat-etiqueta">Comerciantes inactivos</p>
                         </div>
                     </div>
 
-                    <h3 class="bloque-separado">Accesos rápidos</h3>
-                    <div class="accesos-dashboard">
-                        <button type="button" class="acceso-dashboard-boton" data-vista="vista-comerciantes">
-                            <i data-lucide="briefcase" class="icon-sm"></i> Ver Comerciantes
-                        </button>
-                        <button type="button" class="acceso-dashboard-boton" data-vista="vista-clientes">
-                            <i data-lucide="users" class="icon-sm"></i> Ver Clientes
-                        </button>
-                        <button type="button" class="acceso-dashboard-boton" data-vista="vista-historiales">
-                            <i data-lucide="history" class="icon-sm"></i> Historiales de Seguridad
-                        </button>
+                    <div class="dashboard-columnas bloque-separado">
+                        <div class="dashboard-actividad">
+                            <div class="dashboard-seccion-encabezado">
+                                <h3>Actividad reciente</h3>
+                                <button type="button" class="acceso-dashboard-boton dashboard-ver-todo" data-vista="vista-historiales">Ver todo &rarr;</button>
+                            </div>
+                            <div id="dashboard-actividad-lista"></div>
+                        </div>
+
+                        <div class="dashboard-accesos">
+                            <h3>Accesos rápidos</h3>
+                            <div class="accesos-dashboard-grid">
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-comerciantes">
+                                    <i data-lucide="briefcase"></i>
+                                    <span>Ver Comerciantes</span>
+                                </button>
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-clientes">
+                                    <i data-lucide="users"></i>
+                                    <span>Ver Clientes</span>
+                                </button>
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-listado">
+                                    <i data-lucide="store"></i>
+                                    <span>Ver Locales</span>
+                                </button>
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-productos-admin">
+                                    <i data-lucide="package"></i>
+                                    <span>Ver Productos</span>
+                                </button>
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-historiales">
+                                    <i data-lucide="history"></i>
+                                    <span>Historiales</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </section>
+               
                 <!-- Vista: Locales Cercanos -->
                 <section id="vista-cercanos" class="vista oculto">
                     <h2>Locales Cercanos</h2>
@@ -812,22 +874,15 @@
 
             </main>
 
-            <footer class="pie-pagina">
+                       <footer class="pie-pagina" id="pie-pagina">
                 <div class="pie-contenido">
                     <div class="pie-marca">
                         <strong>RapiVentas</strong>
                         <p>Conectamos clientes con locales cercanos, de forma rápida, simple y eficiente.</p>
                     </div>
-                    <div class="pie-enlaces">
-                        <strong>Enlaces rápidos</strong>
-                        <a href="#" data-vista-footer="vista-listado">Ver Locales</a>
-                        <a href="#" data-vista-footer="vista-cercanos">Locales Cercanos</a>
-                        <a href="#" data-vista-footer="vista-login">Iniciar Sesión</a>
-                    </div>
                     <div class="pie-info">
-                        <strong>RapiVentas</strong>
                         <p>Proyecto académico de comercio local.</p>
-                        <p>&copy; <span id="pie-anio"></span> Todos los derechos reservados.</p>
+                        <p>&copy; <span id="pie-anio"></span> RapiVentas. Todos los derechos reservados.</p>
                     </div>
                 </div>
             </footer>
@@ -853,7 +908,43 @@
             </div>
         </div>
     </div>
+        <div id="modal-local" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="modal-local-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
 
+            <div class="modal-producto-imagen">
+                <img id="modal-local-imagen" src="" alt="">
+                <div id="modal-local-sin-imagen" class="modal-producto-sin-imagen oculto">
+                    <i data-lucide="store"></i>
+                </div>
+            </div>
+
+            <div class="modal-producto-info">
+                <span id="modal-local-categoria" class="etiqueta-tipo"></span>
+                <h3 id="modal-local-nombre"></h3>
+
+                             <div class="modal-local-tabs">
+                    <button type="button" id="modal-local-tab-detalles" class="modal-local-tab activo">Ver Detalles</button>
+                    <button type="button" id="modal-local-tab-productos" class="modal-local-tab">Ver Productos</button>
+                </div>
+
+                <div id="modal-local-detalles-contenido">
+                    <p id="modal-local-descripcion" class="modal-producto-descripcion"></p>
+
+                    <p class="modal-local-dato">
+                        <i data-lucide="phone" class="icon-sm"></i> <span id="modal-local-telefono"></span>
+                    </p>
+                    <p class="modal-local-dato">
+                        <i data-lucide="map-pin" class="icon-sm"></i> <span id="modal-local-ubicacion"></span>
+                    </p>
+                </div>
+
+                <div id="modal-local-productos-contenido" class="oculto">
+                    <div id="modal-local-productos-lista"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
         <div id="modal-producto" class="modal-overlay oculto">
         <div class="modal-contenido">

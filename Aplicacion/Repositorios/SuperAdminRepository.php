@@ -57,7 +57,7 @@ class SuperAdminRepository
         return $fila ? $this->mapearFila($fila) : null;
     }
 
-    public function actualizarCorreo(int $idSuperAdmin, string $correoNuevo): bool
+       public function actualizarCorreo(int $idSuperAdmin, string $correoNuevo): bool
     {
         $anterior = $this->obtenerPorId($idSuperAdmin);
 
@@ -70,6 +70,13 @@ class SuperAdminRepository
         }
 
         return $exito;
+    }
+
+    public function actualizarNombre(int $idSuperAdmin, string $nombreNuevo): bool
+    {
+        $sql = "UPDATE tbsuperadmin SET tbsuperadminnombrecompleto = :nombre WHERE tbsuperadminid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        return $consulta->execute([":nombre" => $nombreNuevo, ":id" => $idSuperAdmin]);
     }
 
     public function actualizarPasswordHash(int $idSuperAdmin, string $passwordHash): bool
