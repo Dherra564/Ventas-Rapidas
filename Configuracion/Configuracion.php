@@ -2,7 +2,7 @@
 
 class Configuracion
 {
-    public const SERVIDOR = "localhost";
+    public const SERVIDOR = "127.0.0.1";
     public const PUERTO = "3306";
     public const BASE_DATOS = "bdrapiventa";
     public const USUARIO = "root";
