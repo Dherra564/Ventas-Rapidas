@@ -2789,6 +2789,7 @@ document.addEventListener('DOMContentLoaded', () => {
             iniciarAutoplayCarrusel();
  
             renderizarCatalogoInicio(locales);
+            cargarProductosRecientesInicio(); 
         } catch (e) {
             contenedorCatalogo.innerHTML = '<p class="ayuda error">No se pudieron cargar los locales.</p>';
         }
@@ -2848,4 +2849,45 @@ function ocultarMenuSecundario() {
 }
  
 });
+
+    async function cargarProductosRecientesInicio() {
+        const contenedor = document.getElementById('productos-recientes-inicio');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando productos...</p>';
+
+        try {
+            const r = await fetch('api/listar_productos_recientes.php?limite=8');
+            const res = await r.json();
+
+            if (!res.exito || res.productos.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">Todavía no hay productos registrados.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.productos.forEach(producto => {
+                const precioHtml = producto.porcentajeDescuento
+                    ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
+                    : `₡${producto.precioOriginal}`;
+
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-clic';
+                tarjeta.innerHTML = `
+                    ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${escaparHtml(producto.nombre)}" class="imagen-producto">` : ''}
+                    <h3>${escaparHtml(producto.nombre)}</h3>
+                    <p class="etiqueta-tipo">${escaparHtml(producto.nombreLocal)}</p>
+                    <p>${precioHtml}</p>
+                    ${producto.agotado ? '<span class="ayuda error">Agotado</span>' : ''}
+                `;
+                tarjeta.addEventListener('click', () => {
+                    mostrarVistaLogin('vista-listado');
+                    abrirDetalleLocal(producto.idLocal);
+                });
+                contenedor.appendChild(tarjeta);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los productos.</p>';
+        }
+    }
  

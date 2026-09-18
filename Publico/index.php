@@ -34,6 +34,9 @@
                 <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar
                     Producto</button>
                 <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
+                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
+                <button class="menu-boton" data-vista="vista-mi-cuenta-comerciante" data-rol="Comerciante">Mi Cuenta</button>
+                <button class="menu-boton" data-vista="vista-mi-cuenta-cliente" data-rol="Cliente">Mi Cuenta</button>
                 <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
                 <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente">Locales Cercanos</button>
                 <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
@@ -80,6 +83,8 @@
                         <input type="text" id="inicio-buscar" placeholder="Buscar por nombre o tipo...">
                     </div>
                     <div id="catalogo-inicio" class="tarjetas"></div>
+                    <h3 class="bloque-separado">Productos recientes</h3>
+                    <div id="productos-recientes-inicio" class="tarjetas"></div>
                 </section>
 
 
@@ -189,7 +194,7 @@
                         <select id="p-idLocal" required>
                             <option value="">Selecciona un local...</option>
                         </select>
-                        
+
                         <label for="p-tipoProducto">Tipo de Producto</label>
                         <input type="text" id="p-tipoProducto" autocomplete="off"
                             placeholder="Ej: Bebidas, Postres, Snacks..." required>
@@ -343,6 +348,103 @@
                     <p class="ayuda">Si no entras al perfil de un local por 7 días, se marca como inactivo
                         automáticamente.</p>
                     <div id="grid-perfiles-local" class="rejilla-perfiles"></div>
+                </section>
+
+                <!-- Vista: Mi Cuenta (Cliente) -->
+                <section id="vista-mi-cuenta-cliente" class="vista oculto">
+                    <h2>Mi Cuenta</h2>
+
+                    <div class="campo-lectura">
+                        <img id="mc-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                        <p><strong>Número de identificación:</strong> <span id="mc-identificacion"></span></p>
+                        <p><strong>Dirección:</strong> <span id="mc-direccion"></span></p>
+                    </div>
+
+                    <form id="form-mi-cuenta-cliente" class="formulario" enctype="multipart/form-data">
+                        <input type="hidden" id="mc-idCliente">
+
+                        <label for="mc-nombreCompleto">Nombre completo</label>
+                        <input type="text" id="mc-nombreCompleto" required>
+
+                        <label for="mc-correo">Correo</label>
+                        <input type="email" id="mc-correo" required>
+
+                        <label for="mc-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la actual)</label>
+                        <input type="file" id="mc-fotoPerfil" accept="image/png, image/jpeg, image/webp">
+
+                        <button type="submit">Guardar Cambios</button>
+                    </form>
+
+                    <div class="bloque-separado">
+                        <h3>Cambiar contraseña</h3>
+                        <form id="form-mi-cuenta-cliente-password" class="formulario">
+                            <label for="mc-password-actual">Contraseña actual</label>
+                            <input type="password" id="mc-password-actual" required>
+
+                            <label for="mc-password-nueva">Nueva contraseña</label>
+                            <input type="password" id="mc-password-nueva" required>
+
+                            <button type="submit">Cambiar Contraseña</button>
+                        </form>
+                    </div>
+
+                    <div class="campo-lectura bloque-separado">
+                        <strong>Locales que sigo</strong>
+                        <div id="mc-locales-lista"></div>
+                        <div class="filtros-busqueda">
+                            <input type="text" id="mc-agregar-local-nombre" placeholder="Nombre exacto de un local...">
+                            <button type="button" id="mc-btn-seguir-local" class="boton-secundario">Seguir local</button>
+                        </div>
+                        <span class="ayuda" id="mc-seguir-local-msg"></span>
+                    </div>
+
+                    <div class="campo-lectura bloque-separado">
+                        <strong>Mis reseñas</strong>
+                        <div id="mc-resenas-lista" class="tarjetas"></div>
+                    </div>
+                </section>
+
+                <!-- Vista: Mi Cuenta (Comerciante) -->
+                <section id="vista-mi-cuenta-comerciante" class="vista oculto">
+                    <h2>Mi Cuenta</h2>
+
+                    <div class="campo-lectura">
+                        <img id="mco-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                        <p><strong>Número de identificación:</strong> <span id="mco-identificacion"></span></p>
+                    </div>
+
+                    <form id="form-mi-cuenta-comerciante" class="formulario" enctype="multipart/form-data">
+                        <input type="hidden" id="mco-idComerciante">
+
+                        <label for="mco-nombre">Nombre completo</label>
+                        <input type="text" id="mco-nombre" required>
+
+                        <label for="mco-alias">Alias</label>
+                        <input type="text" id="mco-alias" required>
+
+                        <label for="mco-correo">Correo</label>
+                        <input type="email" id="mco-correo" required>
+
+                        <label for="mco-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la actual)</label>
+                        <input type="file" id="mco-fotoPerfil" accept="image/png, image/jpeg, image/webp">
+
+                        <button type="submit">Guardar Cambios</button>
+                    </form>
+
+                    <div class="bloque-separado">
+                        <h3>Cambiar contraseña</h3>
+                        <form id="form-mi-cuenta-comerciante-password" class="formulario">
+                            <label for="mco-password-actual">Contraseña actual</label>
+                            <input type="password" id="mco-password-actual" required>
+
+                            <label for="mco-password-nueva">Nueva contraseña</label>
+                            <input type="password" id="mco-password-nueva" required>
+
+                            <button type="submit">Cambiar Contraseña</button>
+                        </form>
+                    </div>
+
+                    <button type="button" class="boton-secundario bloque-separado" id="mco-btn-ir-mis-locales">Ver mis locales →</button>
                 </section>
 
                 <!-- Vista: Listado de locales -->
@@ -813,7 +915,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/app.js"></script>
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>

@@ -156,4 +156,9 @@ class ProductoController
 
         return $id;
     }
+
+        public function listarRecientes(int $limite = 8): array
+    {
+        return $this->productoRepository->obtenerRecientes($limite);
+    }
 }
