@@ -34,12 +34,11 @@
                 <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar
                     Producto</button>
                 <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
-                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
                 <button class="menu-boton" data-vista="vista-mi-cuenta-comerciante" data-rol="Comerciante">Mi Cuenta</button>
                 <button class="menu-boton" data-vista="vista-mi-cuenta-cliente" data-rol="Cliente">Mi Cuenta</button>
-                <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente">Ver Locales</button>
-                <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente">Locales Cercanos</button>
-                <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente">Reseñas</button>
+                <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
+                <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button>
+                <button class="menu-boton" data-vista="vista-resenas">Reseñas</button>
                 <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin">Dashboard</button>
                 <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin">Ver
                     Comerciantes</button>
@@ -49,6 +48,7 @@
 
             <div id="sesion-indicador" class="sesion-indicador oculto">
                 <span id="sesion-texto"></span>
+                <button type="button" id="btn-empezar-vender" class="boton-secundario oculto">¿Quieres empezar a vender?</button>
                 <button type="button" id="btn-cerrar-sesion" class="boton-secundario">Cerrar sesión</button>
             </div>
         </aside>
@@ -111,11 +111,7 @@
                             <h3>Iniciar Sesión</h3>
                             <p class="subtitulo">Ingresa a tu cuenta para continuar</p>
 
-                            <div class="login-tabs">
-                                <button class="login-tab activo" data-rol="cliente">Cliente</button>
-                                <button class="login-tab" data-rol="comerciante">Comerciante</button>
-                                <button type="button" class="login-tab" data-rol="superadmin">Admin</button>
-                            </div>
+
 
                             <form id="form-login">
                                 <div class="grupo-form">
@@ -227,6 +223,9 @@
                 <section id="vista-local" class="vista oculto">
                     <h2>Registro de Local</h2>
                     <form id="form-local" class="formulario" enctype="multipart/form-data">
+                        <label for="l-alias">¿Con qué nombre quieres que te conozcan como vendedor?</label>
+                        <input type="text" id="l-alias" placeholder="Ej: Panadería Viki">
+                        <span class="ayuda">Solo hace falta la primera vez que registras un local.</span>
                         <label for="l-tipoLocal">Tipo de Local</label>
                         <input type="text" id="l-tipoLocal" autocomplete="off"
                             placeholder="Ej: Soda, Feria, Repostería..." required>

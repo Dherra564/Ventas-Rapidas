@@ -4,8 +4,6 @@ require_once __DIR__ . '/../../Aplicacion/Controladoras/ProductoController.php';
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
 
-Sesion::requerirSesion(Sesion::TIPO_CLIENTE);
-
 try {
     $termino = trim($_GET['q'] ?? '');
     $latitud = isset($_GET['lat']) ? (float) $_GET['lat'] : null;

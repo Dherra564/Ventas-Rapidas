@@ -2,6 +2,7 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ClienteController.php';
 require_once __DIR__ . '/../../Aplicacion/Modelos/Cliente.php';
+require_once __DIR__ . '/../../Aplicacion/Modelos/Usuario.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
 
 $usuario = Sesion::requerirSesion(Sesion::TIPO_CLIENTE);
@@ -33,14 +34,21 @@ try {
         ? password_hash($passwordNueva, PASSWORD_DEFAULT)
         : $actual->getPasswordHash();
 
-    $cliente = new Cliente(
+    $usuarioActualizado = new Usuario(
         $_POST['nombreCompleto'] ?? '',
         $actual->getNumeroIdentificacion(),
         $correoNuevo,
         $passwordHash,
         $actual->getPerfilImagen(),
+        $actual->getUsuario()->isActivo(),
+        $actual->getIdUsuario()
+    );
+
+    $cliente = new Cliente(
+        $actual->getIdUsuario(),
         $actual->isActivo(),
-        $idCliente
+        $idCliente,
+        $usuarioActualizado
     );
 
     $actualizado = $controlador->editar($cliente);

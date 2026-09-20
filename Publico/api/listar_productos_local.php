@@ -5,12 +5,12 @@ require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Repositorios/ProductoRepository.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
 
-$usuario = Sesion::requerirSesion();
+$usuario = Sesion::usuarioActual();
 
 $idLocal = (int) ($_GET['idLocal'] ?? 0);
 
 try {
-    if ($usuario['tipo'] === Sesion::TIPO_COMERCIANTE) {
+    if ($usuario !== null && $usuario['tipo'] === Sesion::TIPO_COMERCIANTE) {
         $localControlador = new LocalController();
         if (!$localControlador->perteneceAComerciante($idLocal, $usuario['id'])) {
             http_response_code(403);

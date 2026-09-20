@@ -1,62 +1,31 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ComercianteController.php';
-require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
-require_once __DIR__ . '/../../Aplicacion/Comun/ValidadorIdentificacion.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
 
-class RegistrarComercianteHandler
-{
-    use ManejadorImagenes, ValidadorIdentificacion;
-
-    public function manejar(): array
-    {
-        $controlador = new ComercianteController();
-
-        $tipoIdentificacion = $_POST['tipoIdentificacion'] ?? '';
-        $numeroIdentificacion = trim($_POST['numeroIdentificacion'] ?? '');
-        $correo = trim($_POST['correo'] ?? '');
-
-        $this->validarIdentificacion($tipoIdentificacion, $numeroIdentificacion);
-
-        if ($controlador->existeIdentificacion($numeroIdentificacion)) {
-            return ['exito' => false, 'mensaje' => 'Ese número de identificación ya está registrado'];
-        }
-
-        if ($controlador->existeCorreo($correo)) {
-            return ['exito' => false, 'mensaje' => 'Ese correo ya está registrado'];
-        }
-
-        $nombreImagen = $this->subirImagenPerfil($_FILES['fotoPerfil'] ?? null, 'comerciante');
-
-        $idComerciante = $controlador->registrar(
-            $_POST['nombre'] ?? '',
-            $_POST['alias'] ?? '',
-            $tipoIdentificacion,
-            $numeroIdentificacion,
-            $correo,
-            $_POST['password'] ?? '',
-            $nombreImagen !== false ? $nombreImagen : null
-        );
-
-        if ($idComerciante !== false) {
-            return [
-                'exito' => true,
-                'mensaje' => 'Comerciante registrado correctamente',
-                'idComerciante' => $idComerciante
-            ];
-        }
-
-        return ['exito' => false, 'mensaje' => 'No se pudo registrar el comerciante'];
-    }
-}
+$usuario = Sesion::requerirSesion();
 
 try {
-    $handler = new RegistrarComercianteHandler();
-    $respuesta = $handler->manejar();
-} catch (InvalidArgumentException $e) {
-    $respuesta = ['exito' => false, 'mensaje' => $e->getMessage()];
-} catch (Exception $e) {
-    $respuesta = ['exito' => false, 'mensaje' => 'Error del servidor: ' . $e->getMessage()];
-}
+    $alias = trim($_POST['alias'] ?? '');
 
-echo json_encode($respuesta);
+    if ($alias === '') {
+        throw new InvalidArgumentException('El alias del negocio es obligatorio');
+    }
+
+    $controlador = new ComercianteController();
+    $idComerciante = $controlador->registrar($usuario['id'], $alias);
+
+    if ($idComerciante !== false) {
+        echo json_encode([
+            'exito' => true,
+            'mensaje' => 'Ahora también eres comerciante',
+            'idComerciante' => $idComerciante
+        ]);
+    } else {
+        echo json_encode(['exito' => false, 'mensaje' => 'No se pudo registrar el perfil de comerciante']);
+    }
+} catch (InvalidArgumentException $e) {
+    echo json_encode(['exito' => false, 'mensaje' => $e->getMessage()]);
+} catch (Exception $e) {
+    echo json_encode(['exito' => false, 'mensaje' => 'Error del servidor: ' . $e->getMessage()]);
+}

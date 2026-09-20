@@ -3,7 +3,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
 
-$usuario = Sesion::requerirSesion();
+$usuario = Sesion::usuarioActual();
 
 try {
     $controlador = new LocalController();
@@ -17,7 +17,7 @@ try {
 
     $locales = $controlador->buscarConFiltros($nombre, $idTipoLocal, $idProvincia, $idCanton, $idDistrito, true);
 
-    if ($usuario['tipo'] === Sesion::TIPO_COMERCIANTE) {
+    if ($usuario !== null && $usuario['tipo'] === Sesion::TIPO_COMERCIANTE) {
         $locales = array_values(array_filter(
             $locales,
             fn($l) => $controlador->perteneceAComerciante($l->getIdLocal(), $usuario['id'])

@@ -2,6 +2,7 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ComercianteController.php';
 require_once __DIR__ . '/../../Aplicacion/Modelos/Comerciante.php';
+require_once __DIR__ . '/../../Aplicacion/Modelos/Usuario.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
 
 $usuario = Sesion::requerirSesion(Sesion::TIPO_COMERCIANTE);
@@ -33,16 +34,23 @@ try {
         ? password_hash($passwordNueva, PASSWORD_DEFAULT)
         : $actual->getPasswordHash();
 
-    $comerciante = new Comerciante(
+    $usuarioActualizado = new Usuario(
         $_POST['nombre'] ?? '',
-        $_POST['alias'] ?? '',
         $actual->getNumeroIdentificacion(),
         $correoNuevo,
         $passwordHash,
         $actual->getPerfilImagen(),
+        $actual->getUsuario()->isActivo(),
+        $actual->getIdUsuario()
+    );
+
+    $comerciante = new Comerciante(
+        $actual->getIdUsuario(),
+        $_POST['alias'] ?? '',
         $actual->isActivo(),
         $idComerciante,
-        $actual->getFechaRegistro()
+        $actual->getFechaRegistro(),
+        $usuarioActualizado
     );
 
     $actualizado = $controlador->editar($comerciante);

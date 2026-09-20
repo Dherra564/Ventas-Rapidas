@@ -9,6 +9,7 @@ require_once __DIR__ . "/../Comun/ValidadorPassword.php";
 require_once __DIR__ . "/../Comun/ManejadorImagenes.php";
 require_once __DIR__ . "/../Comun/ValidadorIdentificacion.php";
 require_once __DIR__ . "/../Comun/Sesion.php";
+require_once __DIR__ . "/../Modelos/Usuario.php";
 
 class ClienteController
 {
@@ -42,7 +43,8 @@ class ClienteController
         $this->validarFormatoPassword($password);
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        $cliente = new Cliente($nombreCompleto, $numeroIdentificacion, $correo, $passwordHash, $perfilImagen);
+        $usuario = new Usuario($nombreCompleto, $numeroIdentificacion, $correo, $passwordHash, $perfilImagen);
+        $cliente = new Cliente(0, true, 0, $usuario);
 
         if ($idProvincia !== null && $idCanton !== null && $idDistrito !== null && $direccionExacta !== null) {
             $ubicacion = new Ubicacion(
