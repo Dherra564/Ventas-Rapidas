@@ -38,7 +38,7 @@
                 <button class="menu-boton" data-vista="vista-mi-cuenta-cliente" data-rol="Cliente">Mi Cuenta</button>
                 <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
                 <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button>
-                <button class="menu-boton" data-vista="vista-resenas">Reseñas</button>
+                <button class="menu-boton" data-vista="vista-resenas" data-rol="SuperAdmin">Reseñas</button>
                 <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin">Dashboard</button>
                 <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin">Ver
                     Comerciantes</button>
@@ -933,6 +933,26 @@
             <h3>Productos</h3>
             <div id="modal-local-productos" class="tarjetas"></div>
 
+            <h3>Reseñas</h3>
+            <p class="ayuda" id="modal-local-resenas-resumen"></p>
+            <div id="modal-local-resenas-lista" class="tarjetas"></div>
+            <div id="modal-local-resena-form-wrap" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <div id="modal-producto" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="modal-producto-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <img id="modal-producto-imagen" src="" alt="" class="modal-logo oculto">
+
+            <h2 id="modal-producto-nombre"></h2>
+            <p class="etiqueta-tipo" id="modal-producto-local"></p>
+            <p id="modal-producto-descripcion"></p>
+            <p id="modal-producto-precio"></p>
+            <p class="ayuda" id="modal-producto-disponibilidad"></p>
+
+            <div id="modal-producto-accion" style="margin-top: 1rem;"></div>
         </div>
     </div>
 </body>

@@ -537,6 +537,7 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 
 .formulario input, .formulario select, .formulario textarea, select,
 .filtros-busqueda input, .filtros-busqueda select {
+    width: 100%;
     padding: 0.65rem 0.8rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -1465,6 +1466,8 @@ body {
     width: 100%;
     max-height: 85vh;
     overflow-y: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
     padding: 1.75rem;
     position: relative;
 }

@@ -17,13 +17,6 @@ try {
 
     $locales = $controlador->buscarConFiltros($nombre, $idTipoLocal, $idProvincia, $idCanton, $idDistrito, true);
 
-    if ($usuario !== null && $usuario['tipo'] === Sesion::TIPO_COMERCIANTE) {
-        $locales = array_values(array_filter(
-            $locales,
-            fn($l) => $controlador->perteneceAComerciante($l->getIdLocal(), $usuario['id'])
-        ));
-    }
-
     $datos = [];
     foreach ($locales as $local) {
         $tipo = $controlador->buscarTipoLocal($local->getIdTipoLocal());

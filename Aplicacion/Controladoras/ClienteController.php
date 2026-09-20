@@ -162,4 +162,8 @@ class ClienteController
     {
         return $this->clienteRepository->obtenerPorIdentificacion($identificacion);
     }
+        public function buscarPorIdUsuario(int $idUsuario): ?Cliente
+    {
+        return $this->clienteRepository->obtenerPorIdUsuario($idUsuario);
+    }
 }

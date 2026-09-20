@@ -918,12 +918,14 @@ document.addEventListener('DOMContentLoaded', () => {
         idLocalModalActual = idLocal;
 
         try {
-            const [rLocal, rProductos] = await Promise.all([
+            const [rLocal, rProductos, rResenias] = await Promise.all([
                 fetch(`api/buscar_local.php?id=${idLocal}`),
-                fetch(`api/listar_productos_local.php?idLocal=${idLocal}`)
+                fetch(`api/listar_productos_local.php?idLocal=${idLocal}`),
+                fetch(`api/listar_resenias_local.php?idLocal=${idLocal}`)
             ]);
             const resLocal = await rLocal.json();
             const resProductos = await rProductos.json();
+            const resResenias = await rResenias.json();
 
             if (!resLocal.exito) {
                 mostrarMensaje(resLocal.mensaje || 'No se pudo cargar el local', 'error');
@@ -991,12 +993,146 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+            const resumenResenas = document.getElementById('modal-local-resenas-resumen');
+            const listaResenas = document.getElementById('modal-local-resenas-lista');
+            const formResenaWrap = document.getElementById('modal-local-resena-form-wrap');
+
+            if (resResenias.exito) {
+                const promedio = resResenias.promedio === null ? 'Sin calificación todavía' : `${Number(resResenias.promedio).toFixed(1)} / 5`;
+                resumenResenas.textContent = `Promedio: ${promedio} · ${resResenias.total} reseña${resResenias.total === 1 ? '' : 's'}`;
+
+                if (resResenias.resenias.length === 0) {
+                    listaResenas.innerHTML = '<p class="ayuda">Este local todavía no tiene reseñas.</p>';
+                } else {
+                    listaResenas.innerHTML = '';
+                    resResenias.resenias.forEach(resenia => {
+                        const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
+                        const tarjeta = document.createElement('div');
+                        tarjeta.className = 'tarjeta';
+                        tarjeta.innerHTML = `
+                            <h4>${escaparHtml(resenia.nombreCliente)}</h4>
+                            <p class="estrellas" aria-label="${resenia.puntuacion} de 5">${estrellas}</p>
+                            <p>${escaparHtml(resenia.comentario)}</p>
+                        `;
+                        listaResenas.appendChild(tarjeta);
+                    });
+                }
+            } else {
+                resumenResenas.textContent = '';
+                listaResenas.innerHTML = '<p class="ayuda error">No se pudieron cargar las reseñas.</p>';
+            }
+
+            if (usuarioSesionActual) {
+                formResenaWrap.innerHTML = `
+                    <form id="modal-form-resena" class="formulario">
+                        <label for="modal-resena-puntuacion">Tu puntuación</label>
+                        <select id="modal-resena-puntuacion" required>
+                            <option value="5">5 - Excelente</option>
+                            <option value="4">4 - Muy bueno</option>
+                            <option value="3">3 - Bueno</option>
+                            <option value="2">2 - Regular</option>
+                            <option value="1">1 - Malo</option>
+                        </select>
+                        <label for="modal-resena-comentario">Comentario</label>
+                        <textarea id="modal-resena-comentario" rows="3" required></textarea>
+                        <button type="submit">Publicar reseña</button>
+                    </form>
+                `;
+
+                document.getElementById('modal-form-resena').addEventListener('submit', async (evento) => {
+                    evento.preventDefault();
+
+                    const puntuacion = document.getElementById('modal-resena-puntuacion').value;
+                    const comentario = document.getElementById('modal-resena-comentario').value.trim();
+
+                    try {
+                        const r = await fetch('api/registrar_resenia.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ idLocal, puntuacion, comentario })
+                        });
+                        const res = await r.json();
+                        mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+                        if (res.exito) {
+                            abrirModalLocal(idLocal);
+                        }
+                    } catch (e) {
+                        mostrarMensaje('Error de conexión con el servidor', 'error');
+                    }
+                });
+            } else {
+                formResenaWrap.innerHTML = `
+                    <button type="button" class="boton-secundario" id="modal-btn-login-resena">Inicia sesión para dejar una reseña</button>
+                `;
+
+                document.getElementById('modal-btn-login-resena').addEventListener('click', () => {
+                    cerrarModalLocal();
+                    mostrarVistaLogin('vista-login');
+                });
+            }
+
             document.getElementById('modal-local').classList.remove('oculto');
         } catch (e) {
             console.error('Error real en abrirModalLocal:', e);
             mostrarMensaje('Error al cargar el local', 'error');
         }
     }
+
+    function abrirModalProducto(producto) {
+        const imgProducto = document.getElementById('modal-producto-imagen');
+        if (producto.imagen) {
+            imgProducto.src = `imagenes/${producto.imagen}`;
+            imgProducto.classList.remove('oculto');
+        } else {
+            imgProducto.classList.add('oculto');
+        }
+
+        document.getElementById('modal-producto-nombre').textContent = producto.nombre;
+        document.getElementById('modal-producto-descripcion').textContent = producto.descripcion ?? '';
+
+        const precioHtml = producto.porcentajeDescuento
+            ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
+            : `₡${producto.precioOriginal}`;
+        document.getElementById('modal-producto-precio').innerHTML = precioHtml;
+
+        document.getElementById('modal-producto-disponibilidad').textContent = producto.agotado ? 'Agotado' : '';
+
+        const enlaceLocal = document.getElementById('modal-producto-local');
+        enlaceLocal.textContent = `Vendido por: ${producto.nombreLocal}`;
+        enlaceLocal.style.cursor = 'pointer';
+        enlaceLocal.onclick = () => {
+            cerrarModalProducto();
+            abrirModalLocal(producto.idLocal);
+        };
+
+        const contenedorAccion = document.getElementById('modal-producto-accion');
+        if (usuarioSesionActual) {
+            contenedorAccion.innerHTML = `<button type="button" id="modal-producto-btn-comprar" class="boton-comprar-modal" ${producto.agotado ? 'disabled' : ''}>Comprar</button>`;
+            document.getElementById('modal-producto-btn-comprar').addEventListener('click', () => {
+                mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
+            });
+        } else {
+            contenedorAccion.innerHTML = `<button type="button" class="boton-secundario" id="modal-producto-btn-login">Inicia sesión o regístrate para comprar</button>`;
+            document.getElementById('modal-producto-btn-login').addEventListener('click', () => {
+                cerrarModalProducto();
+                mostrarVistaLogin('vista-login');
+            });
+        }
+
+        document.getElementById('modal-producto').classList.remove('oculto');
+    }
+
+    function cerrarModalProducto() {
+        document.getElementById('modal-producto').classList.add('oculto');
+    }
+
+    document.getElementById('modal-producto-cerrar')?.addEventListener('click', cerrarModalProducto);
+
+    document.getElementById('modal-producto')?.addEventListener('click', (evento) => {
+        if (evento.target.id === 'modal-producto') {
+            cerrarModalProducto();
+        }
+    });
 
     function cerrarModalLocal() {
         document.getElementById('modal-local').classList.add('oculto');
@@ -2979,13 +3115,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${producto.agotado ? '<span class="ayuda error">Agotado</span>' : ''}
                 `;
                 tarjeta.addEventListener('click', () => {
-                    mostrarVistaLogin('vista-listado');
-                    abrirDetalleLocal(producto.idLocal);
+                    abrirModalProducto(producto);
                 });
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
-            console.error('Error real en productos recientes:', e);
             contenedor.innerHTML = '<p class="ayuda error">Error al cargar los productos.</p>';
         }
     }
