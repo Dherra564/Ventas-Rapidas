@@ -912,6 +912,105 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    let idLocalModalActual = null;
+
+    async function abrirModalLocal(idLocal) {
+        idLocalModalActual = idLocal;
+
+        try {
+            const [rLocal, rProductos] = await Promise.all([
+                fetch(`api/buscar_local.php?id=${idLocal}`),
+                fetch(`api/listar_productos_local.php?idLocal=${idLocal}`)
+            ]);
+            const resLocal = await rLocal.json();
+            const resProductos = await rProductos.json();
+
+            if (!resLocal.exito) {
+                mostrarMensaje(resLocal.mensaje || 'No se pudo cargar el local', 'error');
+                return;
+            }
+
+            const { local, ubicacion } = resLocal;
+
+            const imgLogo = document.getElementById('modal-local-logo');
+            if (local.logo) {
+                imgLogo.src = `imagenes/${local.logo}`;
+                imgLogo.classList.remove('oculto');
+            } else {
+                imgLogo.classList.add('oculto');
+            }
+
+            document.getElementById('modal-local-nombre').textContent = local.nombreLocal;
+            document.getElementById('modal-local-tipo').textContent = local.tipoLocal ?? '';
+            document.getElementById('modal-local-descripcion').textContent = local.descripcion ?? '';
+            document.getElementById('modal-local-telefono').textContent = `📞 ${local.telefono}`;
+            document.getElementById('modal-local-ubicacion').textContent =
+                `${ubicacion.provincia}, ${ubicacion.canton}, ${ubicacion.distrito} — ${ubicacion.direccionExacta}` +
+                (ubicacion.referencia ? ` (${ubicacion.referencia})` : '');
+
+            const contenedorProductos = document.getElementById('modal-local-productos');
+            if (!resProductos.exito || resProductos.productos.length === 0) {
+                contenedorProductos.innerHTML = '<p class="ayuda">Este local todavía no tiene productos registrados.</p>';
+            } else {
+                contenedorProductos.innerHTML = '';
+                resProductos.productos.forEach(producto => {
+                    const precioHtml = producto.porcentajeDescuento
+                        ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
+                        : `₡${producto.precioOriginal}`;
+
+                    const botonAccion = usuarioSesionActual
+                        ? `<button type="button" class="boton-comprar-modal" data-id="${producto.idProducto}" ${producto.agotado ? 'disabled' : ''}>Comprar</button>`
+                        : `<button type="button" class="boton-secundario btn-login-para-comprar">Inicia sesión o regístrate para comprar</button>`;
+
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'tarjeta';
+                    tarjeta.innerHTML = `
+                        ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${escaparHtml(producto.nombre)}" class="imagen-producto">` : ''}
+                        <h4>${escaparHtml(producto.nombre)}</h4>
+                        <p>${producto.descripcion ?? ''}</p>
+                        <p>${precioHtml}</p>
+                        <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
+                        ${botonAccion}
+                    `;
+                    contenedorProductos.appendChild(tarjeta);
+
+                    const btnComprar = tarjeta.querySelector('.boton-comprar-modal');
+                    if (btnComprar) {
+                        btnComprar.addEventListener('click', () => {
+                            mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
+                        });
+                    }
+
+                    const btnLogin = tarjeta.querySelector('.btn-login-para-comprar');
+                    if (btnLogin) {
+                        btnLogin.addEventListener('click', () => {
+                            cerrarModalLocal();
+                            mostrarVistaLogin('vista-login');
+                        });
+                    }
+                });
+            }
+
+            document.getElementById('modal-local').classList.remove('oculto');
+        } catch (e) {
+            console.error('Error real en abrirModalLocal:', e);
+            mostrarMensaje('Error al cargar el local', 'error');
+        }
+    }
+
+    function cerrarModalLocal() {
+        document.getElementById('modal-local').classList.add('oculto');
+        idLocalModalActual = null;
+    }
+
+    document.getElementById('modal-local-cerrar')?.addEventListener('click', cerrarModalLocal);
+
+    document.getElementById('modal-local')?.addEventListener('click', (evento) => {
+        if (evento.target.id === 'modal-local') {
+            cerrarModalLocal();
+        }
+    });
+
     async function cargarProductosDelLocal(idLocal) {
         const contenedor = document.getElementById('e-productos-lista');
         contenedor.innerHTML = '<p>Cargando productos...</p>';
@@ -2723,8 +2822,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         pista.querySelectorAll('.carrusel-ver-local').forEach(boton => {
             boton.addEventListener('click', () => {
-                mostrarVistaLogin('vista-listado');
-                abrirDetalleLocal(Number(boton.dataset.id));
+                abrirModalLocal(Number(boton.dataset.id));
             });
         });
     }
@@ -2775,8 +2873,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>${escaparHtml(local.descripcion ?? '')}</p>
             `;
             tarjeta.addEventListener('click', () => {
-                mostrarVistaLogin('vista-listado');
-                abrirDetalleLocal(local.idLocal);
+                abrirModalLocal(local.idLocal);
             });
             contenedor.appendChild(tarjeta);
         });

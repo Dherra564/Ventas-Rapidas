@@ -524,7 +524,7 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 .vista h2 { font-family: var(--font-primary); font-weight: 700; font-size: 1.5rem; color: var(--text-primary); margin-bottom: 1.1rem; }
 .vista h3 { font-family: var(--font-primary); font-weight: 600; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.6rem; }
 
-.oculto { display: none; }
+.oculto { display: none !important; }
 
 /* ---------- Formularios ---------- */
 
@@ -1445,4 +1445,83 @@ body {
     display: none !important;
 }
 
+/* Modal de vista rápida de local */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 17, 17, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 1000;
+}
+
+.modal-contenido {
+    background: var(--surface, #FFFFFF);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 640px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.75rem;
+    position: relative;
+}
+
+.modal-cerrar {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--color-gray-100);
+    border: none;
+    border-radius: 999px;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--color-gray-600);
+}
+
+.modal-cerrar:hover {
+    background: var(--color-gray-200);
+}
+
+.modal-logo {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.modal-contenido h2 {
+    margin: 0 0 0.25rem 0;
+}
+
+.modal-contenido h3 {
+    margin-top: 1.25rem;
+}
+
+.boton-comprar-modal {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.boton-comprar-modal:hover {
+    background: var(--color-primary-hover);
+}
+
+.boton-comprar-modal:disabled {
+    background: var(--color-gray-200);
+    color: var(--color-gray-600);
+    cursor: not-allowed;
+}
 

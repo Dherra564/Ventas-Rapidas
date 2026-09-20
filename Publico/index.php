@@ -917,6 +917,24 @@
     <script>
         lucide.createIcons();
     </script>
+
+    <div id="modal-local" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="modal-local-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <img id="modal-local-logo" src="" alt="" class="modal-logo oculto">
+
+            <h2 id="modal-local-nombre"></h2>
+            <p class="etiqueta-tipo" id="modal-local-tipo"></p>
+            <p id="modal-local-descripcion"></p>
+            <p id="modal-local-telefono"></p>
+            <p class="ayuda" id="modal-local-ubicacion"></p>
+
+            <h3>Productos</h3>
+            <div id="modal-local-productos" class="tarjetas"></div>
+
+        </div>
+    </div>
 </body>
 
 </html>
