@@ -1,14 +1,26 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/HistorialController.php';
+require_once __DIR__ . '/../../Aplicacion/Controladoras/ClienteController.php';
+require_once __DIR__ . '/../../Aplicacion/Controladoras/ComercianteController.php';
 
 try {
-    $idUsuario = (int) ($_GET['idUsuario'] ?? 0);
+    $id = (int) ($_GET['idUsuario'] ?? 0);
     $tipoUsuario = trim($_GET['tipoUsuario'] ?? '');
 
-    if ($idUsuario <= 0 || !in_array($tipoUsuario, ['Cliente', 'Comerciante'], true)) {
+    if ($id <= 0 || !in_array($tipoUsuario, ['Cliente', 'Comerciante'], true)) {
         throw new InvalidArgumentException('Selecciona un usuario válido');
     }
+
+    $persona = $tipoUsuario === 'Cliente'
+        ? (new ClienteController())->buscar($id)
+        : (new ComercianteController())->buscar($id);
+
+    if ($persona === null) {
+        throw new InvalidArgumentException('No se encontró ese usuario');
+    }
+
+    $idUsuario = $persona->getIdUsuario();
 
     $controlador = new HistorialController();
 

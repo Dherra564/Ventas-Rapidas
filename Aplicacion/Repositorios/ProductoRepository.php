@@ -377,4 +377,33 @@ class ProductoRepository
             : null
         );
     }
+
+    // Productos más recientes de locales activos, con el nombre del local incluido —
+    // para el catálogo de inicio, que no muestra locales individuales sino productos sueltos.
+    public function obtenerRecientes(int $limite = 8): array
+    {
+        $sql = "SELECT p.*, l.tblocalnombre AS nombreLocal, l.tblocallogo AS logoLocal
+                FROM tbproducto p
+                INNER JOIN tblocal l ON l.tblocalid = p.tblocalid
+                WHERE p.tbproductoactivo = 1
+                  AND l.tblocalactivo = 1
+                ORDER BY p.tbproductoregistrofecha DESC
+                LIMIT :limite";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->bindValue(":limite", $limite, PDO::PARAM_INT);
+        $consulta->execute();
+
+        $resultados = [];
+
+        while ($fila = $consulta->fetch(PDO::FETCH_ASSOC)) {
+            $resultados[] = [
+                "producto" => $this->mapearFila($fila),
+                "nombreLocal" => $fila["nombreLocal"],
+                "logoLocal" => $fila["logoLocal"]
+            ];
+        }
+
+        return $resultados;
+    }
 }

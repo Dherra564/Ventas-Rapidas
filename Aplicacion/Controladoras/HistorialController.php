@@ -6,21 +6,18 @@ class HistorialController
 {
     private array $repositorios;
 
-    public function __construct()
+        public function __construct()
     {
+        $historialUsuario = [
+            'nombre' => new HistorialCampoRepository("tbusuarionombrecompletohistorico", "tbusuarionombrecompletohistoricoid", "tbusuarioid"),
+            'correo' => new HistorialCampoRepository("tbusuariocorreohistorico", "tbusuariocorreohistoricoid", "tbusuarioid"),
+            'perfilImagen' => new HistorialCampoRepository("tbusuarioperfilimagenhistorico", "tbusuarioperfilimagenhistoricoid", "tbusuarioid"),
+            'password' => new HistorialCampoRepository("tbusuariopasswordhistorico", "tbusuariopasswordhistoricoid", "tbusuarioid"),
+        ];
+
         $this->repositorios = [
-            'Comerciante' => [
-                'nombre' => new HistorialCampoRepository("tbcomerciantenombrehistorico", "tbcomerciantenombrehistoricoid", "tbcomercianteid"),
-                'correo' => new HistorialCampoRepository("tbcomerciantecorreohistorico", "tbcomerciantecorreohistoricoid", "tbcomercianteid"),
-                'perfilImagen' => new HistorialCampoRepository("tbcomercianteperfilimagenhistorico", "tbcomercianteperfilimagenhistoricoid", "tbcomercianteid"),
-                'password' => new HistorialCampoRepository("tbcomerciantepasswordhistorico", "tbcomerciantepasswordhistoricoid", "tbcomercianteid"),
-            ],
-            'Cliente' => [
-                'nombre' => new HistorialCampoRepository("tbclientenombrecompletohistorico", "tbclientenombrecompletohistoricoid", "tbclienteid"),
-                'correo' => new HistorialCampoRepository("tbclientecorreohistorico", "tbclientecorreohistoricoid", "tbclienteid"),
-                'perfilImagen' => new HistorialCampoRepository("tbclienteperfilimagenhistorico", "tbclienteperfilimagenhistoricoid", "tbclienteid"),
-                'password' => new HistorialCampoRepository("tbclientepasswordhistorico", "tbclientepasswordhistoricoid", "tbclienteid"),
-            ],
+            'Comerciante' => $historialUsuario,
+            'Cliente' => $historialUsuario,
             'Local' => [
                 'nombre' => new HistorialCampoRepository("tblocalnombrehistorico", "tblocalnombrehistoricoid", "tblocalid"),
                 'telefono' => new HistorialCampoRepository("tblocaltelefonohistorico", "tblocaltelefonohistoricoid", "tblocalid"),

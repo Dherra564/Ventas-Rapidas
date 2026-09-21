@@ -1,15 +1,10 @@
 <?php
+
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../../Aplicacion/Controladoras/ProvinciaController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/LectorUbicaciones.php';
 
 try {
-    $controlador = new ProvinciaController();
-    $provincias = $controlador->listar();
-
-    $datos = array_map(fn($p) => [
-        'idProvincia' => $p->getIdProvincia(),
-        'nombre' => $p->getNombre()
-    ], $provincias);
+    $datos = LectorUbicaciones::provincias();
 
     echo json_encode(['exito' => true, 'provincias' => $datos]);
 } catch (Exception $e) {

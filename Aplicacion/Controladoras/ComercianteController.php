@@ -21,29 +21,9 @@ class ComercianteController
         $this->historialActividadRepository = new SesionActicoHistoricoRepository();
     }
 
-    public function registrar(
-        string $nombre,
-        string $alias,
-        string $tipoIdentificacion,
-        string $numeroIdentificacion,
-        string $correo,
-        string $password,
-        ?string $perfilImagen = null
-    ): int|false {
-        $this->validarIdentificacion($tipoIdentificacion, $numeroIdentificacion);
-        $this->validarFormatoPassword($password);
-
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
-        $comerciante = new Comerciante(
-            $nombre,
-            $alias,
-            $numeroIdentificacion,
-            $correo,
-            $passwordHash,
-            $perfilImagen
-        );
-
+        public function registrar(int $idUsuario, string $alias): int|false
+    {
+        $comerciante = new Comerciante($idUsuario, $alias);
         return $this->comercianteRepository->insertar($comerciante);
     }
 
@@ -145,5 +125,10 @@ class ComercianteController
     public function buscarPorIdentificacion(string $identificacion): ?Comerciante
     {
         return $this->buscarPorCedula($identificacion);
+    }
+
+        public function buscarPorIdUsuario(int $idUsuario): ?Comerciante
+    {
+        return $this->comercianteRepository->obtenerPorIdUsuario($idUsuario);
     }
 }

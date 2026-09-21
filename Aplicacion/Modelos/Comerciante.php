@@ -1,65 +1,52 @@
 <?php
 
 require_once __DIR__ . "/../Comun/ValidarTexto.php";
+require_once __DIR__ . "/Usuario.php";
 
 class Comerciante
 {
     use ValidadorTexto;
+
     private int $idComerciante;
-    private string $nombreCompleto;
+    private int $idUsuario;
     private string $alias;
-    public readonly string $cedula;
-    private string $correo;
-    private string $passwordHash;
-    private ?string $perfilImagen;
     private ?DateTime $fechaRegistro;
     private bool $activo;
+    private ?Usuario $usuario;
 
     public function __construct(
-        string $nombreCompleto,
+        int $idUsuario,
         string $alias,
-        string $cedula,
-        string $correo,
-        string $passwordHash,
-        ?string $perfilImagen = null,
         bool $activo = true,
         int $idComerciante = 0,
-        ?DateTime $fechaRegistro = null
+        ?DateTime $fechaRegistro = null,
+        ?Usuario $usuario = null
     ) {
         $this->idComerciante = $idComerciante;
-        $this->cedula = $cedula;
+        $this->idUsuario = $idUsuario;
         $this->activo = $activo;
-        $this->passwordHash = $passwordHash;
         $this->fechaRegistro = $fechaRegistro;
+        $this->usuario = $usuario;
 
-        $this->setNombreCompleto($nombreCompleto);
         $this->setAlias($alias);
-        $this->setCorreo($correo);
-        $this->setPerfilImagen($perfilImagen);
     }
 
     public function getIdComerciante(): int { return $this->idComerciante; }
-    public function getNombreCompleto(): string { return $this->nombreCompleto; }
+    public function getIdUsuario(): int { return $this->idUsuario; }
+    public function getUsuario(): ?Usuario { return $this->usuario; }
     public function getAlias(): string { return $this->alias; }
-    public function getCedula(): string { return $this->cedula; }
-    // Alias conservado para las APIs/vistas existentes.
-    public function getNumeroIdentificacion(): string { return $this->cedula; }
-    public function getCorreo(): string { return $this->correo; }
-    public function getPasswordHash(): string { return $this->passwordHash; }
-    public function getPerfilImagen(): ?string { return $this->perfilImagen; }
-    // Alias conservado para las APIs/vistas existentes.
-    public function getFotoPerfil(): ?string { return $this->perfilImagen; }
     public function getFechaRegistro(): ?DateTime { return $this->fechaRegistro; }
     public function isActivo(): bool { return $this->activo; }
 
-    public function setNombreCompleto(string $nombreCompleto): void
-    {
-        if (trim($nombreCompleto) === '') {
-            throw new InvalidArgumentException("El nombre no puede estar vacío");
-        }
-        $this->validarSoloLetras($nombreCompleto, "El nombre");
-        $this->nombreCompleto = $nombreCompleto;
-    }
+    // Los datos personales viven en Usuario. Estos métodos se conservan
+    // para que las APIs/vistas existentes sigan funcionando.
+    public function getNombreCompleto(): string { return $this->usuario()->getNombreCompleto(); }
+    public function getCedula(): string { return $this->usuario()->getIdentificacion(); }
+    public function getNumeroIdentificacion(): string { return $this->usuario()->getIdentificacion(); }
+    public function getCorreo(): string { return $this->usuario()->getCorreo(); }
+    public function getPasswordHash(): string { return $this->usuario()->getPasswordHash(); }
+    public function getPerfilImagen(): ?string { return $this->usuario()->getPerfilImagen(); }
+    public function getFotoPerfil(): ?string { return $this->usuario()->getPerfilImagen(); }
 
     public function setAlias(string $alias): void
     {
@@ -69,26 +56,17 @@ class Comerciante
         $this->validarSoloLetras($alias, "El alias");
         $this->alias = $alias;
     }
-    public function setCorreo(string $correo): void
-    {
-        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException("Correo inválido: $correo");
-        }
-        $this->correo = $correo;
-    }
-
-    public function setPasswordHash(string $passwordHash): void
-    {
-        $this->passwordHash = $passwordHash;
-    }
-
-    public function setPerfilImagen(?string $perfilImagen): void
-    {
-        $this->perfilImagen = $perfilImagen;
-    }
 
     public function setActivo(bool $activo): void
     {
         $this->activo = $activo;
+    }
+
+    private function usuario(): Usuario
+    {
+        if ($this->usuario === null) {
+            throw new LogicException("El comerciante no tiene cargados los datos de usuario");
+        }
+        return $this->usuario;
     }
 }

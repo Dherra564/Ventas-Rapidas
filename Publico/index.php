@@ -31,30 +31,28 @@
             </div>
 
             <nav class="menu" id="menu-principal">
-                <button class="menu-boton activo" data-vista="vista-inicio"><i data-lucide="home"></i><span class="menu-boton-texto">Inicio</span></button>
-                <button class="menu-boton" data-vista="vista-login"><i data-lucide="log-in"></i><span class="menu-boton-texto">Iniciar Sesión</span></button>
-                <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin"><i data-lucide="layout-dashboard"></i><span class="menu-boton-texto">Dashboard</span></button>
-                <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante"><i data-lucide="plus-circle"></i><span class="menu-boton-texto">Registrar Local</span></button>
-                <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante"><i data-lucide="package-plus"></i><span class="menu-boton-texto">Registrar Producto</span></button>
-                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante"><i data-lucide="store"></i><span class="menu-boton-texto">Mi Local</span></button>
-                <button class="menu-boton" data-vista="vista-listado" data-rol="Cliente,SuperAdmin"><i data-lucide="store"></i><span class="menu-boton-texto">Ver Locales</span></button>
-                <button class="menu-boton" data-vista="vista-cercanos" data-rol="Cliente"><i data-lucide="map-pin"></i><span class="menu-boton-texto">Locales Cercanos</span></button>
-                <button class="menu-boton" data-vista="vista-resenas" data-rol="Cliente"><i data-lucide="star"></i><span class="menu-boton-texto">Reseñas</span></button>
-                <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin"><i data-lucide="briefcase"></i><span class="menu-boton-texto">Ver Comerciantes</span></button>
-                <button class="menu-boton" data-vista="vista-clientes" data-rol="SuperAdmin"><i data-lucide="users"></i><span class="menu-boton-texto">Ver Clientes</span></button>
-                <button class="menu-boton" data-vista="vista-productos-admin" data-rol="SuperAdmin"><i data-lucide="package"></i><span class="menu-boton-texto">Ver Productos</span></button>
-                <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin"><i data-lucide="history"></i><span class="menu-boton-texto">Historiales</span></button>
+                <button class="menu-boton activo" data-vista="vista-inicio">Inicio</button>
+                <button class="menu-boton" data-vista="vista-login">Iniciar Sesión</button>
+                <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
+                <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar
+                    Producto</button>
+                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
+                <button class="menu-boton" data-vista="vista-mi-cuenta-comerciante" data-rol="Comerciante">Mi Cuenta</button>
+                <button class="menu-boton" data-vista="vista-mi-cuenta-cliente" data-rol="Cliente">Mi Cuenta</button>
+                <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
+                <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button>
+                <button class="menu-boton" data-vista="vista-resenas" data-rol="SuperAdmin">Reseñas</button>
+                <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin">Dashboard</button>
+                <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin">Ver
+                    Comerciantes</button>
+                <button class="menu-boton" data-vista="vista-clientes" data-rol="SuperAdmin">Ver Clientes</button>
+                <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin">Historiales</button>
             </nav>
 
             <div id="sesion-indicador" class="sesion-indicador oculto">
-                <button type="button" id="btn-mi-perfil" class="btn-mi-perfil oculto" aria-label="Mi perfil" title="Mi perfil">
-                    <i data-lucide="user-circle"></i>
-                </button>
-                <span id="sesion-texto" class="sesion-texto-completo"></span>
-                <button type="button" id="btn-cerrar-sesion" class="boton-secundario">
-                    <i data-lucide="log-out" class="icon-sm"></i>
-                    <span class="menu-boton-texto">Cerrar sesión</span>
-                </button>
+                <span id="sesion-texto"></span>
+                <button type="button" id="btn-empezar-vender" class="boton-secundario oculto">¿Quieres empezar a vender?</button>
+                <button type="button" id="btn-cerrar-sesion" class="boton-secundario">Cerrar sesión</button>
             </div>
         </aside>
 
@@ -112,7 +110,9 @@
                     <div class="filtros-busqueda">
                         <input type="text" id="inicio-buscar" placeholder="Buscar producto, local o categoría...">
                     </div>
-                    <div id="secciones-productos-inicio" class="secciones-productos"></div>
+                    <div id="catalogo-inicio" class="tarjetas"></div>
+                    <h3 class="bloque-separado">Productos recientes</h3>
+                    <div id="productos-recientes-inicio" class="tarjetas"></div>
                 </section>
 
                 <!-- Vista: Iniciar Sesión / Crear cuenta -->
@@ -138,11 +138,7 @@
                             <h3>Iniciar Sesión</h3>
                             <p class="subtitulo">Ingresa a tu cuenta para continuar</p>
 
-                            <div class="login-tabs">
-                                <button class="login-tab activo" data-rol="cliente">Cliente</button>
-                                <button class="login-tab" data-rol="comerciante">Comerciante</button>
-                                <button type="button" class="login-tab" data-rol="superadmin">Admin</button>
-                            </div>
+
 
                             <form id="form-login">
                                 <div class="grupo-form">
@@ -221,7 +217,7 @@
                         <select id="p-idLocal" required>
                             <option value="">Selecciona un local...</option>
                         </select>
-                        
+
                         <label for="p-tipoProducto">Tipo de Producto</label>
                         <input type="text" id="p-tipoProducto" autocomplete="off"
                             placeholder="Ej: Bebidas, Postres, Snacks..." required>
@@ -254,6 +250,9 @@
                 <section id="vista-local" class="vista oculto">
                     <h2>Registro de Local</h2>
                     <form id="form-local" class="formulario" enctype="multipart/form-data">
+                        <label for="l-alias">¿Con qué nombre quieres que te conozcan como vendedor?</label>
+                        <input type="text" id="l-alias" placeholder="Ej: Panadería Viki">
+                        <span class="ayuda">Solo hace falta la primera vez que registras un local.</span>
                         <label for="l-tipoLocal">Tipo de Local</label>
                         <input type="text" id="l-tipoLocal" autocomplete="off"
                             placeholder="Ej: Soda, Feria, Repostería..." required>
@@ -375,6 +374,103 @@
                     <p class="ayuda">Si no entras al perfil de un local por 7 días, se marca como inactivo
                         automáticamente.</p>
                     <div id="grid-perfiles-local" class="rejilla-perfiles"></div>
+                </section>
+
+                <!-- Vista: Mi Cuenta (Cliente) -->
+                <section id="vista-mi-cuenta-cliente" class="vista oculto">
+                    <h2>Mi Cuenta</h2>
+
+                    <div class="campo-lectura">
+                        <img id="mc-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                        <p><strong>Número de identificación:</strong> <span id="mc-identificacion"></span></p>
+                        <p><strong>Dirección:</strong> <span id="mc-direccion"></span></p>
+                    </div>
+
+                    <form id="form-mi-cuenta-cliente" class="formulario" enctype="multipart/form-data">
+                        <input type="hidden" id="mc-idCliente">
+
+                        <label for="mc-nombreCompleto">Nombre completo</label>
+                        <input type="text" id="mc-nombreCompleto" required>
+
+                        <label for="mc-correo">Correo</label>
+                        <input type="email" id="mc-correo" required>
+
+                        <label for="mc-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la actual)</label>
+                        <input type="file" id="mc-fotoPerfil" accept="image/png, image/jpeg, image/webp">
+
+                        <button type="submit">Guardar Cambios</button>
+                    </form>
+
+                    <div class="bloque-separado">
+                        <h3>Cambiar contraseña</h3>
+                        <form id="form-mi-cuenta-cliente-password" class="formulario">
+                            <label for="mc-password-actual">Contraseña actual</label>
+                            <input type="password" id="mc-password-actual" required>
+
+                            <label for="mc-password-nueva">Nueva contraseña</label>
+                            <input type="password" id="mc-password-nueva" required>
+
+                            <button type="submit">Cambiar Contraseña</button>
+                        </form>
+                    </div>
+
+                    <div class="campo-lectura bloque-separado">
+                        <strong>Locales que sigo</strong>
+                        <div id="mc-locales-lista"></div>
+                        <div class="filtros-busqueda">
+                            <input type="text" id="mc-agregar-local-nombre" placeholder="Nombre exacto de un local...">
+                            <button type="button" id="mc-btn-seguir-local" class="boton-secundario">Seguir local</button>
+                        </div>
+                        <span class="ayuda" id="mc-seguir-local-msg"></span>
+                    </div>
+
+                    <div class="campo-lectura bloque-separado">
+                        <strong>Mis reseñas</strong>
+                        <div id="mc-resenas-lista" class="tarjetas"></div>
+                    </div>
+                </section>
+
+                <!-- Vista: Mi Cuenta (Comerciante) -->
+                <section id="vista-mi-cuenta-comerciante" class="vista oculto">
+                    <h2>Mi Cuenta</h2>
+
+                    <div class="campo-lectura">
+                        <img id="mco-foto-actual" src="" alt="Foto de perfil" class="imagen-producto oculto">
+                        <p><strong>Número de identificación:</strong> <span id="mco-identificacion"></span></p>
+                    </div>
+
+                    <form id="form-mi-cuenta-comerciante" class="formulario" enctype="multipart/form-data">
+                        <input type="hidden" id="mco-idComerciante">
+
+                        <label for="mco-nombre">Nombre completo</label>
+                        <input type="text" id="mco-nombre" required>
+
+                        <label for="mco-alias">Alias</label>
+                        <input type="text" id="mco-alias" required>
+
+                        <label for="mco-correo">Correo</label>
+                        <input type="email" id="mco-correo" required>
+
+                        <label for="mco-fotoPerfil">Nueva foto (opcional, deja vacío para mantener la actual)</label>
+                        <input type="file" id="mco-fotoPerfil" accept="image/png, image/jpeg, image/webp">
+
+                        <button type="submit">Guardar Cambios</button>
+                    </form>
+
+                    <div class="bloque-separado">
+                        <h3>Cambiar contraseña</h3>
+                        <form id="form-mi-cuenta-comerciante-password" class="formulario">
+                            <label for="mco-password-actual">Contraseña actual</label>
+                            <input type="password" id="mco-password-actual" required>
+
+                            <label for="mco-password-nueva">Nueva contraseña</label>
+                            <input type="password" id="mco-password-nueva" required>
+
+                            <button type="submit">Cambiar Contraseña</button>
+                        </form>
+                    </div>
+
+                    <button type="button" class="boton-secundario bloque-separado" id="mco-btn-ir-mis-locales">Ver mis locales →</button>
                 </section>
 
                 <!-- Vista: Listado de locales -->
@@ -988,7 +1084,47 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/app.js"></script>
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <div id="modal-local" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="modal-local-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <img id="modal-local-logo" src="" alt="" class="modal-logo oculto">
+
+            <h2 id="modal-local-nombre"></h2>
+            <p class="etiqueta-tipo" id="modal-local-tipo"></p>
+            <p id="modal-local-descripcion"></p>
+            <p id="modal-local-telefono"></p>
+            <p class="ayuda" id="modal-local-ubicacion"></p>
+
+            <h3>Productos</h3>
+            <div id="modal-local-productos" class="tarjetas"></div>
+
+            <h3>Reseñas</h3>
+            <p class="ayuda" id="modal-local-resenas-resumen"></p>
+            <div id="modal-local-resenas-lista" class="tarjetas"></div>
+            <div id="modal-local-resena-form-wrap" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <div id="modal-producto" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="modal-producto-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <img id="modal-producto-imagen" src="" alt="" class="modal-logo oculto">
+
+            <h2 id="modal-producto-nombre"></h2>
+            <p class="etiqueta-tipo" id="modal-producto-local"></p>
+            <p id="modal-producto-descripcion"></p>
+            <p id="modal-producto-precio"></p>
+            <p class="ayuda" id="modal-producto-disponibilidad"></p>
+
+            <div id="modal-producto-accion" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
 </body>
 
 </html>
