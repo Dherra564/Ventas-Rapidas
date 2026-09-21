@@ -177,117 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return validar;
     }
 
-    const inputIdentificacionComerciante = document.getElementById('c-numeroIdentificacion');
-    const mensajeIdentificacionComerciante = document.getElementById('c-identificacion-msg');
-    const inputCorreoComerciante = document.getElementById('c-correo');
-    const mensajeCorreoComerciante = document.getElementById('c-correo-msg');
-
-    const verificarIdentificacionComercianteDebounced = debounce(async () => {
-        const numeroIdentificacion = inputIdentificacionComerciante.value.trim();
-        mensajeIdentificacionComerciante.textContent = '';
-        mensajeIdentificacionComerciante.className = 'ayuda';
-        if (numeroIdentificacion.length < 5) return;
-
-        try {
-            const r = await fetch(`api/verificar_identificacion.php?numeroIdentificacion=${encodeURIComponent(numeroIdentificacion)}`);
-            const res = await r.json();
-            mensajeIdentificacionComerciante.textContent = res.existe ? 'Esta identificación ya está registrada' : 'Identificación disponible';
-            mensajeIdentificacionComerciante.className = res.existe ? 'ayuda error' : 'ayuda exito';
-        } catch (e) { }
-    }, 400);
-
-    inputIdentificacionComerciante.addEventListener('input', verificarIdentificacionComercianteDebounced);
-
-    const verificarCorreoComercianteDebounced = debounce(async () => {
-        const correo = inputCorreoComerciante.value.trim();
-        mensajeCorreoComerciante.textContent = '';
-        mensajeCorreoComerciante.className = 'ayuda';
-        if (!correo.includes('@') || !correo.includes('.')) return;
-
-        try {
-            const r = await fetch(`api/verificar_correo.php?correo=${encodeURIComponent(correo)}`);
-            const res = await r.json();
-            mensajeCorreoComerciante.textContent = res.existe ? 'Este correo ya está registrado' : 'Correo disponible';
-            mensajeCorreoComerciante.className = res.existe ? 'ayuda error' : 'ayuda exito';
-        } catch (e) { }
-    }, 500);
-
-    inputCorreoComerciante.addEventListener('input', verificarCorreoComercianteDebounced);
-
-    const inputNombreComerciante = document.getElementById('c-nombre');
-    const inputAliasComerciante = document.getElementById('c-alias');
-    const inputPasswordComerciante = document.getElementById('c-password');
-
-    const validarNombreComerciante = activarValidacionRequerida(
-        inputNombreComerciante,
-        document.getElementById('c-nombre-msg'),
-        'El nombre'
-    );
-    const validarAliasComerciante = activarValidacionRequerida(
-        inputAliasComerciante,
-        document.getElementById('c-alias-msg'),
-        'El alias'
-    );
-    const validarPasswordComerciante = activarValidacionPassword(
-        inputPasswordComerciante,
-        document.getElementById('c-password-msg')
-    );
-
-    document.getElementById('form-comerciante').addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-
-        const numeroIdentificacion = inputIdentificacionComerciante.value.trim();
-
-        const camposValidos = [
-            validarNombreComerciante(),
-            validarAliasComerciante(),
-            validarPasswordComerciante()
-        ];
-
-        if (camposValidos.includes(false)) {
-            mostrarMensaje('Revisa los campos marcados en el formulario', 'error');
-            return;
-        }
-
-        const datos = new FormData();
-        datos.append('nombre', document.getElementById('c-nombre').value);
-        datos.append('alias', document.getElementById('c-alias').value);
-        datos.append('tipoIdentificacion', document.getElementById('c-tipoIdentificacion').value);
-        datos.append('numeroIdentificacion', numeroIdentificacion);
-        datos.append('correo', inputCorreoComerciante.value);
-        datos.append('password', document.getElementById('c-password').value);
-
-        const archivoFoto = document.getElementById('c-fotoPerfil').files[0];
-        if (archivoFoto) {
-            datos.append('fotoPerfil', archivoFoto);
-        }
-
-        try {
-            const r = await fetch('api/registrar_comerciante.php', {
-                method: 'POST',
-                body: datos
-            });
-            const res = await r.json();
-
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-            if (res.exito) {
-                evento.target.reset();
-                mensajeIdentificacionComerciante.textContent = '';
-                mensajeCorreoComerciante.textContent = '';
-                document.getElementById('c-nombre-msg').textContent = '';
-                document.getElementById('c-nombre-msg').className = 'ayuda';
-                document.getElementById('c-alias-msg').textContent = '';
-                document.getElementById('c-alias-msg').className = 'ayuda';
-                const mensajePasswordComerciante = document.getElementById('c-password-msg');
-                mensajePasswordComerciante.textContent = TEXTO_AYUDA_PASSWORD;
-                mensajePasswordComerciante.className = 'ayuda';
-            }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
-    });
-
     function activarAutocompletadoTipo(inputEl, listaEl, endpoint) {
         const buscar = debounce(async () => {
             const texto = inputEl.value.trim();
@@ -1781,11 +1670,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('c-identificacion-msg')
     );
 
-    activarValidacionIdentificacion(
-        document.getElementById('cl-tipoIdentificacion'),
-        document.getElementById('cl-numeroIdentificacion'),
-        document.getElementById('cl-identificacion-msg')
-    );
 
     const selectProvinciaFiltro = document.getElementById('f-provincia');
     const selectCantonFiltro = document.getElementById('f-canton');
@@ -2324,7 +2208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const menuPrincipal = document.getElementById('menu-principal');
         if (menuPrincipal) {
-            const esRegistro = idVista === 'vista-comerciante' || idVista === 'vista-cliente';
+            const esRegistro = idVista === 'vista-cliente';
             menuPrincipal.classList.toggle('oculto', esRegistro);
         }
 
@@ -2496,23 +2380,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-registro')?.addEventListener('click', (evento) => {
         evento.preventDefault();
-        Swal.fire({
-            title: '¿Cómo quieres registrarte?',
-            showDenyButton: true,
-            showCancelButton: true,
-            confirmButtonText: 'Soy Cliente',
-            denyButtonText: 'Soy Comerciante',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#8E7CC3',
-            denyButtonColor: '#7A69B6'
-        }).then((resultado) => {
-            if (resultado.isConfirmed) {
-                mostrarVistaLogin('vista-cliente');
-            } else if (resultado.isDenied) {
-                mostrarVistaLogin('vista-comerciante');
-            }
-        });
+        mostrarVistaLogin('vista-cliente');
     });
+
 
     document.getElementById('link-volver-login')?.addEventListener('click', (evento) => {
         evento.preventDefault();
@@ -2615,8 +2485,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Se aplica a los mismos campos que el backend valida con validarSoloLetras()
-    soloLetras(document.getElementById('c-nombre'));
-    soloLetras(document.getElementById('c-alias'));
     soloLetras(document.getElementById('cl-nombreCompleto'));
     soloLetras(document.getElementById('dc-nombre'));
     soloLetras(document.getElementById('dc-alias'));
