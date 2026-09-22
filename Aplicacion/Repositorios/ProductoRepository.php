@@ -20,7 +20,21 @@ class ProductoRepository
         $this->historialDescuento = new HistorialCampoRepository("tbproductodescuentoporcentajehistorico", "tbproductodescuentoporcentajehistoricoid", "tbproductoid", $this->conexion);
     }
 
-    public function insertar(Producto $producto): int|false
+    private function resolverIdUsuarioDeComerciante(?int $idComerciante): ?int
+    {
+        if ($idComerciante === null) {
+            return null;
+        }
+
+        $sql = "SELECT tbusuarioid FROM tbcomerciante WHERE tbcomercianteid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":id" => $idComerciante]);
+        $valor = $consulta->fetchColumn();
+
+        return $valor !== false && $valor !== null ? (int) $valor : null;
+    }
+
+    public function insertar(Producto $producto, ?int $idComercianteAutor = null): int|false
     {
         $this->validarReferencia($this->conexion, "tblocal", "tblocalid", $producto->getIdLocal(), "El local con ID {$producto->getIdLocal()} no existe");
         $this->validarReferencia($this->conexion, "tbproductotipo", "tbproductotipoid", $producto->getIdTipoProducto(), "El tipo de producto con ID {$producto->getIdTipoProducto()} no existe");
@@ -71,6 +85,14 @@ class ProductoRepository
             ":activo" => $producto->isActivo(),
             ":fechaVencimiento" => $producto->getFechaVencimiento()?->format('Y-m-d H:i:s')
         ]);
+
+        if ($exito) {
+            $idUsuarioAutor = $this->resolverIdUsuarioDeComerciante($idComercianteAutor);
+            $this->historialPrecio->registrar($id, null, $producto->getPrecioOriginal(), $idUsuarioAutor, 'Comerciante');
+            if ($producto->getPorcentajeDescuento() !== null) {
+                $this->historialDescuento->registrar($id, null, $producto->getPorcentajeDescuento(), $idUsuarioAutor, 'Comerciante');
+            }
+        }
 
         return $exito ? $id : false;
     }
@@ -182,7 +204,7 @@ class ProductoRepository
         return $productos;
     }
 
-    public function actualizar(Producto $producto): bool
+    public function actualizar(Producto $producto, ?int $idComercianteAutor = null): bool
     {
         $this->validarReferencia(
             $this->conexion,
@@ -224,8 +246,9 @@ class ProductoRepository
 
         if ($exito && $anterior !== null) {
             $id = $producto->getIdProducto();
-            $this->historialPrecio->registrarSiCambio($id, $anterior->getPrecioOriginal(), $producto->getPrecioOriginal());
-            $this->historialDescuento->registrarSiCambio($id, $anterior->getPorcentajeDescuento(), $producto->getPorcentajeDescuento());
+            $idUsuarioAutor = $this->resolverIdUsuarioDeComerciante($idComercianteAutor);
+            $this->historialPrecio->registrarSiCambio($id, $anterior->getPrecioOriginal(), $producto->getPrecioOriginal(), $idUsuarioAutor, 'Comerciante');
+            $this->historialDescuento->registrarSiCambio($id, $anterior->getPorcentajeDescuento(), $producto->getPorcentajeDescuento(), $idUsuarioAutor, 'Comerciante');
         }
 
         return $exito;

@@ -21,11 +21,12 @@
     </header>
 
     <div class="app-shell">
-                <aside class="barra-lateral oculto" id="barra-lateral">
+        <aside class="barra-lateral oculto" id="barra-lateral">
             <div class="marca-sidebar">
                 <img src="imagenes/logo-rapiventas.png" alt="RapiVentas">
                 <h1 class="marca-sidebar-texto">Rapi<span>Ventas</span></h1>
-                <button type="button" id="btn-colapsar-sidebar" class="btn-colapsar-sidebar" aria-label="Colapsar menú" title="Colapsar menú">
+                <button type="button" id="btn-colapsar-sidebar" class="btn-colapsar-sidebar" aria-label="Colapsar menú"
+                    title="Colapsar menú">
                     <i data-lucide="chevrons-left"></i>
                 </button>
             </div>
@@ -37,10 +38,11 @@
                 <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar
                     Producto</button>
                 <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
-                <button class="menu-boton" data-vista="vista-mi-cuenta-comerciante" data-rol="Comerciante">Mi Cuenta</button>
+                <button class="menu-boton" data-vista="vista-mi-cuenta-comerciante" data-rol="Comerciante">Mi
+                    Cuenta</button>
                 <button class="menu-boton" data-vista="vista-mi-cuenta-cliente" data-rol="Cliente">Mi Cuenta</button>
                 <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
-                <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button>
+                <!-- <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button> -->
                 <button class="menu-boton" data-vista="vista-resenas" data-rol="SuperAdmin">Reseñas</button>
                 <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin">Dashboard</button>
                 <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin">Ver
@@ -51,7 +53,8 @@
 
             <div id="sesion-indicador" class="sesion-indicador oculto">
                 <span id="sesion-texto"></span>
-                <button type="button" id="btn-empezar-vender" class="boton-secundario oculto">¿Quieres empezar a vender?</button>
+                <button type="button" id="btn-empezar-vender" class="boton-secundario oculto">¿Quieres empezar a
+                    vender?</button>
                 <button type="button" id="btn-cerrar-sesion" class="boton-secundario">Cerrar sesión</button>
             </div>
         </aside>
@@ -65,8 +68,8 @@
                         aria-label="Cerrar mensaje">&times;</button>
                 </div>
 
-               
-                                    <!-- Vista: Inicio (catálogo público) -->
+
+                <!-- Vista: Inicio (catálogo público) -->
                 <section id="vista-inicio" class="vista">
                     <div class="hero-inicio">
                         <div class="hero-inicio-texto">
@@ -79,21 +82,23 @@
                                         placeholder="Buscar por cantón o provincia...">
                                     <datalist id="hero-ubicacion-sugerencias"></datalist>
                                     <button type="button" id="hero-ubicacion-buscar" aria-label="Buscar">
-    <i data-lucide="search" class="icon-sm"></i>
-</button>
+                                        <i data-lucide="search" class="icon-sm"></i>
+                                    </button>
                                 </div>
                                 <button type="button" id="hero-ubicacion-actual" class="hero-ubicacion-actual">
                                     <i data-lucide="map-pin" class="icon-sm"></i> Usar mi ubicación actual
                                 </button>
                                 <div id="hero-ubicacion-activa" class="hero-ubicacion-activa oculto">
                                     <span id="hero-ubicacion-activa-texto"></span>
-                                    <button type="button" id="hero-ubicacion-limpiar" aria-label="Quitar filtro de ubicación">&times;</button>
+                                    <button type="button" id="hero-ubicacion-limpiar"
+                                        aria-label="Quitar filtro de ubicación">&times;</button>
                                 </div>
                             </div>
                         </div>
 
                         <div class="hero-inicio-imagen">
-                            <img src="imagenes/hero-ilustracion.svg" alt="Ilustración de una bolsa de compras con productos de RapiVentas">
+                            <img src="imagenes/hero-ilustracion.svg"
+                                alt="Ilustración de una bolsa de compras con productos de RapiVentas">
                         </div>
                     </div>
 
@@ -235,9 +240,19 @@
 
                         <label for="p-descuento">Porcentaje de descuento (opcional)</label>
                         <input type="number" id="p-descuento" min="1" max="99" step="0.01" placeholder="Ej: 15">
-
+                        
                         <label for="p-cantidad">Cantidad disponible</label>
                         <input type="number" id="p-cantidad" min="0" step="1" required>
+
+                        <label>Duración del producto</label>
+                        <div class="opciones-duracion">
+                            <label><input type="radio" name="p-duracion" value="permanente" checked> Permanente</label>
+                            <label><input type="radio" name="p-duracion" value="temporal"> Por tiempo limitado</label>
+                        </div>
+                        <div id="p-fechaVencimiento-wrap" class="oculto">
+                            <label for="p-fechaVencimiento">Disponible hasta</label>
+                            <input type="datetime-local" id="p-fechaVencimiento">
+                        </div>
 
                         <label for="p-imagen">Imagen del producto</label>
                         <input type="file" id="p-imagen" accept="image/png, image/jpeg, image/webp">
@@ -419,7 +434,8 @@
                         <div id="mc-locales-lista"></div>
                         <div class="filtros-busqueda">
                             <input type="text" id="mc-agregar-local-nombre" placeholder="Nombre exacto de un local...">
-                            <button type="button" id="mc-btn-seguir-local" class="boton-secundario">Seguir local</button>
+                            <button type="button" id="mc-btn-seguir-local" class="boton-secundario">Seguir
+                                local</button>
                         </div>
                         <span class="ayuda" id="mc-seguir-local-msg"></span>
                     </div>
@@ -470,7 +486,8 @@
                         </form>
                     </div>
 
-                    <button type="button" class="boton-secundario bloque-separado" id="mco-btn-ir-mis-locales">Ver mis locales →</button>
+                    <button type="button" class="boton-secundario bloque-separado" id="mco-btn-ir-mis-locales">Ver mis
+                        locales →</button>
                 </section>
 
                 <!-- Vista: Listado de locales -->
@@ -525,12 +542,13 @@
                             <p class="ayuda" id="e-actividad-estado"></p>
                             <div id="e-actividad-lista" class="tarjetas"></div>
                         </div>
-                                               <div class="campo-lectura" id="e-info-solo-lectura">
+                        <div class="campo-lectura" id="e-info-solo-lectura">
                             <div class="campo-lectura-encabezado">
                                 <strong>Información del local</strong>
                                 <button type="button" id="btn-editar-local" class="btn-editar-icono oculto" aria-label="Editar local">
                                     <i data-lucide="pencil"></i>
                                 </button>
+                                <button type="button" id="btn-eliminar-local" class="boton-peligro oculto" aria-label="Eliminar local">Eliminar Local</button>
                             </div>
                             <p><strong>Tipo:</strong> <span id="e-solo-tipo"></span></p>
                             <p><strong>Nombre:</strong> <span id="e-solo-nombre"></span></p>
@@ -587,9 +605,19 @@
 
                             <label for="ep-descuento">Porcentaje de descuento (opcional)</label>
                             <input type="number" id="ep-descuento" min="1" max="99" step="0.01">
-
+                            
                             <label for="ep-cantidad">Cantidad disponible</label>
                             <input type="number" id="ep-cantidad" min="0" step="1" required>
+
+                            <label>Duración del producto</label>
+                            <div class="opciones-duracion">
+                                <label><input type="radio" name="ep-duracion" value="permanente" checked> Permanente</label>
+                                <label><input type="radio" name="ep-duracion" value="temporal"> Por tiempo limitado</label>
+                            </div>
+                            <div id="ep-fechaVencimiento-wrap" class="oculto">
+                                <label for="ep-fechaVencimiento">Disponible hasta</label>
+                                <input type="datetime-local" id="ep-fechaVencimiento">
+                            </div>
 
                             <label for="ep-imagen">Nueva imagen (opcional, deja vacío para mantener la actual)</label>
                             <input type="file" id="ep-imagen" accept="image/png, image/jpeg, image/webp">
@@ -615,13 +643,13 @@
                 </section>
 
                 <!-- Vista: Listado de Comerciantes -->
-                                <!-- Vista: Listado de Comerciantes -->
                 <section id="vista-comerciantes" class="vista oculto">
 
                     <div id="panel-lista-comerciantes">
                         <h2>Comerciantes Registrados</h2>
                         <div class="filtros-busqueda">
-                            <input type="text" id="com-admin-buscar" placeholder="Buscar por nombre, alias, correo o identificación...">
+                            <input type="text" id="com-admin-buscar"
+                                placeholder="Buscar por nombre, alias, correo o identificación...">
                             <select id="com-admin-filtro-estado">
                                 <option value="activos">Activos</option>
                                 <option value="todos">Todos</option>
@@ -655,7 +683,7 @@
 
                 </section>
 
-                                <!-- Vista: listado de Clientes -->
+                <!-- Vista: listado de Clientes -->
                 <section id="vista-clientes" class="vista oculto">
 
                     <div id="panel-lista-clientes">
@@ -700,49 +728,18 @@
                 <section id="vista-resenas" class="vista oculto">
                     <h2>Reseñas de Locales</h2>
 
-                    <div class="rejilla-dos">
-                        <div>
-                            <h3>Publicar reseña</h3>
-                            <form id="form-resena" class="formulario">
-                                <label for="resena-cliente">Cliente</label>
-                                <select id="resena-cliente" required>
-                                    <option value="">Seleccione...</option>
-                                </select>
-
-                                <label for="resena-local">Local</label>
-                                <select id="resena-local" required>
-                                    <option value="">Seleccione...</option>
-                                </select>
-
-                                <label for="resena-puntuacion">Puntuación</label>
-                                <select id="resena-puntuacion" required>
-                                    <option value="5">5 - Excelente</option>
-                                    <option value="4">4 - Muy bueno</option>
-                                    <option value="3">3 - Bueno</option>
-                                    <option value="2">2 - Regular</option>
-                                    <option value="1">1 - Malo</option>
-                                </select>
-
-                                <label for="resena-comentario">Comentario</label>
-                                <textarea id="resena-comentario" rows="4" required></textarea>
-
-                                <button type="submit">Publicar Reseña</button>
-                            </form>
+                    <div>
+                        <h3>Consultar reseñas</h3>
+                        <div class="formulario">
+                            <label for="resena-filtro-local">Local</label>
+                            <select id="resena-filtro-local">
+                                <option value="">Seleccione...</option>
+                            </select>
+                            <button type="button" id="btn-cargar-resenas">Ver Reseñas</button>
                         </div>
 
-                        <div>
-                            <h3>Consultar reseñas</h3>
-                            <div class="formulario">
-                                <label for="resena-filtro-local">Local</label>
-                                <select id="resena-filtro-local">
-                                    <option value="">Seleccione...</option>
-                                </select>
-                                <button type="button" id="btn-cargar-resenas">Ver Reseñas</button>
-                            </div>
-
-                            <div id="resena-resumen" class="resumen-resenas">
-                                Selecciona un local para ver su calificación.
-                            </div>
+                        <div id="resena-resumen" class="resumen-resenas">
+                            Selecciona un local para ver su calificación.
                         </div>
                     </div>
 
@@ -759,7 +756,7 @@
                     </div>
                 </section>
 
-                 <!-- Vista: Ver Productos (Admin) -->
+                <!-- Vista: Ver Productos (Admin) -->
                 <section id="vista-productos-admin" class="vista oculto">
                     <h2>Productos Registrados</h2>
                     <p class="ayuda">Todos los productos de todos los locales, para moderación.</p>
@@ -772,7 +769,7 @@
                     <div id="lista-productos-admin" class="tarjetas"></div>
                 </section>
 
-                              <section id="vista-historiales" class="vista oculto">
+                <section id="vista-historiales" class="vista oculto">
                     <div class="historial-header">
                         <h2>Historiales</h2>
                         <p class="ayuda">Consulta todos los cambios realizados en el sistema.</p>
@@ -786,7 +783,8 @@
                             <option value="Local">Solo locales</option>
                             <option value="Producto">Solo productos</option>
                         </select>
-                        <input type="text" id="hist-buscar" class="historial-search" placeholder="Buscar en historiales...">
+                        <input type="text" id="hist-buscar" class="historial-search"
+                            placeholder="Buscar en historiales...">
                     </div>
 
                     <div class="historial-tabs" id="hist-tabs"></div>
@@ -799,7 +797,8 @@
                         <div class="historial-panel">
                             <div class="historial-panel-header">
                                 <h3>Detalle del historial</h3>
-                                <button type="button" id="hist-panel-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+                                <button type="button" id="hist-panel-cerrar" class="modal-cerrar"
+                                    aria-label="Cerrar">&times;</button>
                             </div>
 
                             <div class="historial-panel-tipo">
@@ -832,7 +831,7 @@
                         </div>
                     </div>
                 </section>
-                                <!-- Vista: Mi Perfil (Admin) -->
+                <!-- Vista: Mi Perfil (Admin) -->
                 <section id="vista-mi-perfil" class="vista oculto">
                     <h2>Mi Perfil</h2>
                     <p class="ayuda">Aquí puedes actualizar tus propios datos de acceso.</p>
@@ -840,7 +839,8 @@
                     <div class="campo-lectura" id="mp-info-solo-lectura">
                         <div class="campo-lectura-encabezado">
                             <strong>Información de la cuenta</strong>
-                            <button type="button" id="btn-editar-mi-perfil" class="btn-editar-icono" aria-label="Editar mi perfil">
+                            <button type="button" id="btn-editar-mi-perfil" class="btn-editar-icono"
+                                aria-label="Editar mi perfil">
                                 <i data-lucide="pencil"></i>
                             </button>
                         </div>
@@ -865,15 +865,16 @@
 
                         <label for="mp-password-nueva">Nueva contraseña</label>
                         <input type="password" id="mp-password-nueva" required>
-                        <span class="ayuda" id="mp-password-msg">Mínimo 8 caracteres, con al menos una letra mayúscula.</span>
+                        <span class="ayuda" id="mp-password-msg">Mínimo 8 caracteres, con al menos una letra
+                            mayúscula.</span>
 
                         <button type="submit">Cambiar Contraseña</button>
                     </form>
                 </section>
 
-                
+
                 <!-- Vista: Dashboard de Administrador -->
-                                <section id="vista-dashboard-admin" class="vista oculto">
+                <section id="vista-dashboard-admin" class="vista oculto">
                     <h2>Panel de Administración</h2>
                     <p class="ayuda">Resumen general de la plataforma.</p>
 
@@ -904,7 +905,8 @@
                         <div class="dashboard-actividad">
                             <div class="dashboard-seccion-encabezado">
                                 <h3>Actividad reciente</h3>
-                                <button type="button" class="acceso-dashboard-boton dashboard-ver-todo" data-vista="vista-historiales">Ver todo &rarr;</button>
+                                <button type="button" class="acceso-dashboard-boton dashboard-ver-todo"
+                                    data-vista="vista-historiales">Ver todo &rarr;</button>
                             </div>
                             <div id="dashboard-actividad-lista"></div>
                         </div>
@@ -912,23 +914,28 @@
                         <div class="dashboard-accesos">
                             <h3>Accesos rápidos</h3>
                             <div class="accesos-dashboard-grid">
-                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-comerciantes">
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta"
+                                    data-vista="vista-comerciantes">
                                     <i data-lucide="briefcase"></i>
                                     <span>Ver Comerciantes</span>
                                 </button>
-                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-clientes">
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta"
+                                    data-vista="vista-clientes">
                                     <i data-lucide="users"></i>
                                     <span>Ver Clientes</span>
                                 </button>
-                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-listado">
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta"
+                                    data-vista="vista-listado">
                                     <i data-lucide="store"></i>
                                     <span>Ver Locales</span>
                                 </button>
-                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-productos-admin">
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta"
+                                    data-vista="vista-productos-admin">
                                     <i data-lucide="package"></i>
                                     <span>Ver Productos</span>
                                 </button>
-                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-historiales">
+                                <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta"
+                                    data-vista="vista-historiales">
                                     <i data-lucide="history"></i>
                                     <span>Historiales</span>
                                 </button>
@@ -936,7 +943,7 @@
                         </div>
                     </div>
                 </section>
-               
+
                 <!-- Vista: Locales Cercanos -->
                 <section id="vista-cercanos" class="vista oculto">
                     <h2>Locales Cercanos</h2>
@@ -970,7 +977,7 @@
 
             </main>
 
-                       <footer class="pie-pagina" id="pie-pagina">
+            <footer class="pie-pagina" id="pie-pagina">
                 <div class="pie-contenido">
                     <div class="pie-marca">
                         <strong>RapiVentas</strong>
@@ -984,9 +991,10 @@
             </footer>
         </div> <!-- cierra .area-principal -->
     </div> <!-- cierra .app-shell -->
-        <div id="modal-permiso-ubicacion" class="modal-overlay oculto">
+    <div id="modal-permiso-ubicacion" class="modal-overlay oculto">
         <div class="modal-contenido modal-permiso-contenido">
-            <button type="button" id="permiso-ubicacion-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+            <button type="button" id="permiso-ubicacion-cerrar" class="modal-cerrar"
+                aria-label="Cerrar">&times;</button>
 
             <div class="modal-permiso-icono">
                 <i data-lucide="map-pin"></i>
@@ -1004,7 +1012,7 @@
             </div>
         </div>
     </div>
-        <div id="modal-local" class="modal-overlay oculto">
+    <div id="modal-local" class="modal-overlay oculto">
         <div class="modal-contenido">
             <button type="button" id="modal-local-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
 
@@ -1019,8 +1027,9 @@
                 <span id="modal-local-categoria" class="etiqueta-tipo"></span>
                 <h3 id="modal-local-nombre"></h3>
 
-                             <div class="modal-local-tabs">
-                    <button type="button" id="modal-local-tab-detalles" class="modal-local-tab activo">Ver Detalles</button>
+                <div class="modal-local-tabs">
+                    <button type="button" id="modal-local-tab-detalles" class="modal-local-tab activo">Ver
+                        Detalles</button>
                     <button type="button" id="modal-local-tab-productos" class="modal-local-tab">Ver Productos</button>
                 </div>
 
@@ -1042,11 +1051,11 @@
         </div>
     </div>
 
-        <div id="modal-producto" class="modal-overlay oculto">
+    <div id="modal-producto" class="modal-overlay oculto">
         <div class="modal-contenido">
             <button type="button" id="modal-producto-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
 
-                        <div class="modal-producto-imagen">
+            <div class="modal-producto-imagen">
                 <img id="modal-producto-imagen" src="" alt="">
                 <div id="modal-producto-sin-imagen" class="modal-producto-sin-imagen oculto">
                     <i data-lucide="image-off"></i>
@@ -1087,44 +1096,6 @@
     <script>
         lucide.createIcons();
     </script>
-
-    <div id="modal-local" class="modal-overlay oculto">
-        <div class="modal-contenido">
-            <button type="button" id="modal-local-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
-
-            <img id="modal-local-logo" src="" alt="" class="modal-logo oculto">
-
-            <h2 id="modal-local-nombre"></h2>
-            <p class="etiqueta-tipo" id="modal-local-tipo"></p>
-            <p id="modal-local-descripcion"></p>
-            <p id="modal-local-telefono"></p>
-            <p class="ayuda" id="modal-local-ubicacion"></p>
-
-            <h3>Productos</h3>
-            <div id="modal-local-productos" class="tarjetas"></div>
-
-            <h3>Reseñas</h3>
-            <p class="ayuda" id="modal-local-resenas-resumen"></p>
-            <div id="modal-local-resenas-lista" class="tarjetas"></div>
-            <div id="modal-local-resena-form-wrap" style="margin-top: 1rem;"></div>
-        </div>
-    </div>
-
-    <div id="modal-producto" class="modal-overlay oculto">
-        <div class="modal-contenido">
-            <button type="button" id="modal-producto-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
-
-            <img id="modal-producto-imagen" src="" alt="" class="modal-logo oculto">
-
-            <h2 id="modal-producto-nombre"></h2>
-            <p class="etiqueta-tipo" id="modal-producto-local"></p>
-            <p id="modal-producto-descripcion"></p>
-            <p id="modal-producto-precio"></p>
-            <p class="ayuda" id="modal-producto-disponibilidad"></p>
-
-            <div id="modal-producto-accion" style="margin-top: 1rem;"></div>
-        </div>
-    </div>
 </body>
 
 </html>

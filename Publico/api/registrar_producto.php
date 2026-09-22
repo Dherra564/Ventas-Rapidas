@@ -27,6 +27,10 @@ class RegistrarProductoHandler
 
         $nombreImagen = $this->subirImagenPerfil($_FILES['imagen'] ?? null, 'producto');
 
+        $fechaVencimiento = !empty($_POST['fechaVencimiento'])
+            ? DateTime::createFromFormat('Y-m-d\TH:i', $_POST['fechaVencimiento'])
+            : null;
+
         $idProducto = $controlador->registrar(
             $idLocal,
             $_POST['nombreTipoProducto'] ?? '',
@@ -35,7 +39,9 @@ class RegistrarProductoHandler
             $porcentajeDescuento !== '' ? (float) $porcentajeDescuento : null,
             $_POST['descripcion'] ?? null,
             (int) ($_POST['cantidadDisponible'] ?? 0),
-            $nombreImagen !== false ? $nombreImagen : null
+            $nombreImagen !== false ? $nombreImagen : null,
+            $fechaVencimiento !== false ? $fechaVencimiento : null,
+            $idComerciante
         );
 
         if ($idProducto !== false) {

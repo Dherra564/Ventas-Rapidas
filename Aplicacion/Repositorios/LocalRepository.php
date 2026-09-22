@@ -31,6 +31,20 @@ class LocalRepository
         $this->historialTelefono = new HistorialCampoRepository("tblocaltelefonohistorico", "tblocaltelefonohistoricoid", "tblocalid", $this->conexion);
         $this->historialLogo = new HistorialCampoRepository("tblocallogohistorico", "tblocallogohistoricoid", "tblocalid", $this->conexion);
     }
+    private function resolverIdUsuarioDeComerciante(?int $idComerciante): ?int
+    {
+        if ($idComerciante === null) {
+            return null;
+        }
+
+        $sql = "SELECT tbusuarioid FROM tbcomerciante WHERE tbcomercianteid = :id";
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([":id" => $idComerciante]);
+        $valor = $consulta->fetchColumn();
+
+        return $valor !== false && $valor !== null ? (int) $valor : null;
+    }
+    
     public function insertar(Local $local, Ubicacion $ubicacion, int $idComerciante): int|false
     {
         try {
@@ -84,6 +98,13 @@ class LocalRepository
 
             $comercianteLocal = new ComercianteLocal($idComerciante, $idLocal);
             $this->comercianteLocalRepository->insertar($comercianteLocal);
+
+            $idUsuarioAutor = $this->resolverIdUsuarioDeComerciante($idComerciante);
+            $this->historialNombre->registrar($idLocal, null, $local->getNombreLocal(), $idUsuarioAutor, 'Comerciante');
+            $this->historialTelefono->registrar($idLocal, null, $local->getTelefono(), $idUsuarioAutor, 'Comerciante');
+            if ($local->getLogo() !== null) {
+                $this->historialLogo->registrar($idLocal, null, $local->getLogo(), $idUsuarioAutor, 'Comerciante');
+            }
 
             $this->conexion->commit();
 
@@ -240,7 +261,7 @@ class LocalRepository
         return ["local" => $local, "ubicacion" => $ubicacion];
     }
 
-    public function actualizar(Local $local): bool
+    public function actualizar(Local $local, ?int $idComercianteAutor = null): bool
     {
         $this->validarReferencia(
             $this->conexion,
@@ -275,9 +296,10 @@ class LocalRepository
         ]);
 
         if ($exito && $anterior !== null) {
-            $this->historialNombre->registrarSiCambio($local->getIdLocal(), $anterior->getNombreLocal(), $local->getNombreLocal());
-            $this->historialTelefono->registrarSiCambio($local->getIdLocal(), $anterior->getTelefono(), $local->getTelefono());
-            $this->historialLogo->registrarSiCambio($local->getIdLocal(), $anterior->getLogo(), $local->getLogo());
+            $idUsuarioAutor = $this->resolverIdUsuarioDeComerciante($idComercianteAutor);
+            $this->historialNombre->registrarSiCambio($local->getIdLocal(), $anterior->getNombreLocal(), $local->getNombreLocal(), $idUsuarioAutor, 'Comerciante');
+            $this->historialTelefono->registrarSiCambio($local->getIdLocal(), $anterior->getTelefono(), $local->getTelefono(), $idUsuarioAutor, 'Comerciante');
+            $this->historialLogo->registrarSiCambio($local->getIdLocal(), $anterior->getLogo(), $local->getLogo(), $idUsuarioAutor, 'Comerciante');
         }
 
         return $exito;
@@ -355,7 +377,7 @@ class LocalRepository
         );
     }
 
-    
+
     public function sincronizarActivoPorInactividad(int $dias = 7): int
     {
         $sql = "UPDATE tblocal l

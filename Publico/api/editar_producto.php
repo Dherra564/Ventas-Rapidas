@@ -41,6 +41,10 @@ class EditarProductoHandler
             $imagenFinal = $productoActual->getImagen();
         }
 
+        $fechaVencimiento = !empty($_POST['fechaVencimiento'])
+            ? DateTime::createFromFormat('Y-m-d\TH:i', $_POST['fechaVencimiento'])
+            : null;
+
         $producto = new Producto(
             $productoActual->getIdLocal(),
             $idTipoProducto,
@@ -51,10 +55,12 @@ class EditarProductoHandler
             (int) ($_POST['cantidadDisponible'] ?? 0),
             $imagenFinal,
             true,
-            $idProducto
+            $idProducto,
+            null,
+            $fechaVencimiento !== false ? $fechaVencimiento : null
         );
 
-        $actualizado = $controlador->editar($producto);
+        $actualizado = $controlador->editar($producto, $idComerciante);
 
         return [
             'exito' => $actualizado,

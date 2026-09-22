@@ -7,6 +7,8 @@ require_once __DIR__ . "/../Comun/GeneradorId.php";
 /**
  * Repositorio genérico para cualquier tabla de historial de un solo campo:
  * (id, id_entidad, valoranterior, valornuevo, fecha) — sin columna "activo".
+ * Algunas tablas (Local, Producto) también tienen idusuario/tipousuario,
+ * para saber quién hizo el cambio — esos dos parámetros son opcionales.
  *
  * Uso: un objeto por tabla, por ejemplo:
  *   new HistorialCampoRepository("tblocalnombrehistorico", "tblocalnombrehistoricoid", "tblocalid");
@@ -28,34 +30,47 @@ class HistorialCampoRepository
         $this->conexion = $conexion ?? BaseDatos::obtenerConexion();
     }
 
-    public function registrar(int $idEntidad, $valorAnterior, $valorNuevo): int|false
+    public function registrar(int $idEntidad, $valorAnterior, $valorNuevo, ?int $idUsuarioAutor = null, ?string $tipoUsuarioAutor = null): int|false
     {
         $id = $this->generarSiguienteId($this->conexion, $this->tabla, $this->columnaId);
 
-        $sql = "INSERT INTO {$this->tabla}
-                ({$this->columnaId}, {$this->columnaEntidad}, valoranterior, valornuevo, fecha)
-                VALUES (:id, :idEntidad, :valorAnterior, :valorNuevo, NOW())";
+        if ($idUsuarioAutor !== null) {
+            $sql = "INSERT INTO {$this->tabla}
+                    ({$this->columnaId}, {$this->columnaEntidad}, valoranterior, valornuevo, fecha, idusuario, tipousuario)
+                    VALUES (:id, :idEntidad, :valorAnterior, :valorNuevo, NOW(), :idUsuarioAutor, :tipoUsuarioAutor)";
+        } else {
+            $sql = "INSERT INTO {$this->tabla}
+                    ({$this->columnaId}, {$this->columnaEntidad}, valoranterior, valornuevo, fecha)
+                    VALUES (:id, :idEntidad, :valorAnterior, :valorNuevo, NOW())";
+        }
 
         $consulta = $this->conexion->prepare($sql);
 
-        $exito = $consulta->execute([
+        $parametros = [
             ":id" => $id,
             ":idEntidad" => $idEntidad,
             ":valorAnterior" => $valorAnterior,
             ":valorNuevo" => $valorNuevo
-        ]);
+        ];
+
+        if ($idUsuarioAutor !== null) {
+            $parametros[":idUsuarioAutor"] = $idUsuarioAutor;
+            $parametros[":tipoUsuarioAutor"] = $tipoUsuarioAutor;
+        }
+
+        $exito = $consulta->execute($parametros);
 
         return $exito ? $id : false;
     }
 
     // Solo registra si el valor realmente cambió — evita ruido en el historial.
-    public function registrarSiCambio(int $idEntidad, $valorAnterior, $valorNuevo): int|false
+    public function registrarSiCambio(int $idEntidad, $valorAnterior, $valorNuevo, ?int $idUsuarioAutor = null, ?string $tipoUsuarioAutor = null): int|false
     {
         if ($valorAnterior == $valorNuevo) {
             return false;
         }
 
-        return $this->registrar($idEntidad, $valorAnterior, $valorNuevo);
+        return $this->registrar($idEntidad, $valorAnterior, $valorNuevo, $idUsuarioAutor, $tipoUsuarioAutor);
     }
 
     public function obtenerPorEntidad(int $idEntidad): array

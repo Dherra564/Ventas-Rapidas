@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (boton.dataset.vista === 'vista-historiales') {
-                cargarUsuariosHistorial();
+                cargarHistorialGlobal();
             }
 
             if (boton.dataset.vista === 'vista-dashboard-admin') {
@@ -565,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cl-password-msg')
     );
 
-    document.getElementById('form-cliente')?.addEventListener('submit', async (evento) => {
+    document.getElementById('form-cliente').addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const camposValidosCliente = [
@@ -578,12 +578,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const correoNuevo = inputCorreoCliente.value;
+        const passwordNueva = document.getElementById('cl-password').value;
+
         const datos = new FormData();
         datos.append('nombreCompleto', document.getElementById('cl-nombreCompleto').value);
         datos.append('tipoIdentificacion', document.getElementById('cl-tipoIdentificacion').value);
         datos.append('numeroIdentificacion', inputIdentificacionCliente.value.trim());
-        datos.append('correo', inputCorreoCliente.value);
-        datos.append('password', document.getElementById('cl-password').value);
+        datos.append('correo', correoNuevo);
+        datos.append('password', passwordNueva);
         datos.append('idProvincia', selectProvinciaCliente.value);
         datos.append('idCanton', selectCantonCliente.value);
         datos.append('idDistrito', selectDistritoCliente.value);
@@ -602,21 +605,57 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const res = await r.json();
 
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje, 'error');
+                return;
+            }
 
-            if (res.exito) {
-                evento.target.reset();
-                mensajeIdentificacionCliente.textContent = '';
-                mensajeCorreoCliente.textContent = '';
-                document.getElementById('cl-nombreCompleto-msg').textContent = '';
-                document.getElementById('cl-nombreCompleto-msg').className = 'ayuda';
-                const mensajePasswordCliente = document.getElementById('cl-password-msg');
-                mensajePasswordCliente.textContent = TEXTO_AYUDA_PASSWORD;
-                mensajePasswordCliente.className = 'ayuda';
-                selectCantonCliente.innerHTML = '<option value="">Primero elige provincia</option>';
-                selectCantonCliente.disabled = true;
-                selectDistritoCliente.innerHTML = '<option value="">Primero elige cantón</option>';
-                selectDistritoCliente.disabled = true;
+            evento.target.reset();
+            mensajeIdentificacionCliente.textContent = '';
+            mensajeCorreoCliente.textContent = '';
+            document.getElementById('cl-nombreCompleto-msg').textContent = '';
+            document.getElementById('cl-nombreCompleto-msg').className = 'ayuda';
+            const mensajePasswordCliente = document.getElementById('cl-password-msg');
+            mensajePasswordCliente.textContent = TEXTO_AYUDA_PASSWORD;
+            mensajePasswordCliente.className = 'ayuda';
+            selectCantonCliente.innerHTML = '<option value="">Primero elige provincia</option>';
+            selectCantonCliente.disabled = true;
+            selectDistritoCliente.innerHTML = '<option value="">Primero elige cantón</option>';
+            selectDistritoCliente.disabled = true;
+
+            const datosLogin = new FormData();
+            datosLogin.append('correo', correoNuevo);
+            datosLogin.append('password', passwordNueva);
+
+            const rLogin = await fetch('api/login.php', { method: 'POST', body: datosLogin });
+            const resLogin = await rLogin.json();
+
+            if (!resLogin.exito) {
+                mostrarMensaje('Cuenta creada. Ahora inicia sesión.', 'exito');
+                mostrarVistaLogin('vista-login');
+                return;
+            }
+
+            actualizarIndicadorSesion(resLogin.usuario);
+            mostrarMensaje('¡Cuenta creada! Sesión iniciada correctamente', 'exito');
+
+            try {
+                const coords = await obtenerCoordenadasGPS();
+                await fetch('api/registrar_ubicacion_login.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
+                });
+            } catch (e) {
+            }
+
+            if (compraProductoPendiente) {
+                const productoRetomado = compraProductoPendiente;
+                compraProductoPendiente = null;
+                mostrarVistaLogin('vista-inicio');
+                abrirModalProducto(productoRetomado);
+            } else {
+                mostrarVistaLogin('vista-inicio');
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
@@ -802,19 +841,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let idLocalModalActual = null;
+    let compraProductoPendiente = null;
 
     async function abrirModalLocal(idLocal) {
         idLocalModalActual = idLocal;
 
         try {
-            const [rLocal, rProductos, rResenias] = await Promise.all([
+            const [rLocal, rProductos] = await Promise.all([
                 fetch(`api/buscar_local.php?id=${idLocal}`),
-                fetch(`api/listar_productos_local.php?idLocal=${idLocal}`),
-                fetch(`api/listar_resenias_local.php?idLocal=${idLocal}`)
+                fetch(`api/listar_productos_local.php?idLocal=${idLocal}`)
             ]);
             const resLocal = await rLocal.json();
             const resProductos = await rProductos.json();
-            const resResenias = await rResenias.json();
 
             if (!resLocal.exito) {
                 mostrarMensaje(resLocal.mensaje || 'No se pudo cargar el local', 'error');
@@ -823,23 +861,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const { local, ubicacion } = resLocal;
 
-            const imgLogo = document.getElementById('modal-local-logo');
+            const imgLocal = document.getElementById('modal-local-imagen');
+            const sinImagen = document.getElementById('modal-local-sin-imagen');
             if (local.logo) {
-                imgLogo.src = `imagenes/${local.logo}`;
-                imgLogo.classList.remove('oculto');
+                imgLocal.src = `imagenes/${local.logo}`;
+                imgLocal.classList.remove('oculto');
+                sinImagen?.classList.add('oculto');
             } else {
-                imgLogo.classList.add('oculto');
+                imgLocal.classList.add('oculto');
+                sinImagen?.classList.remove('oculto');
             }
 
+            document.getElementById('modal-local-categoria').textContent = local.tipoLocal ?? '';
             document.getElementById('modal-local-nombre').textContent = local.nombreLocal;
-            document.getElementById('modal-local-tipo').textContent = local.tipoLocal ?? '';
             document.getElementById('modal-local-descripcion').textContent = local.descripcion ?? '';
-            document.getElementById('modal-local-telefono').textContent = `📞 ${local.telefono}`;
+            document.getElementById('modal-local-telefono').textContent = local.telefono;
             document.getElementById('modal-local-ubicacion').textContent =
                 `${ubicacion.provincia}, ${ubicacion.canton}, ${ubicacion.distrito} — ${ubicacion.direccionExacta}` +
                 (ubicacion.referencia ? ` (${ubicacion.referencia})` : '');
 
-            const contenedorProductos = document.getElementById('modal-local-productos');
+            const contenedorProductos = document.getElementById('modal-local-productos-lista');
             if (!resProductos.exito || resProductos.productos.length === 0) {
                 contenedorProductos.innerHTML = '<p class="ayuda">Este local todavía no tiene productos registrados.</p>';
             } else {
@@ -862,6 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${precioHtml}</p>
                         <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
                         ${botonAccion}
+                        <button type="button" class="boton-secundario btn-comparar-producto">Comparar</button>
                     `;
                     contenedorProductos.appendChild(tarjeta);
 
@@ -871,6 +913,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
                         });
                     }
+
+                    tarjeta.querySelector('.btn-comparar-producto')?.addEventListener('click', () => {
+                        mostrarMensaje('Pronto podrás comparar productos 🔍', 'exito');
+                    });
 
                     const btnLogin = tarjeta.querySelector('.btn-login-para-comprar');
                     if (btnLogin) {
@@ -882,130 +928,119 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            const resumenResenas = document.getElementById('modal-local-resenas-resumen');
-            const listaResenas = document.getElementById('modal-local-resenas-lista');
-            const formResenaWrap = document.getElementById('modal-local-resena-form-wrap');
-
-            if (resResenias.exito) {
-                const promedio = resResenias.promedio === null ? 'Sin calificación todavía' : `${Number(resResenias.promedio).toFixed(1)} / 5`;
-                resumenResenas.textContent = `Promedio: ${promedio} · ${resResenias.total} reseña${resResenias.total === 1 ? '' : 's'}`;
-
-                if (resResenias.resenias.length === 0) {
-                    listaResenas.innerHTML = '<p class="ayuda">Este local todavía no tiene reseñas.</p>';
-                } else {
-                    listaResenas.innerHTML = '';
-                    resResenias.resenias.forEach(resenia => {
-                        const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
-                        const tarjeta = document.createElement('div');
-                        tarjeta.className = 'tarjeta';
-                        tarjeta.innerHTML = `
-                            <h4>${escaparHtml(resenia.nombreCliente)}</h4>
-                            <p class="estrellas" aria-label="${resenia.puntuacion} de 5">${estrellas}</p>
-                            <p>${escaparHtml(resenia.comentario)}</p>
-                        `;
-                        listaResenas.appendChild(tarjeta);
-                    });
-                }
-            } else {
-                resumenResenas.textContent = '';
-                listaResenas.innerHTML = '<p class="ayuda error">No se pudieron cargar las reseñas.</p>';
-            }
-
-            if (usuarioSesionActual) {
-                formResenaWrap.innerHTML = `
-                    <form id="modal-form-resena" class="formulario">
-                        <label for="modal-resena-puntuacion">Tu puntuación</label>
-                        <select id="modal-resena-puntuacion" required>
-                            <option value="5">5 - Excelente</option>
-                            <option value="4">4 - Muy bueno</option>
-                            <option value="3">3 - Bueno</option>
-                            <option value="2">2 - Regular</option>
-                            <option value="1">1 - Malo</option>
-                        </select>
-                        <label for="modal-resena-comentario">Comentario</label>
-                        <textarea id="modal-resena-comentario" rows="3" required></textarea>
-                        <button type="submit">Publicar reseña</button>
-                    </form>
-                `;
-
-                document.getElementById('modal-form-resena')?.addEventListener('submit', async (evento) => {
-                    evento.preventDefault();
-
-                    const puntuacion = document.getElementById('modal-resena-puntuacion').value;
-                    const comentario = document.getElementById('modal-resena-comentario').value.trim();
-
-                    try {
-                        const r = await fetch('api/registrar_resenia.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ idLocal, puntuacion, comentario })
-                        });
-                        const res = await r.json();
-                        mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-                        if (res.exito) {
-                            abrirModalLocal(idLocal);
-                        }
-                    } catch (e) {
-                        mostrarMensaje('Error de conexión con el servidor', 'error');
-                    }
-                });
-            } else {
-                formResenaWrap.innerHTML = `
-                    <button type="button" class="boton-secundario" id="modal-btn-login-resena">Inicia sesión para dejar una reseña</button>
-                `;
-
-                document.getElementById('modal-btn-login-resena')?.addEventListener('click', () => {
-                    cerrarModalLocal();
-                    mostrarVistaLogin('vista-login');
-                });
-            }
+            document.getElementById('modal-local-tab-detalles')?.classList.add('activo');
+            document.getElementById('modal-local-tab-productos')?.classList.remove('activo');
+            document.getElementById('modal-local-detalles-contenido')?.classList.remove('oculto');
+            document.getElementById('modal-local-productos-contenido')?.classList.add('oculto');
 
             document.getElementById('modal-local').classList.remove('oculto');
         } catch (e) {
-            console.error('Error real en abrirModalLocal:', e);
             mostrarMensaje('Error al cargar el local', 'error');
         }
     }
 
+    document.getElementById('modal-local-tab-detalles')?.addEventListener('click', () => {
+        document.getElementById('modal-local-tab-detalles').classList.add('activo');
+        document.getElementById('modal-local-tab-productos').classList.remove('activo');
+        document.getElementById('modal-local-detalles-contenido').classList.remove('oculto');
+        document.getElementById('modal-local-productos-contenido').classList.add('oculto');
+    });
+
+    document.getElementById('modal-local-tab-productos')?.addEventListener('click', () => {
+        document.getElementById('modal-local-tab-productos').classList.add('activo');
+        document.getElementById('modal-local-tab-detalles').classList.remove('activo');
+        document.getElementById('modal-local-productos-contenido').classList.remove('oculto');
+        document.getElementById('modal-local-detalles-contenido').classList.add('oculto');
+    });
+
+    function cerrarModalLocal() {
+        document.getElementById('modal-local').classList.add('oculto');
+        idLocalModalActual = null;
+    }
+
+    document.getElementById('modal-local-cerrar')?.addEventListener('click', cerrarModalLocal);
+
+    document.getElementById('modal-local')?.addEventListener('click', (evento) => {
+        if (evento.target.id === 'modal-local') {
+            cerrarModalLocal();
+        }
+    });
+
     function abrirModalProducto(producto) {
         const imgProducto = document.getElementById('modal-producto-imagen');
+        const sinImagenProducto = document.getElementById('modal-producto-sin-imagen');
         if (producto.imagen) {
             imgProducto.src = `imagenes/${producto.imagen}`;
             imgProducto.classList.remove('oculto');
+            sinImagenProducto?.classList.add('oculto');
         } else {
             imgProducto.classList.add('oculto');
+            sinImagenProducto?.classList.remove('oculto');
+        }
+
+        const badge = document.getElementById('modal-producto-badge');
+        if (badge) {
+            if (producto.porcentajeDescuento) {
+                badge.textContent = `-${producto.porcentajeDescuento}%`;
+                badge.classList.remove('oculto');
+            } else {
+                badge.classList.add('oculto');
+            }
+        }
+
+        const logoLocal = document.getElementById('modal-producto-logo-local');
+        if (logoLocal) {
+            if (producto.logoLocal) {
+                logoLocal.src = `imagenes/${producto.logoLocal}`;
+                logoLocal.classList.remove('oculto');
+            } else {
+                logoLocal.classList.add('oculto');
+            }
+        }
+        const nombreLocalSpan = document.getElementById('modal-producto-nombre-local');
+        if (nombreLocalSpan) {
+            nombreLocalSpan.textContent = producto.nombreLocal ?? '';
         }
 
         document.getElementById('modal-producto-nombre').textContent = producto.nombre;
         document.getElementById('modal-producto-descripcion').textContent = producto.descripcion ?? '';
 
-        const precioHtml = producto.porcentajeDescuento
-            ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
-            : `₡${producto.precioOriginal}`;
-        document.getElementById('modal-producto-precio').innerHTML = precioHtml;
+        const disponibles = document.getElementById('modal-producto-disponibles');
+        if (disponibles) {
+            disponibles.textContent = producto.agotado
+                ? 'Agotado'
+                : (producto.cantidadDisponible !== undefined ? `Disponibles: ${producto.cantidadDisponible}` : '');
+        }
 
-        document.getElementById('modal-producto-disponibilidad').textContent = producto.agotado ? 'Agotado' : '';
+        const precioOriginal = document.getElementById('modal-producto-precio-original');
+        const precioFinal = document.getElementById('modal-producto-precio-final');
+        if (precioOriginal && precioFinal) {
+            if (producto.porcentajeDescuento) {
+                precioOriginal.textContent = `₡${producto.precioOriginal}`;
+                precioOriginal.classList.remove('oculto');
+                precioFinal.textContent = `₡${producto.precioFinal}`;
+            } else {
+                precioOriginal.classList.add('oculto');
+                precioFinal.textContent = `₡${producto.precioOriginal}`;
+            }
+        }
 
-        const enlaceLocal = document.getElementById('modal-producto-local');
-        enlaceLocal.textContent = `Vendido por: ${producto.nombreLocal}`;
-        enlaceLocal.style.cursor = 'pointer';
-        enlaceLocal.onclick = () => {
-            cerrarModalProducto();
-            abrirModalLocal(producto.idLocal);
-        };
+        const btnComprarModalProducto = document.getElementById('modal-producto-comprar');
+        if (btnComprarModalProducto) {
+            btnComprarModalProducto.disabled = !!producto.agotado;
+            btnComprarModalProducto.textContent = usuarioSesionActual
+                ? 'Comprar'
+                : 'Inicia sesión o regístrate para comprar';
 
-        const contenedorAccion = document.getElementById('modal-producto-accion');
-        if (usuarioSesionActual) {
-            contenedorAccion.innerHTML = `<button type="button" id="modal-producto-btn-comprar" class="boton-comprar-modal" ${producto.agotado ? 'disabled' : ''}>Comprar</button>`;
-            document.getElementById('modal-producto-btn-comprar')?.addEventListener('click', () => {
-                mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
-            });
-        } else {
-            contenedorAccion.innerHTML = `<button type="button" class="boton-secundario" id="modal-producto-btn-login">Inicia sesión o regístrate para comprar</button>`;
-            document.getElementById('modal-producto-btn-login')?.addEventListener('click', () => {
-                cerrarModalProducto();
-                mostrarVistaLogin('vista-login');
-            });
+            btnComprarModalProducto.onclick = () => {
+                if (usuarioSesionActual) {
+                    mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
+                } else {
+                    compraProductoPendiente = producto;
+                    cerrarModalProducto();
+                    mostrarVistaLogin('vista-login');
+                }
+            };
         }
 
         document.getElementById('modal-producto').classList.remove('oculto');
@@ -1020,19 +1055,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal-producto')?.addEventListener('click', (evento) => {
         if (evento.target.id === 'modal-producto') {
             cerrarModalProducto();
-        }
-    });
-
-    function cerrarModalLocal() {
-        document.getElementById('modal-local').classList.add('oculto');
-        idLocalModalActual = null;
-    }
-
-    document.getElementById('modal-local-cerrar')?.addEventListener('click', cerrarModalLocal);
-
-    document.getElementById('modal-local')?.addEventListener('click', (evento) => {
-        if (evento.target.id === 'modal-local') {
-            cerrarModalLocal();
         }
     });
 
@@ -1065,13 +1087,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${producto.descripcion ?? ''}</p>
                     <p>${precioHtml}</p>
                     <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
-                    ${usuarioSesionActual?.tipo === 'Comerciante' ? `<button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>` : ''}
+                    ${usuarioSesionActual?.tipo === 'Comerciante' ? `
+                        <button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>
+                        <button type="button" class="boton-peligro btn-eliminar-producto" data-id="${producto.idProducto}">Eliminar</button>
+                    ` : ''}
                 `;
                 contenedor.appendChild(tarjeta);
                 const btnEditar = tarjeta.querySelector('.btn-editar-producto');
                 if (btnEditar) {
                     btnEditar.addEventListener('click', () => {
                         abrirEditarProducto(producto.idProducto, idLocal);
+                    });
+                }
+
+                const btnEliminarProducto = tarjeta.querySelector('.btn-eliminar-producto');
+                if (btnEliminarProducto) {
+                    btnEliminarProducto.addEventListener('click', async () => {
+                        const resultado = await Swal.fire({
+                            title: '¿Eliminar producto?',
+                            text: `Se eliminará "${producto.nombre}". Esta acción no se puede deshacer.`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, eliminar',
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: '#dc3545'
+                        });
+                        if (!resultado.isConfirmed) return;
+
+                        try {
+                            const r = await fetch('api/eliminar_mi_producto.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ idProducto: producto.idProducto })
+                            });
+                            const res = await r.json();
+                            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+                            if (res.exito) {
+                                cargarProductosDelLocal(idLocal);
+                            }
+                        } catch (e) {
+                            mostrarMensaje('Error de conexión con el servidor', 'error');
+                        }
                     });
                 }
             });
@@ -1170,6 +1226,20 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('descripcion', document.getElementById('p-descripcion').value);
         datos.append('cantidadDisponible', document.getElementById('p-cantidad').value);
 
+        const esTemporal = document.querySelector('input[name="p-duracion"]:checked')?.value === 'temporal';
+        if (esTemporal) {
+            const fecha = document.getElementById('p-fechaVencimiento').value;
+            if (!fecha) {
+                mostrarMensaje('Indica hasta cuándo estará disponible el producto', 'error');
+                return;
+            }
+            if (new Date(fecha) <= new Date()) {
+                mostrarMensaje('La fecha de disponibilidad debe ser posterior a este momento', 'error');
+                return;
+            }
+            datos.append('fechaVencimiento', fecha);
+        }
+
         const archivoImagen = document.getElementById('p-imagen').files[0];
         if (archivoImagen) {
             datos.append('imagen', archivoImagen);
@@ -1248,6 +1318,20 @@ document.addEventListener('DOMContentLoaded', () => {
         datos.append('descripcion', document.getElementById('ep-descripcion').value);
         datos.append('cantidadDisponible', document.getElementById('ep-cantidad').value);
 
+        const esTemporalEdicion = document.querySelector('input[name="ep-duracion"]:checked')?.value === 'temporal';
+        if (esTemporalEdicion) {
+            const fechaEdicion = document.getElementById('ep-fechaVencimiento').value;
+            if (!fechaEdicion) {
+                mostrarMensaje('Indica hasta cuándo estará disponible el producto', 'error');
+                return;
+            }
+            if (new Date(fechaEdicion) <= new Date()) {
+                mostrarMensaje('La fecha de disponibilidad debe ser posterior a este momento', 'error');
+                return;
+            }
+            datos.append('fechaVencimiento', fechaEdicion);
+        }
+
         const archivoImagen = document.getElementById('ep-imagen').files[0];
         if (archivoImagen) {
             datos.append('imagen', archivoImagen);
@@ -1284,14 +1368,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const contenedor = document.getElementById('lista-comerciantes');
         contenedor.innerHTML = '<p>Cargando...</p>';
 
-                const soloActivos = !(document.getElementById('chk-inactivos-comerciantes')?.checked ?? false);
+        const termino = document.getElementById('com-admin-buscar')?.value.trim() || '';
+        const estado = document.getElementById('com-admin-filtro-estado')?.value || 'activos';
 
         try {
-            const r = await fetch(`api/listar_comerciantes.php?soloActivos=${soloActivos ? '1' : '0'}`);
+            const parametros = new URLSearchParams({ termino, estado });
+            const r = await fetch(`api/listar_comerciantes.php?${parametros.toString()}`);
             const res = await r.json();
 
             if (!res.exito || res.comerciantes.length === 0) {
-                contenedor.innerHTML = '<p>No hay comerciantes registrados todavía.</p>';
+                contenedor.innerHTML = '<p>No se encontraron comerciantes.</p>';
                 return;
             }
 
@@ -1314,7 +1400,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-        document.getElementById('chk-inactivos-comerciantes')?.addEventListener('change', cargarComerciantes);
+    document.getElementById('com-admin-buscar')?.addEventListener('input', debounce(cargarComerciantes, 400));
+    document.getElementById('com-admin-filtro-estado')?.addEventListener('change', cargarComerciantes);
 
     async function abrirDetalleComerciante(idComerciante) {
         try {
@@ -1329,18 +1416,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const c = res.comerciante;
 
             document.getElementById('dc-idComerciante').value = c.idComerciante;
-            document.getElementById('dc-nombre').value = c.nombre;
-            document.getElementById('dc-alias').value = c.alias;
-            document.getElementById('dc-correo').value = c.correo;
+            document.getElementById('dc-solo-nombre').textContent = c.nombre;
+            document.getElementById('dc-solo-alias').textContent = c.alias;
+            document.getElementById('dc-solo-correo').textContent = c.correo;
             document.getElementById('dc-identificacion').textContent = c.numeroIdentificacion;
-            document.getElementById('dc-password').value = '';
+            document.getElementById('dc-solo-estado').textContent = c.activo ? 'Activo' : 'Inactivo';
 
             const imgFoto = document.getElementById('dc-foto-actual');
-            if (c.fotoPerfil) {
-                imgFoto.src = `imagenes/${c.fotoPerfil}`;
-                imgFoto.classList.remove('oculto');
-            } else {
-                imgFoto.classList.add('oculto');
+            if (imgFoto) {
+                if (c.fotoPerfil) {
+                    imgFoto.src = `imagenes/${c.fotoPerfil}`;
+                    imgFoto.classList.remove('oculto');
+                } else {
+                    imgFoto.classList.add('oculto');
+                }
             }
 
             const btnDesactivar = document.getElementById('btn-desactivar-comerciante');
@@ -1363,44 +1452,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-volver-comerciantes')?.addEventListener('click', mostrarListaComerciantes);
 
-    document.getElementById('form-editar-comerciante')?.addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-
-        const datos = new FormData();
-        datos.append('idComerciante', document.getElementById('dc-idComerciante').value);
-        datos.append('nombre', document.getElementById('dc-nombre').value);
-        datos.append('alias', document.getElementById('dc-alias').value);
-        datos.append('correo', document.getElementById('dc-correo').value);
-        datos.append('password', document.getElementById('dc-password').value);
-
-        const archivoFoto = document.getElementById('dc-fotoPerfil').files[0];
-        if (archivoFoto) {
-            datos.append('fotoPerfil', archivoFoto);
-        }
-
-        try {
-            const r = await fetch('api/editar_comerciante.php', {
-                method: 'POST',
-                body: datos
-            });
-            const res = await r.json();
-
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-            if (res.exito) {
-                mostrarListaComerciantes();
-                cargarComerciantes();
-            }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
-    });
-
     document.getElementById('btn-desactivar-comerciante')?.addEventListener('click', async () => {
         const idComerciante = document.getElementById('dc-idComerciante').value;
-        const nombre = document.getElementById('dc-nombre').value;
+        const nombre = document.getElementById('dc-solo-nombre').textContent;
 
-        if (!confirm(`¿Seguro que querés desactivar a "${nombre}"? Sus locales seguirán existiendo, pero no podrá ingresar más.`)) {
+        const resultado = await Swal.fire({
+            title: '¿Desactivar comerciante?',
+            text: `¿Seguro que querés desactivar a "${nombre}"? Sus locales seguirán existiendo, pero no podrá ingresar más.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        });
+        if (!resultado.isConfirmed) {
             return;
         }
 
@@ -1457,14 +1522,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const contenedor = document.getElementById('lista-clientes');
         contenedor.innerHTML = '<p>Cargando...</p>';
 
-        const soloActivos = !document.getElementById('chk-inactivos-clientes').checked;
+        const termino = document.getElementById('cl-admin-buscar')?.value.trim() || '';
+        const estado = document.getElementById('cl-admin-filtro-estado')?.value || 'activos';
 
         try {
-            const r = await fetch(`api/listar_clientes.php?soloActivos=${soloActivos ? '1' : '0'}`);
+            const parametros = new URLSearchParams({ termino, estado });
+            const r = await fetch(`api/listar_clientes.php?${parametros.toString()}`);
             const res = await r.json();
 
             if (!res.exito || res.clientes.length === 0) {
-                contenedor.innerHTML = '<p>No hay clientes registrados todavía.</p>';
+                contenedor.innerHTML = '<p>No se encontraron clientes.</p>';
                 return;
             }
 
@@ -1486,7 +1553,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('chk-inactivos-clientes')?.addEventListener('change', cargarClientes);
+    document.getElementById('cl-admin-buscar')?.addEventListener('input', debounce(cargarClientes, 400));
+    document.getElementById('cl-admin-filtro-estado')?.addEventListener('change', cargarClientes);
 
     async function abrirDetalleCliente(idCliente) {
         try {
@@ -1502,19 +1570,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const u = res.ubicacion;
 
             document.getElementById('dcl-idCliente').value = c.idCliente;
-            document.getElementById('dcl-nombreCompleto').value = c.nombreCompleto;
-            document.getElementById('dcl-correo').value = c.correo;
+            document.getElementById('dcl-solo-nombre').textContent = c.nombreCompleto;
+            document.getElementById('dcl-solo-correo').textContent = c.correo;
             document.getElementById('dcl-identificacion').textContent = c.numeroIdentificacion;
             document.getElementById('dcl-direccion').textContent =
                 u.direccionExacta + (u.referencia ? ` (${u.referencia})` : '');
-            document.getElementById('dcl-password').value = '';
+            document.getElementById('dcl-solo-estado').textContent = c.activo ? 'Activo' : 'Inactivo';
 
             const imgFoto = document.getElementById('dcl-foto-actual');
-            if (c.fotoPerfil) {
-                imgFoto.src = `imagenes/${c.fotoPerfil}`;
-                imgFoto.classList.remove('oculto');
-            } else {
-                imgFoto.classList.add('oculto');
+            if (imgFoto) {
+                if (c.fotoPerfil) {
+                    imgFoto.src = `imagenes/${c.fotoPerfil}`;
+                    imgFoto.classList.remove('oculto');
+                } else {
+                    imgFoto.classList.add('oculto');
+                }
             }
 
             const btnDesactivarCl = document.getElementById('btn-desactivar-cliente');
@@ -1530,8 +1600,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             panelListaClientes.classList.add('oculto');
             panelDetalleCliente.classList.remove('oculto');
-
-            cargarLocalesQueSigueCliente(c.idCliente);
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del cliente', 'error');
         }
@@ -1544,11 +1612,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const datos = new FormData();
         datos.append('idCliente', document.getElementById('dcl-idCliente').value);
-        datos.append('nombreCompleto', document.getElementById('dcl-nombreCompleto').value);
-        datos.append('correo', document.getElementById('dcl-correo').value);
-        datos.append('password', document.getElementById('dcl-password').value);
+        datos.append('nombreCompleto', document.getElementById('dcl-nombreCompleto')?.value ?? '');
+        datos.append('correo', document.getElementById('dcl-correo')?.value ?? '');
+        datos.append('password', document.getElementById('dcl-password')?.value ?? '');
 
-        const archivoFoto = document.getElementById('dcl-fotoPerfil').files[0];
+        const archivoFoto = document.getElementById('dcl-fotoPerfil')?.files[0];
         if (archivoFoto) {
             datos.append('fotoPerfil', archivoFoto);
         }
@@ -1573,9 +1641,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-desactivar-cliente')?.addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
-        const nombre = document.getElementById('dcl-nombreCompleto').value;
+        const nombre = document.getElementById('dcl-solo-nombre').textContent;
 
-        if (!confirm(`¿Seguro que querés desactivar a "${nombre}"?`)) {
+        const resultado = await Swal.fire({
+            title: '¿Desactivar cliente?',
+            text: `¿Seguro que querés desactivar a "${nombre}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        });
+        if (!resultado.isConfirmed) {
             return;
         }
 
@@ -1782,6 +1859,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function cargarLocalesQueSigueCliente(idCliente, idContenedor = 'dcl-locales-lista') {
         const contenedor = document.getElementById(idContenedor);
+        if (!contenedor) return;
         contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         try {
@@ -1828,10 +1906,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-seguir-local')?.addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
-        const nombreLocal = document.getElementById('dcl-agregar-local-nombre').value.trim();
+        const nombreLocal = document.getElementById('dcl-agregar-local-nombre')?.value.trim();
         const mensaje = document.getElementById('dcl-seguir-local-msg');
 
-        if (!nombreLocal) return;
+        if (!nombreLocal || !mensaje) return;
 
         mensaje.textContent = 'Buscando local...';
         mensaje.className = 'ayuda';
@@ -1915,41 +1993,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 obtenerLocalesActivos()
             ]);
 
-            llenarSelect(document.getElementById('resena-cliente'), clientes, 'idCliente', 'nombreCompleto');
-            llenarSelect(document.getElementById('resena-local'), locales, 'idLocal', 'nombreLocal');
             llenarSelect(document.getElementById('resena-filtro-local'), locales, 'idLocal', 'nombreLocal');
             llenarSelect(document.getElementById('resena-filtro-cliente'), clientes, 'idCliente', 'nombreCompleto');
         } catch (e) {
             mostrarMensaje('No se pudieron cargar los datos de reseñas', 'error');
         }
     }
-
-    document.getElementById('form-resena')?.addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-
-        const idCliente = document.getElementById('resena-cliente').value;
-        const idLocal = document.getElementById('resena-local').value;
-        const puntuacion = document.getElementById('resena-puntuacion').value;
-        const comentario = document.getElementById('resena-comentario').value.trim();
-
-        try {
-            const r = await fetch('api/registrar_resenia.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idLocal, puntuacion, comentario })
-            });
-            const res = await r.json();
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-            if (res.exito) {
-                document.getElementById('resena-comentario').value = '';
-                document.getElementById('resena-filtro-local').value = idLocal;
-                await cargarResenasLocal();
-            }
-        } catch (e) {
-            mostrarMensaje('Error de conexión al publicar la reseña', 'error');
-        }
-    });
 
     async function cargarResenasLocal() {
         const idLocal = document.getElementById('resena-filtro-local').value;
@@ -1958,11 +2007,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!idLocal) {
             resumen.textContent = 'Selecciona un local para ver su calificación.';
-            contenedor.innerHTML = '';
+            if (contenedor) contenedor.innerHTML = '';
             return;
         }
 
-        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
+        if (contenedor) contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         try {
             const r = await fetch(`api/listar_resenias_local.php?idLocal=${encodeURIComponent(idLocal)}`);
@@ -1970,12 +2019,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!res.exito) {
                 resumen.textContent = 'No se pudo obtener la calificación.';
-                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'Error al cargar reseñas')}</p>`;
+                if (contenedor) contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'Error al cargar reseñas')}</p>`;
                 return;
             }
 
             const promedio = res.promedio === null ? 'Sin calificación' : `${Number(res.promedio).toFixed(1)} / 5`;
             resumen.textContent = `Promedio: ${promedio} · ${res.total} reseña${res.total === 1 ? '' : 's'}`;
+
+            if (!contenedor) return;
 
             if (res.resenias.length === 0) {
                 contenedor.innerHTML = '<p class="ayuda">Este local todavía no tiene reseñas.</p>';
@@ -1988,84 +2039,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 tarjeta.className = 'tarjeta';
                 const estrellas = '★'.repeat(resenia.puntuacion) + '☆'.repeat(5 - resenia.puntuacion);
 
-                const esPropia = usuarioSesionActual
-                    && usuarioSesionActual.tipo === 'Cliente'
-                    && Number(usuarioSesionActual.id) === Number(resenia.idCliente);
-
                 tarjeta.innerHTML = `
                     <h3>${escaparHtml(resenia.nombreCliente)}</h3>
                     <p class="estrellas" aria-label="${resenia.puntuacion} de 5">${estrellas}</p>
                     <p>${escaparHtml(resenia.comentario)}</p>
                     <p class="ayuda">${escaparHtml(formatearFecha(resenia.fechaResenia))}</p>
-                    ${esPropia ? `
-                    <div class="acciones-tarjeta">
-                        <button type="button" class="boton-pequeno boton-editar btn-editar-resena">Editar</button>
-                        <button type="button" class="boton-peligro btn-eliminar-resena">Eliminar</button>
-                    </div>
-                    ` : ''}
                 `;
-
-                if (esPropia) {
-                    tarjeta.querySelector('.btn-editar-resena').addEventListener('click', () => editarResenaDesdeLista(resenia));
-                    tarjeta.querySelector('.btn-eliminar-resena').addEventListener('click', () => eliminarResenaDesdeLista(resenia.idResenia));
-                }
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
             resumen.textContent = 'No se pudo obtener la calificación.';
-            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar reseñas.</p>';
+            if (contenedor) contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar reseñas.</p>';
         }
     }
 
     document.getElementById('btn-cargar-resenas')?.addEventListener('click', cargarResenasLocal);
 
-    async function editarResenaDesdeLista(resenia) {
-        const comentario = prompt('Edita el comentario:', resenia.comentario);
-        if (comentario === null) return;
-
-        const puntuacionTexto = prompt('Nueva puntuación del 1 al 5:', String(resenia.puntuacion));
-        if (puntuacionTexto === null) return;
-
-        const puntuacion = Number(puntuacionTexto);
-        if (!Number.isInteger(puntuacion) || puntuacion < 1 || puntuacion > 5) {
-            mostrarMensaje('La puntuación debe ser un número entero del 1 al 5', 'error');
-            return;
-        }
-
-        try {
-            const r = await fetch('api/editar_resenia.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idResenia: resenia.idResenia, comentario, puntuacion })
-            });
-            const respuesta = await r.json();
-            mostrarMensaje(respuesta.mensaje, respuesta.exito ? 'exito' : 'error');
-            if (respuesta.exito) cargarResenasLocal();
-        } catch (e) {
-            mostrarMensaje('Error de conexión al editar la reseña', 'error');
-        }
-    }
-
-    async function eliminarResenaDesdeLista(idResenia) {
-        if (!confirm('¿Seguro que querés eliminar esta reseña?')) return;
-
-        try {
-            const r = await fetch('api/eliminar_resenia.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idResenia })
-            });
-            const res = await r.json();
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-            if (res.exito) cargarResenasLocal();
-        } catch (e) {
-            mostrarMensaje('Error de conexión al eliminar la reseña', 'error');
-        }
-    }
-
     async function cargarUsuariosHistorial() {
-        const tipo = document.getElementById('historial-tipo').value;
+        const tipo = document.getElementById('historial-tipo')?.value;
         const select = document.getElementById('historial-usuario');
+        if (!select) return;
         select.innerHTML = '<option value="">Cargando...</option>';
 
         try {
@@ -2078,107 +2071,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 llenarSelect(select, res.exito ? res.comerciantes : [], 'idComerciante', 'nombre');
             }
 
-            document.getElementById('historial-password-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
-            document.getElementById('historial-fotos-lista').innerHTML = '<p class="ayuda">Selecciona un usuario y consulta su historial.</p>';
+            document.getElementById('historial-password-lista')?.setAttribute('data-cargado', '1');
         } catch (e) {
             select.innerHTML = '<option value="">No se pudieron cargar usuarios</option>';
         }
     }
 
     document.getElementById('historial-tipo')?.addEventListener('change', cargarUsuariosHistorial);
-
-    async function consultarHistorialUsuario() {
-        const tipoUsuario = document.getElementById('historial-tipo').value;
-        const idUsuario = document.getElementById('historial-usuario').value;
-        const listaPassword = document.getElementById('historial-password-lista');
-        const listaFotos = document.getElementById('historial-fotos-lista');
-
-        if (!idUsuario) {
-            mostrarMensaje('Selecciona un usuario para consultar el historial', 'error');
-            return;
-        }
-
-        listaPassword.innerHTML = '<p class="ayuda">Cargando...</p>';
-        listaFotos.innerHTML = '<p class="ayuda">Cargando...</p>';
-
-        try {
-            const parametros = new URLSearchParams({ idUsuario, tipoUsuario });
-            const r = await fetch(`api/listar_historial_usuario.php?${parametros.toString()}`);
-            const res = await r.json();
-
-            if (!res.exito) {
-                listaPassword.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
-                listaFotos.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje)}</p>`;
-                return;
-            }
-
-            if (res.passwords.length === 0) {
-                listaPassword.innerHTML = '<p class="ayuda">No hay cambios de contraseña registrados.</p>';
-            } else {
-                listaPassword.innerHTML = '';
-                res.passwords.forEach(item => {
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'tarjeta';
-                    tarjeta.innerHTML = `
-                        <h3>Contraseña actualizada</h3>
-                        <p>${escaparHtml(formatearFecha(item.fecha))}</p>
-                    `;
-                    listaPassword.appendChild(tarjeta);
-                });
-            }
-
-            if (res.fotos.length === 0) {
-                listaFotos.innerHTML = '<p class="ayuda">No hay cambios de foto registrados.</p>';
-            } else {
-                listaFotos.innerHTML = '';
-                res.fotos.forEach(item => {
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'tarjeta';
-                    tarjeta.innerHTML = `
-                        ${item.rutaNueva ? `<img src="imagenes/${encodeURIComponent(item.rutaNueva)}" alt="Nueva foto" class="imagen-producto">` : ''}
-                        <h3>Cambio de foto</h3>
-                        <p>${escaparHtml(formatearFecha(item.fecha))}</p>
-                    `;
-                    listaFotos.appendChild(tarjeta);
-                });
-            }
-        } catch (e) {
-            listaPassword.innerHTML = '<p class="ayuda error">Error de conexión.</p>';
-            listaFotos.innerHTML = '<p class="ayuda error">Error de conexión.</p>';
-        }
-    }
-
-    document.getElementById('btn-ver-historial')?.addEventListener('click', consultarHistorialUsuario);
-
-    document.getElementById('form-cambiar-password')?.addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-
-        const tipoUsuario = document.getElementById('historial-tipo').value;
-        const idUsuario = document.getElementById('historial-usuario').value;
-        const passwordActual = document.getElementById('historial-password-actual').value;
-        const passwordNueva = document.getElementById('historial-password-nueva').value;
-
-        if (!idUsuario) {
-            mostrarMensaje('Selecciona un usuario antes de cambiar la contraseña', 'error');
-            return;
-        }
-
-        try {
-            const r = await fetch('api/cambiar_password_usuario.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idUsuario, tipoUsuario, passwordActual, passwordNueva })
-            });
-            const res = await r.json();
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-            document.getElementById('historial-password-actual').value = '';
-            document.getElementById('historial-password-nueva').value = '';
-            await consultarHistorialUsuario();
-        } catch (e) {
-            mostrarMensaje('Error de conexión al cambiar la contraseña', 'error');
-        }
-    });
 
     function obtenerCoordenadasGPS() {
         return new Promise((resolve, reject) => {
@@ -2225,13 +2124,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.autenticado) {
                 actualizarIndicadorSesion(res.usuario);
-                if (res.usuario.tipo === 'Cliente') {
-                    mostrarVistaLogin('vista-listado');
-                } else if (res.usuario.tipo === 'Comerciante') {
-                    await mostrarSelectorPerfilesLocal();
-                } else {
+                if (res.usuario.tipo === 'SuperAdmin') {
                     mostrarVistaLogin('vista-dashboard-admin');
                     cargarDashboardAdmin();
+                } else {
+                    mostrarVistaLogin('vista-inicio');
                 }
             } else {
                 actualizarIndicadorSesion(null);
@@ -2240,6 +2137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarIndicadorSesion(null);
         }
     }
+
     function actualizarMenuPorRol(tipoUsuario) {
         botonesMenu.forEach(boton => {
             const rol = boton.dataset.rol;
@@ -2279,13 +2177,13 @@ document.addEventListener('DOMContentLoaded', () => {
             botonLogin.classList.toggle('oculto', !!usuario);
         }
 
-        if (!indicador || !texto) return;
-
-        if (usuario) {
-            texto.textContent = `Sesión: ${usuario.nombre}`;
-            indicador.classList.remove('oculto');
-        } else {
-            indicador.classList.add('oculto');
+        if (indicador && texto) {
+            if (usuario) {
+                texto.textContent = `Sesión: ${usuario.nombre}`;
+                indicador.classList.remove('oculto');
+            } else {
+                indicador.classList.add('oculto');
+            }
         }
 
         const botonEmpezarVender = document.getElementById('btn-empezar-vender');
@@ -2339,13 +2237,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) {
                 }
 
-                if (res.usuario.tipo === 'Cliente') {
-                    mostrarVistaLogin('vista-listado');
-                } else if (res.usuario.tipo === 'Comerciante') {
-                    await mostrarSelectorPerfilesLocal();
-                } else {
+                if (compraProductoPendiente) {
+                    const productoRetomado = compraProductoPendiente;
+                    compraProductoPendiente = null;
+                    mostrarVistaLogin('vista-inicio');
+                    abrirModalProducto(productoRetomado);
+                } else if (res.usuario.tipo === 'SuperAdmin') {
                     mostrarVistaLogin('vista-dashboard-admin');
                     cargarDashboardAdmin();
+                } else {
+                    mostrarVistaLogin('vista-inicio');
                 }
             }
         } catch (e) {
@@ -2354,6 +2255,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-cerrar-sesion')?.addEventListener('click', async () => {
+        const resultado = await Swal.fire({
+            title: '¿Cerrar sesión?',
+            text: '¿Seguro que quieres cerrar sesión?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cerrar sesión',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#8E7CC3'
+        });
+        if (!resultado.isConfirmed) {
+            return;
+        }
+
         try {
             await fetch('api/cerrar_sesion.php', { method: 'POST' });
         } catch (e) { }
@@ -2484,7 +2398,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Se aplica a los mismos campos que el backend valida con validarSoloLetras()
     soloLetras(document.getElementById('cl-nombreCompleto'));
     soloLetras(document.getElementById('dc-nombre'));
     soloLetras(document.getElementById('dc-alias'));
@@ -2494,7 +2407,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return valor.replace(/[^A-Za-z0-9]/g, '');
     }
 
-    // Rellena el pie de página
     const pieAnio = document.getElementById('pie-anio');
     if (pieAnio) pieAnio.textContent = new Date().getFullYear();
 
@@ -2512,7 +2424,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    //GPS
     document.getElementById('btn-cerc-ubicacion')?.addEventListener('click', async () => {
         const msg = document.getElementById('cerc-ubicacion-msg');
         msg.textContent = 'Obteniendo tu ubicación...';
@@ -2605,7 +2516,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    //Buscar comerciante por ID 
     const inputBuscarIdentComerciante = document.getElementById('admin-buscar-identificacion');
 
     inputBuscarIdentComerciante?.addEventListener('input', () => {
@@ -2642,7 +2552,6 @@ document.addEventListener('DOMContentLoaded', () => {
             msg.className = 'ayuda error';
         }
     });
-
 
     async function cargarHistorialActividadLocal(idLocal) {
         const contenedor = document.getElementById('e-actividad-lista');
@@ -2685,7 +2594,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // resenias escritas por un cliente 
     document.getElementById('btn-ver-resenas-cliente')?.addEventListener('click', async () => {
         const idCliente = document.getElementById('resena-filtro-cliente').value;
         const contenedor = document.getElementById('lista-resenas-cliente');
@@ -2730,7 +2638,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-
     // ============================================================
     // Dashboard de SuperAdmin
     // ============================================================
@@ -2740,7 +2647,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const statComerciantes = document.getElementById('stat-comerciantes');
         const statComerciantesInactivos = document.getElementById('stat-comerciantes-inactivos');
 
-        if (!statLocales) return; // la vista del dashboard todavía no existe en el HTML
+        if (!statLocales) return;
 
         statLocales.textContent = '—';
         statClientes.textContent = '—';
@@ -2934,23 +2841,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.textContent = '👁️';
         }
     });
-
-    // Mostrar menú secundario al iniciar sesión
-    function mostrarMenuSecundario(rol) {
-        const menuSec = document.getElementById('menu-secundario');
-        menuSec.style.display = 'flex';
-
-        // Mostrar solo botones según rol
-        document.querySelectorAll('#menu-secundario .menu-boton').forEach(boton => {
-            const rolRequerido = boton.dataset.rol;
-            boton.style.display = (rol === rolRequerido || !rolRequerido) ? 'inline-block' : 'none';
-        });
-    }
-
-    // Ocultar menú secundario al cerrar sesión
-    function ocultarMenuSecundario() {
-        document.getElementById('menu-secundario').style.display = 'none';
-    }
 
     async function cargarProductosRecientesInicio() {
         const contenedor = document.getElementById('productos-recientes-inicio');
@@ -3224,6 +3114,256 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mco-btn-ir-mis-locales')?.addEventListener('click', async () => {
         await mostrarSelectorPerfilesLocal();
     });
+
+    const ETIQUETAS_TIPO_HISTORIAL = {
+        password: 'Cambio de contraseña',
+        perfilImagen: 'Cambio de foto',
+        nombre: 'Cambio de nombre',
+        correo: 'Cambio de correo',
+        telefono: 'Cambio de teléfono',
+        logo: 'Cambio de logo',
+        precio: 'Cambio de precio',
+        descuento: 'Cambio de descuento',
+        activo: 'Producto eliminado'
+    };
+
+    const ICONOS_TIPO_HISTORIAL = {
+        password: '🔒',
+        perfilImagen: '🖼️',
+        nombre: '✏️',
+        correo: '✉️',
+        telefono: '📞',
+        logo: '🏷️',
+        precio: '💲',
+        descuento: '🏷️',
+        activo: '🗑️'
+    };
+
+    function etiquetaHistorial(registro) {
+        if (registro.tipo === 'activo') {
+            return Number(registro.valorNuevo) === 1 ? 'Producto reactivado' : 'Producto eliminado';
+        }
+        return ETIQUETAS_TIPO_HISTORIAL[registro.tipo] || registro.tipo;
+    }
+
+    let historialTipoActivo = 'todos';
+    let historialBuscarDebounced = null;
+    let historialRegistrosCache = [];
+
+    async function cargarHistorialGlobal() {
+        const contenedor = document.getElementById('hist-tabla');
+        const tabsContenedor = document.getElementById('hist-tabs');
+        const entidadTipo = document.getElementById('hist-filtro-entidad')?.value || 'todos';
+        const termino = document.getElementById('hist-buscar')?.value.trim() || '';
+
+        contenedor.innerHTML = '<p class="ayuda" style="padding: 1.2rem;">Cargando...</p>';
+
+        try {
+            const parametros = new URLSearchParams({ entidadTipo, termino, tipo: historialTipoActivo });
+            const r = await fetch(`api/listar_historial_global.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error" style="padding: 1.2rem;">${escaparHtml(res.mensaje || 'No se pudo cargar el historial')}</p>`;
+                tabsContenedor.innerHTML = '';
+                return;
+            }
+
+            historialRegistrosCache = res.registros;
+
+            tabsContenedor.innerHTML = '';
+            const conteos = res.conteos || { todos: 0 };
+            Object.keys(conteos).forEach(tipo => {
+                const boton = document.createElement('button');
+                boton.type = 'button';
+                boton.className = 'historial-tab' + (tipo === historialTipoActivo ? ' activo' : '');
+                const etiqueta = tipo === 'todos' ? 'Todos' : (ETIQUETAS_TIPO_HISTORIAL[tipo] || tipo);
+                boton.textContent = `${etiqueta} (${conteos[tipo]})`;
+                boton.addEventListener('click', () => {
+                    historialTipoActivo = tipo;
+                    cargarHistorialGlobal();
+                });
+                tabsContenedor.appendChild(boton);
+            });
+
+            if (res.registros.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda" style="padding: 1.2rem;">No hay registros de historial todavía.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            res.registros.forEach(registro => {
+                const fila = document.createElement('div');
+                fila.className = 'fila-relacion historial-fila';
+
+                let nombrePrincipal = registro.usuarioNombre ?? '(sin nombre)';
+                if (registro.localNombre) {
+                    nombrePrincipal += ` — ${registro.localNombre}`;
+                }
+
+                const esCreacion = registro.valorAnterior === null;
+                let etiquetaAutor = '';
+                if (registro.autorNombre) {
+                    etiquetaAutor = `<span class="ayuda">${esCreacion ? 'Creado' : 'Editado'} por ${escaparHtml(registro.autorNombre)}</span>`;
+                }
+
+                fila.innerHTML = `
+                    <span>${ICONOS_TIPO_HISTORIAL[registro.tipo] || '📋'} ${escaparHtml(etiquetaHistorial(registro))}</span>
+                    <span class="etiqueta-tipo">${escaparHtml(registro.entidadTipo)}</span>
+                    <span>${escaparHtml(nombrePrincipal)}</span>
+                    ${etiquetaAutor}
+                    <span class="ayuda">${escaparHtml(formatearFecha(registro.fecha))}</span>
+                `;
+                fila.style.cursor = 'pointer';
+                fila.addEventListener('click', () => abrirPanelHistorial(registro));
+                contenedor.appendChild(fila);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error" style="padding: 1.2rem;">Error de conexión al cargar el historial.</p>';
+        }
+    }
+
+    function abrirPanelHistorial(registro) {
+        document.getElementById('hist-panel-icono').textContent = ICONOS_TIPO_HISTORIAL[registro.tipo] || '📋';
+        document.getElementById('hist-panel-tipo-nombre').textContent = etiquetaHistorial(registro);
+        document.getElementById('hist-panel-entidad-badge').textContent = registro.entidadTipo;
+
+        let nombreUsuario = registro.usuarioNombre ?? '(sin nombre)';
+        if (registro.localNombre) {
+            nombreUsuario += ` (local: ${registro.localNombre})`;
+        }
+        document.getElementById('hist-panel-usuario').textContent = nombreUsuario;
+        document.getElementById('hist-panel-entidad-tipo').textContent = registro.autorNombre
+            ? `${registro.entidadTipo} — hecho por ${registro.autorNombre}`
+            : registro.entidadTipo;
+
+        const esCreacion = registro.valorAnterior === null;
+        document.getElementById('hist-panel-accion').textContent =
+            registro.tipo === 'activo' ? etiquetaHistorial(registro) : (esCreacion ? 'Creado — ' : '') + (ETIQUETAS_TIPO_HISTORIAL[registro.tipo] || registro.tipo);
+        document.getElementById('hist-panel-fecha').textContent = formatearFecha(registro.fecha);
+
+        const esPassword = registro.tipo === 'password' || registro.tipo === 'activo';
+        document.getElementById('hist-panel-cambio-wrap').classList.toggle('oculto', esPassword);
+        if (!esPassword) {
+            document.getElementById('hist-panel-cambio').textContent = esCreacion
+                ? `Valor inicial: ${registro.valorNuevo ?? '(vacío)'}`
+                : `${registro.valorAnterior ?? '(vacío)'} → ${registro.valorNuevo ?? '(vacío)'}`;
+        }
+
+        document.getElementById('hist-panel-overlay').classList.remove('oculto');
+    }
+
+    function activarMensajesValidacionNativa() {
+        document.querySelectorAll('input[required], select[required], textarea[required]').forEach(campo => {
+            campo.addEventListener('invalid', (evento) => {
+                evento.preventDefault();
+
+                const label = document.querySelector(`label[for="${campo.id}"]`);
+                const nombreCampo = label ? label.textContent.trim() : 'Este campo';
+
+                let mensaje;
+                if (campo.validity.valueMissing) {
+                    mensaje = `${nombreCampo} es obligatorio`;
+                } else if (campo.validity.typeMismatch && campo.type === 'email') {
+                    mensaje = `Escribe un correo válido en "${nombreCampo}"`;
+                } else if (campo.validity.tooShort) {
+                    mensaje = `${nombreCampo} debe tener al menos ${campo.minLength} caracteres`;
+                } else if (campo.validity.rangeUnderflow) {
+                    mensaje = `${nombreCampo} debe ser mayor o igual a ${campo.min}`;
+                } else if (campo.validity.rangeOverflow) {
+                    mensaje = `${nombreCampo} debe ser menor o igual a ${campo.max}`;
+                } else if (campo.validity.patternMismatch) {
+                    mensaje = `El formato de "${nombreCampo}" no es válido`;
+                } else {
+                    mensaje = `Revisa el campo "${nombreCampo}"`;
+                }
+
+                mostrarMensaje(mensaje, 'error');
+                campo.focus();
+            });
+        });
+    }
+
+    activarMensajesValidacionNativa();
+
+    function establecerMinimoFechaHoraActual(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const ahora = new Date();
+        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+        input.min = ahora.toISOString().slice(0, 16);
+    }
+    document.querySelectorAll('input[name="p-duracion"], input[name="ep-duracion"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            establecerMinimoFechaHoraActual('p-fechaVencimiento');
+            establecerMinimoFechaHoraActual('ep-fechaVencimiento');
+        });
+    });
+
+    document.getElementById('hist-panel-cerrar')?.addEventListener('click', () => {
+        document.getElementById('hist-panel-overlay').classList.add('oculto');
+    });
+
+    document.getElementById('hist-panel-overlay')?.addEventListener('click', (evento) => {
+        if (evento.target.id === 'hist-panel-overlay') {
+            document.getElementById('hist-panel-overlay').classList.add('oculto');
+        }
+    });
+
+    document.getElementById('hist-filtro-entidad')?.addEventListener('change', () => {
+        historialTipoActivo = 'todos';
+        cargarHistorialGlobal();
+    });
+
+    historialBuscarDebounced = debounce(cargarHistorialGlobal, 400);
+    document.getElementById('hist-buscar')?.addEventListener('input', historialBuscarDebounced);
+
+    document.querySelectorAll('input[name="p-duracion"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.getElementById('p-fechaVencimiento-wrap').classList.toggle(
+                'oculto',
+                document.querySelector('input[name="p-duracion"]:checked').value !== 'temporal'
+            );
+        });
+    });
+
+    document.querySelectorAll('input[name="ep-duracion"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.getElementById('ep-fechaVencimiento-wrap').classList.toggle(
+                'oculto',
+                document.querySelector('input[name="ep-duracion"]:checked').value !== 'temporal'
+            );
+        });
+    });
+
+    document.getElementById('btn-eliminar-local')?.addEventListener('click', async () => {
+        const idLocal = document.getElementById('e-idLocal').value;
+        const nombreLocal = document.getElementById('e-solo-nombre').textContent;
+
+        const resultado = await Swal.fire({
+            title: '¿Eliminar local?',
+            text: `Se eliminará "${nombreLocal}" y dejará de aparecer en la plataforma. Esta acción no se puede deshacer.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        });
+        if (!resultado.isConfirmed) return;
+
+        try {
+            const r = await fetch('api/eliminar_mi_local.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idLocal })
+            });
+            const res = await r.json();
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+            if (res.exito) {
+                await mostrarSelectorPerfilesLocal();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
 });
-
-

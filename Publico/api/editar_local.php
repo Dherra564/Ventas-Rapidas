@@ -48,7 +48,7 @@ class EditarLocalHandler
             $idLocal
         );
 
-        $actualizado = $controlador->editar($local);
+        $actualizado = $controlador->editar($local, $idComerciante);
 
         return [
             'exito' => $actualizado,

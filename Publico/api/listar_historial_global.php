@@ -12,57 +12,58 @@ try {
 
     $conexion = BaseDatos::obtenerConexion();
 
+    $esComercianteCase = "CASE WHEN EXISTS (
+        SELECT 1 FROM tbcomerciante co
+        WHERE co.tbusuarioid = u.tbusuarioid AND co.tbcomercianteactivo = 1
+    ) THEN 'Comerciante' ELSE 'Cliente' END";
+
     $union = "
-        SELECT CONCAT('cp-', h.tbcomerciantepasswordhistoricoid) AS id, 'password' AS tipo, 'Comerciante' AS entidadTipo, c.tbcomerciantenombre AS usuarioNombre, h.valoranterior AS valorAnterior, h.valornuevo AS valorNuevo, h.fecha AS fecha
-        FROM tbcomerciantepasswordhistorico h JOIN tbcomerciante c ON c.tbcomercianteid = h.tbcomercianteid
+        SELECT CONCAT('up-', h.tbusuariopasswordhistoricoid) AS id, 'password' AS tipo, {$esComercianteCase} AS entidadTipo, u.tbusuarionombrecompleto AS usuarioNombre, NULL AS localNombre, NULL AS autorNombre, h.valoranterior AS valorAnterior, h.valornuevo AS valorNuevo, h.fecha AS fecha
+        FROM tbusuariopasswordhistorico h JOIN tbusuario u ON u.tbusuarioid = h.tbusuarioid
 
         UNION ALL
-        SELECT CONCAT('clp-', h.tbclientepasswordhistoricoid), 'password', 'Cliente', c.tbclientenombrecompleto, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbclientepasswordhistorico h JOIN tbcliente c ON c.tbclienteid = h.tbclienteid
+        SELECT CONCAT('uf-', h.tbusuarioperfilimagenhistoricoid), 'perfilImagen', {$esComercianteCase}, u.tbusuarionombrecompleto, NULL, NULL, h.valoranterior, h.valornuevo, h.fecha
+        FROM tbusuarioperfilimagenhistorico h JOIN tbusuario u ON u.tbusuarioid = h.tbusuarioid
 
         UNION ALL
-        SELECT CONCAT('cf-', h.tbcomercianteperfilimagenhistoricoid), 'perfilImagen', 'Comerciante', c.tbcomerciantenombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbcomercianteperfilimagenhistorico h JOIN tbcomerciante c ON c.tbcomercianteid = h.tbcomercianteid
+        SELECT CONCAT('un-', h.tbusuarionombrecompletohistoricoid), 'nombre', {$esComercianteCase}, u.tbusuarionombrecompleto, NULL, NULL, h.valoranterior, h.valornuevo, h.fecha
+        FROM tbusuarionombrecompletohistorico h JOIN tbusuario u ON u.tbusuarioid = h.tbusuarioid
 
         UNION ALL
-        SELECT CONCAT('clf-', h.tbclienteperfilimagenhistoricoid), 'perfilImagen', 'Cliente', c.tbclientenombrecompleto, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbclienteperfilimagenhistorico h JOIN tbcliente c ON c.tbclienteid = h.tbclienteid
+        SELECT CONCAT('uc-', h.tbusuariocorreohistoricoid), 'correo', {$esComercianteCase}, u.tbusuarionombrecompleto, NULL, NULL, h.valoranterior, h.valornuevo, h.fecha
+        FROM tbusuariocorreohistorico h JOIN tbusuario u ON u.tbusuarioid = h.tbusuarioid
 
         UNION ALL
-        SELECT CONCAT('cn-', h.tbcomerciantenombrehistoricoid), 'nombre', 'Comerciante', c.tbcomerciantenombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbcomerciantenombrehistorico h JOIN tbcomerciante c ON c.tbcomercianteid = h.tbcomercianteid
+        SELECT CONCAT('ln-', h.tblocalnombrehistoricoid), 'nombre', 'Local', l.tblocalnombre, NULL, au.tbusuarionombrecompleto, h.valoranterior, h.valornuevo, h.fecha
+        FROM tblocalnombrehistorico h
+        JOIN tblocal l ON l.tblocalid = h.tblocalid
+        LEFT JOIN tbusuario au ON au.tbusuarioid = h.idusuario
 
         UNION ALL
-        SELECT CONCAT('cln-', h.tbclientenombrecompletohistoricoid), 'nombre', 'Cliente', c.tbclientenombrecompleto, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbclientenombrecompletohistorico h JOIN tbcliente c ON c.tbclienteid = h.tbclienteid
+        SELECT CONCAT('lt-', h.tblocaltelefonohistoricoid), 'telefono', 'Local', l.tblocalnombre, NULL, au.tbusuarionombrecompleto, h.valoranterior, h.valornuevo, h.fecha
+        FROM tblocaltelefonohistorico h
+        JOIN tblocal l ON l.tblocalid = h.tblocalid
+        LEFT JOIN tbusuario au ON au.tbusuarioid = h.idusuario
 
         UNION ALL
-        SELECT CONCAT('cc-', h.tbcomerciantecorreohistoricoid), 'correo', 'Comerciante', c.tbcomerciantenombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbcomerciantecorreohistorico h JOIN tbcomerciante c ON c.tbcomercianteid = h.tbcomercianteid
+        SELECT CONCAT('ll-', h.tblocallogohistoricoid), 'logo', 'Local', l.tblocalnombre, NULL, au.tbusuarionombrecompleto, h.valoranterior, h.valornuevo, h.fecha
+        FROM tblocallogohistorico h
+        JOIN tblocal l ON l.tblocalid = h.tblocalid
+        LEFT JOIN tbusuario au ON au.tbusuarioid = h.idusuario
 
         UNION ALL
-        SELECT CONCAT('clc-', h.tbclientecorreohistoricoid), 'correo', 'Cliente', c.tbclientenombrecompleto, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbclientecorreohistorico h JOIN tbcliente c ON c.tbclienteid = h.tbclienteid
+        SELECT CONCAT('pp-', h.tbproductopreciohistoricoid), 'precio', 'Producto', p.tbproductonombre, l2.tblocalnombre, au.tbusuarionombrecompleto, h.valoranterior, h.valornuevo, h.fecha
+        FROM tbproductopreciohistorico h
+        JOIN tbproducto p ON p.tbproductoid = h.tbproductoid
+        JOIN tblocal l2 ON l2.tblocalid = p.tblocalid
+        LEFT JOIN tbusuario au ON au.tbusuarioid = h.idusuario
 
         UNION ALL
-        SELECT CONCAT('ln-', h.tblocalnombrehistoricoid), 'nombre', 'Local', l.tblocalnombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tblocalnombrehistorico h JOIN tblocal l ON l.tblocalid = h.tblocalid
-
-        UNION ALL
-        SELECT CONCAT('lt-', h.tblocaltelefonohistoricoid), 'telefono', 'Local', l.tblocalnombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tblocaltelefonohistorico h JOIN tblocal l ON l.tblocalid = h.tblocalid
-
-        UNION ALL
-        SELECT CONCAT('ll-', h.tblocallogohistoricoid), 'logo', 'Local', l.tblocalnombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tblocallogohistorico h JOIN tblocal l ON l.tblocalid = h.tblocalid
-
-        UNION ALL
-        SELECT CONCAT('pp-', h.tbproductopreciohistoricoid), 'precio', 'Producto', p.tbproductonombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbproductopreciohistorico h JOIN tbproducto p ON p.tbproductoid = h.tbproductoid
-
-        UNION ALL
-        SELECT CONCAT('pd-', h.tbproductodescuentoporcentajehistoricoid), 'descuento', 'Producto', p.tbproductonombre, h.valoranterior, h.valornuevo, h.fecha
-        FROM tbproductodescuentoporcentajehistorico h JOIN tbproducto p ON p.tbproductoid = h.tbproductoid
+        SELECT CONCAT('pd-', h.tbproductodescuentoporcentajehistoricoid), 'descuento', 'Producto', p.tbproductonombre, l2.tblocalnombre, au.tbusuarionombrecompleto, h.valoranterior, h.valornuevo, h.fecha
+        FROM tbproductodescuentoporcentajehistorico h
+        JOIN tbproducto p ON p.tbproductoid = h.tbproductoid
+        JOIN tblocal l2 ON l2.tblocalid = p.tblocalid
+        LEFT JOIN tbusuario au ON au.tbusuarioid = h.idusuario
     ";
 
     $condiciones = [];
@@ -77,15 +78,17 @@ try {
         $parametros[':entidadTipo'] = $entidadTipo;
     }
     if ($termino !== '') {
-        $condiciones[] = "usuarioNombre LIKE :termino";
+        $condiciones[] = "(usuarioNombre LIKE :termino OR localNombre LIKE :termino2 OR autorNombre LIKE :termino3)";
         $parametros[':termino'] = '%' . $termino . '%';
+        $parametros[':termino2'] = '%' . $termino . '%';
+        $parametros[':termino3'] = '%' . $termino . '%';
     }
 
     $sqlListado = "SELECT * FROM ({$union}) AS todo";
     if (!empty($condiciones)) {
         $sqlListado .= " WHERE " . implode(" AND ", $condiciones);
     }
-        $limite = isset($_GET['limite']) ? max(1, min(150, (int) $_GET['limite'])) : 150;
+    $limite = isset($_GET['limite']) ? max(1, min(150, (int) $_GET['limite'])) : 150;
     $sqlListado .= " ORDER BY fecha DESC LIMIT {$limite}";
 
     $consulta = $conexion->prepare($sqlListado);
@@ -99,8 +102,10 @@ try {
         $parametrosConteo[':entidadTipo'] = $entidadTipo;
     }
     if ($termino !== '') {
-        $condicionesConteo[] = "usuarioNombre LIKE :termino";
+        $condicionesConteo[] = "(usuarioNombre LIKE :termino OR localNombre LIKE :termino2 OR autorNombre LIKE :termino3)";
         $parametrosConteo[':termino'] = '%' . $termino . '%';
+        $parametrosConteo[':termino2'] = '%' . $termino . '%';
+        $parametrosConteo[':termino3'] = '%' . $termino . '%';
     }
 
     $sqlConteos = "SELECT tipo, COUNT(*) AS cantidad FROM ({$union}) AS todo";

@@ -28,7 +28,8 @@ class ProductoController
         ?string $descripcion,
         int $cantidadDisponible,
         ?string $imagen,
-        ?DateTime $fechaVencimiento = null
+        ?DateTime $fechaVencimiento = null,
+        ?int $idComercianteAutor = null
     ): int|false {
 
         $idTipoProducto = $this->resolverOCrearTipoProducto($nombreTipoProducto);
@@ -48,7 +49,7 @@ class ProductoController
             $fechaVencimiento
         );
 
-        return $this->productoRepository->insertar($producto);
+        return $this->productoRepository->insertar($producto, $idComercianteAutor);
     }
 
     public function listar(): array
@@ -95,9 +96,9 @@ class ProductoController
         return $this->productoRepository->buscar($nombre, $idLocal, $idTipoProducto, $precioMinimo, $precioMaximo, $activo);
     }
 
-    public function editar(Producto $producto): bool
+    public function editar(Producto $producto, ?int $idComercianteAutor = null): bool
     {
-        return $this->productoRepository->actualizar($producto);
+        return $this->productoRepository->actualizar($producto, $idComercianteAutor);
     }
 
     public function eliminar(int $idProducto): bool
@@ -162,7 +163,7 @@ class ProductoController
         return $id;
     }
 
-        public function listarRecientes(int $limite = 8): array
+    public function listarRecientes(int $limite = 8): array
     {
         return $this->productoRepository->obtenerRecientes($limite);
     }

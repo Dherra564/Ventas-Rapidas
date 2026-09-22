@@ -3,10 +3,18 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/ClienteController.php';
 
 try {
-    $soloActivos = ($_GET['soloActivos'] ?? '1') === '1';
+    $termino = trim($_GET['termino'] ?? '');
+    $estado = trim($_GET['estado'] ?? 'activos');
+
+    $activo = match ($estado) {
+        'todos' => null,
+        'inactivos' => false,
+        default => true,
+    };
 
     $controlador = new ClienteController();
-    $clientes = $controlador->buscarConFiltros(null, $soloActivos ? true : null);
+    $clientes = $controlador->buscarConFiltros($termino !== '' ? $termino : null, $activo);
+
     $datos = array_map(fn($c) => [
         'idCliente' => $c->getIdCliente(),
         'nombreCompleto' => $c->getNombreCompleto(),

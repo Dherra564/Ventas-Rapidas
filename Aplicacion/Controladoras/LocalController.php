@@ -158,9 +158,9 @@ class LocalController
         return $this->historialActividadRepository->tieneActividadReciente($idLocal, $dias);
     }
 
-    public function editar(Local $local): bool
+    public function editar(Local $local, ?int $idComercianteAutor = null): bool
     {
-        return $this->localRepository->actualizar($local);
+        return $this->localRepository->actualizar($local, $idComercianteAutor);
     }
 
     public function eliminar(int $idLocal): bool

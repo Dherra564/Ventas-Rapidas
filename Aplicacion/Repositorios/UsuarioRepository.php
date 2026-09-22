@@ -61,6 +61,15 @@ class UsuarioRepository
             ":activo" => (int) $usuario->isActivo()
         ]);
 
+        if ($exito) {
+            $this->historialNombre->registrar($id, null, $usuario->getNombreCompleto());
+            $this->historialCorreo->registrar($id, null, $usuario->getCorreo());
+            $this->historialPassword->registrar($id, null, $usuario->getPasswordHash());
+            if ($usuario->getPerfilImagen() !== null) {
+                $this->historialPerfilImagen->registrar($id, null, $usuario->getPerfilImagen());
+            }
+        }
+
         return $exito ? $id : false;
     }
 
