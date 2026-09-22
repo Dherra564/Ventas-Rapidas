@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (boton.dataset.vista === 'vista-dashboard-admin') {
                 cargarDashboardAdmin();
             }
+
             if (boton.dataset.vista === 'vista-producto') {
                 cargarLocalesComercianteParaProducto();
             }
@@ -460,13 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     : `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). No se pudo identificar provincia/cantón/distrito automáticamente, selecciónalos a mano.`;
             }
         } catch (e) {
-            msg.textContent = 'No se pudo obtener tu ubicación GPS. Revisa los permisos del navegador.';
-            msg.className = 'ayuda error';
+            if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'No se pudo obtener tu ubicación. Puedes registrar el local sin GPS.';
         }
-    }
-
-    document.getElementById('btn-cerc-ubicacion')?.addEventListener('click', () => {
-        abrirModalPermisoUbicacion(capturarGpsCercanos);
     });
 
     formLocal.addEventListener('submit', async (evento) => {
@@ -569,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cl-password-msg')
     );
 
-    document.getElementById('form-cliente').addEventListener('submit', async (evento) => {
+    document.getElementById('form-cliente')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const camposValidosCliente = [
@@ -674,29 +670,16 @@ document.addEventListener('DOMContentLoaded', () => {
             res.locales.forEach(local => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta tarjeta-clic';
-                if (esAdmin) tarjeta.classList.add('tarjeta-con-borrar');
                 tarjeta.innerHTML = `
-                    ${esAdmin ? `<button type="button" class="tarjeta-local-btn-eliminar" aria-label="Eliminar local"><i data-lucide="trash-2"></i></button>` : ''}
-                    ${local.logo
-                        ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}" class="imagen-producto">`
-                        : `<div class="imagen-producto imagen-producto-vacia"><i data-lucide="store"></i></div>`}
+                    ${local.logo ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}" class="imagen-producto">` : ''}
                     <h3>${local.nombreLocal}</h3>
                     <p class="etiqueta-tipo">${local.tipoLocal ?? ''}</p>
                     <p>${local.descripcion ?? ''}</p>
                     <p>📞 ${local.telefono}</p>
                 `;
                 tarjeta.addEventListener('click', () => abrirDetalleLocal(local.idLocal));
-
-                if (esAdmin) {
-                    tarjeta.querySelector('.tarjeta-local-btn-eliminar').addEventListener('click', (evento) => {
-                        evento.stopPropagation();
-                        confirmarEliminarLocal(local.idLocal, local.nombreLocal, tarjeta);
-                    });
-                }
                 contenedor.appendChild(tarjeta);
             });
-
-            if (window.lucide) lucide.createIcons();
         } catch (e) {
             contenedor.innerHTML = '<p>Error al cargar los locales.</p>';
         }
@@ -770,9 +753,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const { local, ubicacion } = res;
 
             const esComerciante = usuarioSesionActual?.tipo === 'Comerciante';
-            const esAdmin = usuarioSesionActual?.tipo === 'SuperAdmin';
-            const puedeEditar = esComerciante;
-
             const formEditarLocal = document.getElementById('form-editar-local');
             const infoSoloLectura = document.getElementById('e-info-solo-lectura');
 
@@ -948,7 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </form>
                 `;
 
-                document.getElementById('modal-form-resena').addEventListener('submit', async (evento) => {
+                document.getElementById('modal-form-resena')?.addEventListener('submit', async (evento) => {
                     evento.preventDefault();
 
                     const puntuacion = document.getElementById('modal-resena-puntuacion').value;
@@ -974,7 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button type="button" class="boton-secundario" id="modal-btn-login-resena">Inicia sesión para dejar una reseña</button>
                 `;
 
-                document.getElementById('modal-btn-login-resena').addEventListener('click', () => {
+                document.getElementById('modal-btn-login-resena')?.addEventListener('click', () => {
                     cerrarModalLocal();
                     mostrarVistaLogin('vista-login');
                 });
@@ -1017,12 +997,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const contenedorAccion = document.getElementById('modal-producto-accion');
         if (usuarioSesionActual) {
             contenedorAccion.innerHTML = `<button type="button" id="modal-producto-btn-comprar" class="boton-comprar-modal" ${producto.agotado ? 'disabled' : ''}>Comprar</button>`;
-            document.getElementById('modal-producto-btn-comprar').addEventListener('click', () => {
+            document.getElementById('modal-producto-btn-comprar')?.addEventListener('click', () => {
                 mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
             });
         } else {
             contenedorAccion.innerHTML = `<button type="button" class="boton-secundario" id="modal-producto-btn-login">Inicia sesión o regístrate para comprar</button>`;
-            document.getElementById('modal-producto-btn-login').addEventListener('click', () => {
+            document.getElementById('modal-producto-btn-login')?.addEventListener('click', () => {
                 cerrarModalProducto();
                 mostrarVistaLogin('vista-login');
             });
@@ -1086,7 +1066,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${precioHtml}</p>
                     <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
                     ${usuarioSesionActual?.tipo === 'Comerciante' ? `<button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>` : ''}
-                    ${esAdmin ? `<button type="button" class="btn-eliminar-icono" aria-label="Eliminar producto"><i data-lucide="trash-2"></i></button>` : ''}
                 `;
                 contenedor.appendChild(tarjeta);
                 const btnEditar = tarjeta.querySelector('.btn-editar-producto');
@@ -1095,23 +1074,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         abrirEditarProducto(producto.idProducto, idLocal);
                     });
                 }
-                const btnEliminar = tarjeta.querySelector('.btn-eliminar-icono');
-                if (btnEliminar) {
-                    btnEliminar.addEventListener('click', () => {
-                        confirmarEliminarProducto(producto.idProducto, producto.nombre, tarjeta);
-                    });
-                }
             });
-
-            if (window.lucide) lucide.createIcons();
         } catch (e) {
             contenedor.innerHTML = '<p>Error al cargar los productos.</p>';
         }
     }
 
-    document.getElementById('btn-volver-lista').addEventListener('click', mostrarListaLocales);
+    document.getElementById('btn-volver-lista')?.addEventListener('click', mostrarListaLocales);
 
-    document.getElementById('form-editar-local').addEventListener('submit', async (evento) => {
+    document.getElementById('form-editar-local')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const datos = new FormData();
@@ -1137,55 +1108,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.exito) {
                 mostrarListaLocales();
+                cargarLocales();
             }
-        });
-    });
-
-    document.getElementById('form-editar-local').addEventListener('submit', (evento) => {
-        evento.preventDefault();
-
-        Swal.fire({
-            title: '¿Guardar estos cambios?',
-            text: 'Se van a actualizar los datos de este local.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, guardar',
-            cancelButtonText: 'Seguir editando',
-            confirmButtonColor: '#8E7CC3',
-            cancelButtonColor: '#6B7280'
-        }).then(async (resultado) => {
-            if (!resultado.isConfirmed) return;
-
-            const datos = new FormData();
-            datos.append('idLocal', document.getElementById('e-idLocal').value);
-            datos.append('nombreTipoLocal', document.getElementById('e-tipoLocal').value);
-            datos.append('nombreLocal', document.getElementById('e-nombreLocal').value);
-            datos.append('descripcion', document.getElementById('e-descripcion').value);
-            datos.append('telefono', document.getElementById('e-telefono').value);
-
-            const archivoLogo = document.getElementById('e-logo').files[0];
-            if (archivoLogo) {
-                datos.append('logo', archivoLogo);
-            }
-
-            try {
-                const r = await fetch('api/editar_local.php', {
-                    method: 'POST',
-                    body: datos
-                });
-                const res = await r.json();
-
-                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-                if (res.exito) {
-                    formLocalTieneCambios = false;
-                    mostrarListaLocales();
-                    cargarLocales();
-                }
-            } catch (e) {
-                mostrarMensaje('No se pudo conectar con el servidor para guardar los cambios del local. Revisa tu conexión e intenta de nuevo.', 'error');
-            }
-        });
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
     });
 
     const selectIdLocalProducto = document.getElementById('p-idLocal');
@@ -1226,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         (item) => `${item.nombre} — ${Math.round(item.similitud)}% (en ${item.locales.map(l => l.nombreLocal).join(', ')})`
     );
 
-    document.getElementById('form-producto').addEventListener('submit', async (evento) => {
+    document.getElementById('form-producto')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         if (!selectIdLocalProducto.value) {
@@ -1304,12 +1231,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('btn-cerrar-editar-producto').addEventListener('click', () => {
+    document.getElementById('btn-cerrar-editar-producto')?.addEventListener('click', () => {
         panelEditarProducto.classList.add('oculto');
         panelDetalle.classList.remove('oculto');
     });
 
-    document.getElementById('form-editar-producto').addEventListener('submit', async (evento) => {
+    document.getElementById('form-editar-producto')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const datos = new FormData();
@@ -1338,59 +1265,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.exito) {
                 panelEditarProducto.classList.add('oculto');
                 panelDetalle.classList.remove('oculto');
+                cargarProductosDelLocal(idLocalProductoEditando);
             }
-        });
-    });
-
-    document.getElementById('form-editar-producto').addEventListener('submit', (evento) => {
-        evento.preventDefault();
-
-        Swal.fire({
-            title: '¿Guardar estos cambios?',
-            text: 'Se van a actualizar los datos de este producto.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, guardar',
-            cancelButtonText: 'Seguir editando',
-            confirmButtonColor: '#8E7CC3',
-            cancelButtonColor: '#6B7280'
-        }).then(async (resultado) => {
-            if (!resultado.isConfirmed) return;
-
-            const datos = new FormData();
-            datos.append('idProducto', document.getElementById('ep-idProducto').value);
-            datos.append('nombreTipoProducto', document.getElementById('ep-tipoProducto').value);
-            datos.append('nombre', document.getElementById('ep-nombre').value);
-            datos.append('precioOriginal', document.getElementById('ep-precio').value);
-            datos.append('porcentajeDescuento', document.getElementById('ep-descuento').value);
-            datos.append('descripcion', document.getElementById('ep-descripcion').value);
-            datos.append('cantidadDisponible', document.getElementById('ep-cantidad').value);
-            datos.append('fechaVencimiento', document.getElementById('ep-fechaVencimiento').value);
-
-            const archivoImagen = document.getElementById('ep-imagen').files[0];
-            if (archivoImagen) {
-                datos.append('imagen', archivoImagen);
-            }
-
-            try {
-                const r = await fetch('api/editar_producto.php', {
-                    method: 'POST',
-                    body: datos
-                });
-                const res = await r.json();
-
-                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-                if (res.exito) {
-                    formProductoTieneCambios = false;
-                    panelEditarProducto.classList.add('oculto');
-                    panelDetalle.classList.remove('oculto');
-                    cargarProductosDelLocal(idLocalProductoEditando);
-                }
-            } catch (e) {
-                mostrarMensaje('No se pudo conectar con el servidor para guardar los cambios del producto. Revisa tu conexión e intenta de nuevo.', 'error');
-            }
-        });
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
     });
 
     const panelListaComerciantes = document.getElementById('panel-lista-comerciantes');
@@ -1405,10 +1284,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const contenedor = document.getElementById('lista-comerciantes');
         contenedor.innerHTML = '<p>Cargando...</p>';
 
-        const soloActivos = !document.getElementById('chk-inactivos-comerciantes').checked;
+                const soloActivos = !(document.getElementById('chk-inactivos-comerciantes')?.checked ?? false);
 
         try {
-            const r = await fetch('api/listar_comerciantes.php?soloActivos=0');
+            const r = await fetch(`api/listar_comerciantes.php?soloActivos=${soloActivos ? '1' : '0'}`);
             const res = await r.json();
 
             if (!res.exito || res.comerciantes.length === 0) {
@@ -1431,11 +1310,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los comerciantes.</p>';
+            contenedor.innerHTML = '<p>Error al cargar los comerciantes.</p>';
         }
     }
 
-    document.getElementById('chk-inactivos-comerciantes').addEventListener('change', cargarComerciantes);
+        document.getElementById('chk-inactivos-comerciantes')?.addEventListener('change', cargarComerciantes);
 
     async function abrirDetalleComerciante(idComerciante) {
         try {
@@ -1450,9 +1329,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const c = res.comerciante;
 
             document.getElementById('dc-idComerciante').value = c.idComerciante;
-            document.getElementById('dc-solo-nombre').textContent = c.nombre;
-            document.getElementById('dc-solo-alias').textContent = c.alias;
-            document.getElementById('dc-solo-correo').textContent = c.correo;
+            document.getElementById('dc-nombre').value = c.nombre;
+            document.getElementById('dc-alias').value = c.alias;
+            document.getElementById('dc-correo').value = c.correo;
             document.getElementById('dc-identificacion').textContent = c.numeroIdentificacion;
             document.getElementById('dc-password').value = '';
 
@@ -1482,9 +1361,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('btn-volver-comerciantes').addEventListener('click', mostrarListaComerciantes);
+    document.getElementById('btn-volver-comerciantes')?.addEventListener('click', mostrarListaComerciantes);
 
-    document.getElementById('form-editar-comerciante').addEventListener('submit', async (evento) => {
+    document.getElementById('form-editar-comerciante')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const datos = new FormData();
@@ -1517,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('btn-desactivar-comerciante').addEventListener('click', async () => {
+    document.getElementById('btn-desactivar-comerciante')?.addEventListener('click', async () => {
         const idComerciante = document.getElementById('dc-idComerciante').value;
         const nombre = document.getElementById('dc-nombre').value;
 
@@ -1539,10 +1418,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 mostrarListaComerciantes();
                 cargarComerciantes();
             }
-        });
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
     });
 
-    document.getElementById('btn-activar-comerciante').addEventListener('click', async () => {
+    document.getElementById('btn-activar-comerciante')?.addEventListener('click', async () => {
         const idComerciante = document.getElementById('dc-idComerciante').value;
 
         try {
@@ -1560,7 +1441,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarComerciantes();
             }
         } catch (e) {
-            mostrarMensaje('No se pudo conectar con el servidor para activar este comerciante. Revisa tu conexión e intenta de nuevo.', 'error');
+            mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
 
@@ -1579,7 +1460,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const soloActivos = !document.getElementById('chk-inactivos-clientes').checked;
 
         try {
-            const r = await fetch('api/listar_clientes.php?soloActivos=0');
+            const r = await fetch(`api/listar_clientes.php?soloActivos=${soloActivos ? '1' : '0'}`);
             const res = await r.json();
 
             if (!res.exito || res.clientes.length === 0) {
@@ -1601,11 +1482,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
-            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los clientes.</p>';
+            contenedor.innerHTML = '<p>Error al cargar los clientes.</p>';
         }
     }
 
-    document.getElementById('chk-inactivos-clientes').addEventListener('change', cargarClientes);
+    document.getElementById('chk-inactivos-clientes')?.addEventListener('change', cargarClientes);
 
     async function abrirDetalleCliente(idCliente) {
         try {
@@ -1656,9 +1537,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('btn-volver-clientes').addEventListener('click', mostrarListaClientes);
+    document.getElementById('btn-volver-clientes')?.addEventListener('click', mostrarListaClientes);
 
-    document.getElementById('form-editar-cliente').addEventListener('submit', async (evento) => {
+    document.getElementById('form-editar-cliente')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const datos = new FormData();
@@ -1690,7 +1571,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('btn-desactivar-cliente').addEventListener('click', async () => {
+    document.getElementById('btn-desactivar-cliente')?.addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
         const nombre = document.getElementById('dcl-nombreCompleto').value;
 
@@ -1712,10 +1593,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 mostrarListaClientes();
                 cargarClientes();
             }
-        });
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
     });
 
-    document.getElementById('btn-activar-cliente').addEventListener('click', async () => {
+    document.getElementById('btn-activar-cliente')?.addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
 
         try {
@@ -1733,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarClientes();
             }
         } catch (e) {
-             mostrarMensaje('No se pudo conectar con el servidor para activar este cliente. Revisa tu conexión e intenta de nuevo.', 'error');
+            mostrarMensaje('Error de conexión con el servidor', 'error');
         }
     });
 
@@ -1796,12 +1679,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buscarLocalesDebounced = debounce(cargarLocales, 400);
 
-    document.getElementById('f-nombre').addEventListener('input', buscarLocalesDebounced);
+    document.getElementById('f-nombre')?.addEventListener('input', buscarLocalesDebounced);
     selectProvinciaFiltro.addEventListener('change', cargarLocales);
     selectCantonFiltro.addEventListener('change', cargarLocales);
     selectDistritoFiltro.addEventListener('change', cargarLocales);
 
-    document.getElementById('btn-limpiar-filtros').addEventListener('click', () => {
+    document.getElementById('btn-limpiar-filtros')?.addEventListener('click', () => {
         document.getElementById('f-nombre').value = '';
         selectProvinciaFiltro.value = '';
         selectCantonFiltro.innerHTML = '<option value="">Todos los cantones</option>';
@@ -1847,7 +1730,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             mostrarMensaje('No se pudo quitar el local', 'error');
                         }
                     } catch (e) {
-                        mostrarMensaje('No se pudo conectar con el servidor para desactivar este comerciante. Revisa tu conexión e intenta de nuevo.', 'error');
+                        mostrarMensaje('Error de conexión con el servidor', 'error');
                     }
                 });
                 contenedor.appendChild(fila);
@@ -1857,7 +1740,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('btn-agregar-local-producto').addEventListener('click', async () => {
+    document.getElementById('btn-agregar-local-producto')?.addEventListener('click', async () => {
         const idProducto = document.getElementById('ep-idProducto').value;
         const nombreLocal = document.getElementById('ep-agregar-local-nombre').value.trim();
         const mensaje = document.getElementById('ep-agregar-local-msg');
@@ -1943,7 +1826,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('btn-seguir-local').addEventListener('click', async () => {
+    document.getElementById('btn-seguir-local')?.addEventListener('click', async () => {
         const idCliente = document.getElementById('dcl-idCliente').value;
         const nombreLocal = document.getElementById('dcl-agregar-local-nombre').value.trim();
         const mensaje = document.getElementById('dcl-seguir-local-msg');
@@ -2041,7 +1924,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('form-resena').addEventListener('submit', async (evento) => {
+    document.getElementById('form-resena')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const idCliente = document.getElementById('resena-cliente').value;
@@ -2134,7 +2017,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('btn-cargar-resenas').addEventListener('click', cargarResenasLocal);
+    document.getElementById('btn-cargar-resenas')?.addEventListener('click', cargarResenasLocal);
 
     async function editarResenaDesdeLista(resenia) {
         const comentario = prompt('Edita el comentario:', resenia.comentario);
@@ -2202,7 +2085,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('historial-tipo').addEventListener('change', cargarUsuariosHistorial);
+    document.getElementById('historial-tipo')?.addEventListener('change', cargarUsuariosHistorial);
 
     async function consultarHistorialUsuario() {
         const tipoUsuario = document.getElementById('historial-tipo').value;
@@ -2265,9 +2148,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.getElementById('btn-ver-historial').addEventListener('click', consultarHistorialUsuario);
+    document.getElementById('btn-ver-historial')?.addEventListener('click', consultarHistorialUsuario);
 
-    document.getElementById('form-cambiar-password').addEventListener('submit', async (evento) => {
+    document.getElementById('form-cambiar-password')?.addEventListener('submit', async (evento) => {
         evento.preventDefault();
 
         const tipoUsuario = document.getElementById('historial-tipo').value;
@@ -2357,22 +2240,14 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarIndicadorSesion(null);
         }
     }
-
-    
-        function actualizarMenuPorRol(tipoUsuario) {
+    function actualizarMenuPorRol(tipoUsuario) {
         botonesMenu.forEach(boton => {
-            if (boton.dataset.vista === 'vista-inicio') {
-                boton.classList.toggle('oculto', !!tipoUsuario);
-                return;
-            }
-
             const rol = boton.dataset.rol;
             if (!rol) {
                 boton.classList.remove('oculto');
                 return;
             }
-            const rolesPermitidos = rol.split(',').map(r => r.trim());
-            boton.classList.toggle('oculto', !rolesPermitidos.includes(tipoUsuario));
+            boton.classList.toggle('oculto', rol !== tipoUsuario);
         });
     }
 
@@ -2472,18 +2347,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     mostrarVistaLogin('vista-dashboard-admin');
                     cargarDashboardAdmin();
                 }
-
-                abrirModalPermisoUbicacion(async () => {
-                    try {
-                        const coords = await obtenerCoordenadasGPS();
-                        await fetch('api/registrar_ubicacion_login.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ latitud: coords.lat, longitud: coords.lng })
-                        });
-                    } catch (e) {
-                    }
-                });
             }
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
@@ -2902,8 +2765,6 @@ document.addEventListener('DOMContentLoaded', () => {
             statComerciantesInactivos.textContent = Math.max(comerciantesTodos - comerciantesActivos, 0);
 
             if (window.lucide) lucide.createIcons();
-
-            cargarActividadRecienteDashboard();
         } catch (e) {
             mostrarMensaje('No se pudo cargar el resumen del dashboard', 'error');
         }
@@ -2919,196 +2780,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // Vista: Inicio (catálogo público + carrusel)
     // ============================================================
-        function crearEstadoVacio(mensaje, icono = 'package-open') {
-        return `
-            <div class="estado-vacio">
-                <i data-lucide="${icono}"></i>
-                <p>${escaparHtml(mensaje)}</p>
-            </div>
-        `;
-    }
-
-        // ------------------------------------------------------------
-    // Modal de detalle de producto
-    // ------------------------------------------------------------
-    function abrirModalProducto(p) {
-        const modal = document.getElementById('modal-producto');
-        if (!modal) return;
-
-                const imagen = document.getElementById('modal-producto-imagen');
-        const sinImagen = document.getElementById('modal-producto-sin-imagen');
-        if (p.imagen) {
-            imagen.src = `imagenes/${p.imagen}`;
-            imagen.alt = p.nombre;
-            imagen.classList.remove('oculto');
-            sinImagen.classList.add('oculto');
-        } else {
-            imagen.classList.add('oculto');
-            sinImagen.classList.remove('oculto');
-        }
-
-        const badge = document.getElementById('modal-producto-badge');
-        if (p.porcentajeDescuento) {
-            badge.textContent = `-${p.porcentajeDescuento}%`;
-            badge.classList.remove('oculto');
-        } else {
-            badge.classList.add('oculto');
-        }
-
-        const logoLocal = document.getElementById('modal-producto-logo-local');
-        if (p.logoLocal) {
-            logoLocal.src = `imagenes/${p.logoLocal}`;
-            logoLocal.classList.remove('oculto');
-        } else {
-            logoLocal.classList.add('oculto');
-        }
-        document.getElementById('modal-producto-nombre-local').textContent = p.nombreLocal;
-
-        document.getElementById('modal-producto-nombre').textContent = p.nombre;
-        document.getElementById('modal-producto-categoria').textContent = p.categoria || '';
-        document.getElementById('modal-producto-descripcion').textContent = p.descripcion || 'Sin descripción.';
-        document.getElementById('modal-producto-disponibles').textContent = `Disponibles: ${p.cantidadDisponible}`;
-        const cronometroModal = document.getElementById('modal-producto-cronometro');
-        if (p.fechaVencimiento) {
-            cronometroModal.dataset.vence = p.fechaVencimiento;
-            cronometroModal.classList.remove('oculto');
-        } else {
-            cronometroModal.classList.add('oculto');
-        }
-        actualizarCronometros();
-
-        const precioOriginal = document.getElementById('modal-producto-precio-original');
-        if (p.porcentajeDescuento) {
-            precioOriginal.textContent = `₡${p.precioOriginal}`;
-            precioOriginal.classList.remove('oculto');
-        } else {
-            precioOriginal.classList.add('oculto');
-        }
-        document.getElementById('modal-producto-precio-final').textContent = `₡${p.precioFinal}`;
-
-        modal.classList.remove('oculto');
-        document.body.style.overflow = 'hidden';
-    }
-
-        async function abrirModalLocal(idLocal) {
-        const modal = document.getElementById('modal-local');
-        if (!modal) return;
-
-        try {
-            const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
-            const res = await r.json();
-
-            if (!res.exito) {
-                mostrarMensaje(res.mensaje || 'No se pudo cargar el local', 'error');
-                return;
-            }
-
-            const { local, ubicacion } = res;
-
-            const imagen = document.getElementById('modal-local-imagen');
-            const sinImagen = document.getElementById('modal-local-sin-imagen');
-            if (local.logo) {
-                imagen.src = `imagenes/${local.logo}`;
-                imagen.alt = local.nombreLocal;
-                imagen.classList.remove('oculto');
-                sinImagen.classList.add('oculto');
-            } else {
-                imagen.classList.add('oculto');
-                sinImagen.classList.remove('oculto');
-            }
-
-                       document.getElementById('modal-local-categoria').textContent = local.tipoLocal ?? '';
-            document.getElementById('modal-local-nombre').textContent = local.nombreLocal;
-            document.getElementById('modal-local-descripcion').textContent = local.descripcion || 'Sin descripción.';
-            document.getElementById('modal-local-telefono').textContent = local.telefono || 'No disponible';
-            document.getElementById('modal-local-ubicacion').textContent =
-                `${ubicacion.provincia ?? ''}, ${ubicacion.canton ?? ''}, ${ubicacion.distrito ?? ''} — ${ubicacion.direccionExacta ?? ''}`;
-
-            const tabDetalles = document.getElementById('modal-local-tab-detalles');
-            const tabProductos = document.getElementById('modal-local-tab-productos');
-            const contenidoDetalles = document.getElementById('modal-local-detalles-contenido');
-            const contenidoProductos = document.getElementById('modal-local-productos-contenido');
-            const listaProductosLocal = document.getElementById('modal-local-productos-lista');
-
-            tabDetalles.classList.add('activo');
-            tabProductos.classList.remove('activo');
-            contenidoDetalles.classList.remove('oculto');
-            contenidoProductos.classList.add('oculto');
-
-            tabDetalles.onclick = () => {
-                tabDetalles.classList.add('activo');
-                tabProductos.classList.remove('activo');
-                contenidoDetalles.classList.remove('oculto');
-                contenidoProductos.classList.add('oculto');
-            };
-
-            tabProductos.onclick = () => {
-                tabProductos.classList.add('activo');
-                tabDetalles.classList.remove('activo');
-                contenidoProductos.classList.remove('oculto');
-                contenidoDetalles.classList.add('oculto');
-
-                const productosDeEsteLocal = productosInicioCache.filter(p => Number(p.idLocal) === Number(local.idLocal));
-
-                if (productosDeEsteLocal.length === 0) {
-                    listaProductosLocal.innerHTML = crearEstadoVacio('Este local todavía no tiene productos disponibles.', 'package-open');
-                } else {
-                    listaProductosLocal.innerHTML = '';
-                    productosDeEsteLocal.forEach(p => {
-                        const tarjeta = crearTarjetaProducto(p);
-                        tarjeta.classList.add('modal-local-producto-item');
-                        listaProductosLocal.appendChild(tarjeta);
-                    });
-                }
-                if (window.lucide) lucide.createIcons();
-            };
-
-            modal.classList.remove('oculto');
-            document.body.style.overflow = 'hidden';
-            if (window.lucide) lucide.createIcons();
-        } catch (e) {
-            mostrarMensaje('Error al cargar el local', 'error');
-        }
-    }
-
-    function cerrarModalLocal() {
-        document.getElementById('modal-local')?.classList.add('oculto');
-        document.body.style.overflow = '';
-    }
-
-       document.getElementById('modal-local-cerrar')?.addEventListener('click', cerrarModalLocal);
-    document.getElementById('modal-local')?.addEventListener('click', (e) => {
-        if (e.target.id === 'modal-local') cerrarModalLocal();
-    });
-    document.getElementById('modal-local-productos-lista')?.addEventListener('click', cerrarModalLocal, true);
-
-    function cerrarModalProducto() {
-        document.getElementById('modal-producto')?.classList.add('oculto');
-        document.body.style.overflow = '';
-    }
-
-    document.getElementById('modal-producto-cerrar')?.addEventListener('click', cerrarModalProducto);
-    document.getElementById('modal-producto')?.addEventListener('click', (e) => {
-        if (e.target.id === 'modal-producto') cerrarModalProducto();
-    });
-    
-    
-
-           document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            cerrarModalProducto();
-            cerrarModalLocal();
-            cerrarModalPermisoUbicacion();
-            cerrarPanelHistorial();
-        }
-    });
-    
-
-    // El botón "Comprar" todavía no tiene funcionalidad — se conecta en el próximo paso.
-    document.getElementById('modal-producto-comprar')?.addEventListener('click', () => {
-        // Pendiente: aquí conectamos la acción real de compra/reserva.
-    });
-    
     let carruselLocales = [];
     let carruselIndice = 0;
     let carruselIntervalo = null;
@@ -3120,9 +2791,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!pista) return;
 
         if (carruselLocales.length === 0) {
-            pista.innerHTML = `<div class="carrusel-slide">${crearEstadoVacio('Todavía no hay locales registrados.', 'store')}</div>`;
+            pista.innerHTML = '<div class="carrusel-slide"><p class="ayuda">Todavía no hay locales registrados.</p></div>';
             puntos.innerHTML = '';
-            if (window.lucide) lucide.createIcons();
             return;
         }
 
@@ -3159,9 +2829,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirModalLocal(Number(boton.dataset.id));
             });
         });
-
-        if (window.lucide) lucide.createIcons();
     }
+
     function moverCarrusel(direccion) {
         if (carruselLocales.length === 0) return;
         carruselIndice = (carruselIndice + direccion + carruselLocales.length) % carruselLocales.length;
@@ -3198,40 +2867,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         contenedor.innerHTML = '';
-
-        Object.keys(grupos).sort().forEach(categoria => {
-            const seccion = document.createElement('section');
-            seccion.className = 'seccion-categoria';
-            seccion.innerHTML = `
-                <div class="seccion-categoria-encabezado">
-                    <h3>${escaparHtml(categoria)}</h3>
-                    <div class="seccion-categoria-flechas">
-                        <button type="button" class="carrusel-flecha-mini" data-dir="-1" aria-label="Anterior">&#10094;</button>
-                        <button type="button" class="carrusel-flecha-mini" data-dir="1" aria-label="Siguiente">&#10095;</button>
-                    </div>
-                </div>
-                <div class="fila-productos-carrusel"></div>
+        filtrados.forEach(local => {
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'tarjeta tarjeta-clic';
+            tarjeta.innerHTML = `
+                ${local.logo ? `<img src="imagenes/${local.logo}" alt="${escaparHtml(local.nombreLocal)}" class="imagen-producto">` : ''}
+                <h3>${escaparHtml(local.nombreLocal)}</h3>
+                <p class="etiqueta-tipo">${escaparHtml(local.tipoLocal ?? '')}</p>
+                <p>${escaparHtml(local.descripcion ?? '')}</p>
             `;
             tarjeta.addEventListener('click', () => {
                 abrirModalLocal(local.idLocal);
             });
-
-            contenedor.appendChild(seccion);
+            contenedor.appendChild(tarjeta);
         });
-
-        if (window.lucide) lucide.createIcons();
-        actualizarCronometros();
     }
 
     document.getElementById('inicio-buscar')?.addEventListener('input', debounce(() => {
-        const termino = (document.getElementById('inicio-buscar').value || '').trim().toLowerCase();
-        const filtrados = termino
-            ? productosInicioCache.filter(p =>
-                p.nombre.toLowerCase().includes(termino) ||
-                p.nombreLocal.toLowerCase().includes(termino) ||
-                p.categoria.toLowerCase().includes(termino))
-            : productosInicioCache;
-        renderizarSeccionesProductos(filtrados);
+        renderizarCatalogoInicio(localesInicioCache);
     }, 300));
 
     async function cargarInicio() {
@@ -3243,6 +2896,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const locales = await obtenerLocalesActivos();
             localesInicioCache = locales;
+
             carruselLocales = locales.slice(0, 8);
             carruselIndice = 0;
             renderizarCarrusel();
@@ -3251,7 +2905,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderizarCatalogoInicio(locales);
             cargarProductosRecientesInicio();
         } catch (e) {
-            contenedorProductos.innerHTML = '<p class="ayuda error">No se pudieron cargar los productos.</p>';
+            contenedorCatalogo.innerHTML = '<p class="ayuda error">No se pudieron cargar los locales.</p>';
         }
     }
 
@@ -3571,6 +3225,5 @@ document.addEventListener('DOMContentLoaded', () => {
         await mostrarSelectorPerfilesLocal();
     });
 });
-
 
 
