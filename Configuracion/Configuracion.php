@@ -10,6 +10,6 @@ class Configuracion
 
     public static function getPassword()
     {
-        return ""; // vacío por defecto en XAMPP
+        return "";
     }
 }
