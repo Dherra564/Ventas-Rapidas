@@ -44,7 +44,7 @@ class LocalRepository
 
         return $valor !== false && $valor !== null ? (int) $valor : null;
     }
-    
+
     public function insertar(Local $local, Ubicacion $ubicacion, int $idComerciante): int|false
     {
         try {
@@ -109,11 +109,10 @@ class LocalRepository
             $this->conexion->commit();
 
             return $idLocal;
-
         } catch (Exception $e) {
             $this->conexion->rollBack();
             error_log("Error al insertar local: " . $e->getMessage());
-            return false;
+            throw new Exception("DEBUG: " . $e->getMessage());
         }
     }
 
@@ -325,7 +324,6 @@ class LocalRepository
             $this->conexion->commit();
 
             return true;
-
         } catch (Exception $e) {
             $this->conexion->rollBack();
             error_log("Error al eliminar local: " . $e->getMessage());
@@ -417,8 +415,8 @@ class LocalRepository
             (bool) $fila["tblocalactivo"],
             (int) $fila["tblocalid"],
             $fila["tblocalregistrofecha"] != null
-            ? new DateTime($fila["tblocalregistrofecha"])
-            : null
+                ? new DateTime($fila["tblocalregistrofecha"])
+                : null
         );
     }
 
