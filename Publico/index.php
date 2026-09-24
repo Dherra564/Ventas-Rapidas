@@ -31,27 +31,34 @@
                 </button>
             </div>
 
-            <nav class="menu" id="menu-principal">
-                <button class="menu-boton activo" data-vista="vista-inicio">Inicio</button>
-                <button class="menu-boton" data-vista="vista-login">Iniciar Sesión</button>
-                <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante">Registrar Local</button>
-                <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante">Registrar
-                    Producto</button>
-                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante">Mi Local</button>
-                <button class="menu-boton" data-vista="vista-mi-cuenta-comerciante" data-rol="Comerciante">Mi
-                    Cuenta</button>
-                <button class="menu-boton" data-vista="vista-mi-cuenta-cliente" data-rol="Cliente">Mi Cuenta</button>
-                <button class="menu-boton" data-vista="vista-listado">Ver Locales</button>
+                   <nav class="menu" id="menu-principal">
+                <button class="menu-boton activo" data-vista="vista-inicio"><i data-lucide="home"></i><span class="menu-boton-texto">Inicio</span></button>
+                <button class="menu-boton" data-vista="vista-login"><i data-lucide="log-in"></i><span class="menu-boton-texto">Iniciar Sesión</span></button>
+                <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin"><i data-lucide="layout-dashboard"></i><span class="menu-boton-texto">Dashboard</span></button>
+                <button class="menu-boton" data-vista="vista-dashboard-comerciante" data-rol="Comerciante"><i data-lucide="layout-dashboard"></i><span class="menu-boton-texto">Dashboard</span></button>
+                <button class="menu-boton" data-vista="vista-local" data-rol="Comerciante"><i data-lucide="plus-circle"></i><span class="menu-boton-texto">Registrar Local</span></button>
+                <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante"><i data-lucide="package-plus"></i><span class="menu-boton-texto">Registrar Producto</span></button>
+                <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante"><i data-lucide="store"></i><span class="menu-boton-texto">Mi Local</span></button>
+                <button class="menu-boton" data-vista="vista-mis-productos" data-rol="Comerciante"><i data-lucide="package"></i><span class="menu-boton-texto">Mis Productos</span></button>
+                <button class="menu-boton" data-vista="vista-listado"><i data-lucide="store"></i><span class="menu-boton-texto">Ver Locales</span></button>
                 <!-- <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button> -->
-                <button class="menu-boton" data-vista="vista-resenas" data-rol="SuperAdmin">Reseñas</button>
-                <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin">Dashboard</button>
-                <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin">Ver
-                    Comerciantes</button>
-                <button class="menu-boton" data-vista="vista-clientes" data-rol="SuperAdmin">Ver Clientes</button>
-                <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin">Historiales</button>
+                <button class="menu-boton" data-vista="vista-resenas" data-rol="SuperAdmin"><i data-lucide="star"></i><span class="menu-boton-texto">Reseñas</span></button>
+                <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin"><i data-lucide="briefcase"></i><span class="menu-boton-texto">Ver Comerciantes</span></button>
+                <button class="menu-boton" data-vista="vista-clientes" data-rol="SuperAdmin"><i data-lucide="users"></i><span class="menu-boton-texto">Ver Clientes</span></button>
+                <button class="menu-boton" data-vista="vista-productos-admin" data-rol="SuperAdmin"><i data-lucide="package"></i><span class="menu-boton-texto">Ver Productos</span></button>
+                <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin"><i data-lucide="history"></i><span class="menu-boton-texto">Historiales</span></button>
             </nav>
 
-            <div id="sesion-indicador" class="sesion-indicador oculto">
+                        <div id="sesion-indicador" class="sesion-indicador oculto">
+                <button type="button" id="btn-mi-perfil" class="btn-mi-perfil oculto" aria-label="Mi perfil" title="Mi perfil">
+                    <i data-lucide="user-circle"></i>
+                </button>
+                <button type="button" id="btn-mi-cuenta-cliente" class="btn-mi-perfil oculto" aria-label="Mi cuenta" title="Mi cuenta">
+                    <i data-lucide="user-circle"></i>
+                </button>
+                <button type="button" id="btn-mi-cuenta-comerciante" class="btn-mi-perfil oculto" aria-label="Mi cuenta" title="Mi cuenta">
+                    <i data-lucide="user-circle"></i>
+                </button>
                 <span id="sesion-texto"></span>
                 <button type="button" id="btn-empezar-vender" class="boton-secundario oculto">¿Quieres empezar a
                     vender?</button>
@@ -111,13 +118,11 @@
                     </div>
                     <div class="carrusel-puntos" id="carrusel-puntos"></div>
 
-                    <h3 class="bloque-separado">Productos disponibles ahora</h3>
+                    <h3 class="bloque-separado">Productos por categoría</h3>
                     <div class="filtros-busqueda">
                         <input type="text" id="inicio-buscar" placeholder="Buscar producto, local o categoría...">
                     </div>
-                    <div id="catalogo-inicio" class="tarjetas"></div>
-                    <h3 class="bloque-separado">Productos recientes</h3>
-                    <div id="productos-recientes-inicio" class="tarjetas"></div>
+                    <div id="productos-recientes-inicio"></div>
                 </section>
 
                 <!-- Vista: Iniciar Sesión / Crear cuenta -->
@@ -133,7 +138,7 @@
                             <p>La plataforma que conecta comerciantes y clientes</p>
                             <div class="testimonial">
                                 <blockquote>"La mejor forma de encontrar locales cerca de ti"</blockquote>
-                                <cite>— Usuarios satisfechos</cite>
+                                — Usuarios satisfechos
                             </div>
                         </div>
 
@@ -383,12 +388,21 @@
 
 
 
-                <!-- Vista: Selector de perfiles de local (estilo Netflix) -->
-                <section id="vista-seleccionar-local" class="vista oculto">
+                    <section id="vista-seleccionar-local" class="vista oculto">
                     <h2>¿Qué local vas a administrar?</h2>
                     <p class="ayuda">Si no entras al perfil de un local por 7 días, se marca como inactivo
                         automáticamente.</p>
                     <div id="grid-perfiles-local" class="rejilla-perfiles"></div>
+                </section>
+
+                <!-- Vista: Mis Productos (Comerciante) -->
+                <section id="vista-mis-productos" class="vista oculto">
+                    <h2>Mis Productos</h2>
+                    <p class="ayuda">Todos los productos de todos tus locales.</p>
+                    <div class="filtros-busqueda">
+                        <input type="text" id="mp-productos-buscar" placeholder="Buscar producto o local...">
+                    </div>
+                    <div id="lista-mis-productos" class="tarjetas"></div>
                 </section>
 
                 <!-- Vista: Mi Cuenta (Cliente) -->
@@ -872,6 +886,51 @@
                     </form>
                 </section>
 
+                                <!-- Vista: Dashboard del Comerciante -->
+                <section id="vista-dashboard-comerciante" class="vista oculto">
+                    <h2>Mi Dashboard</h2>
+                    <p class="ayuda">Resumen de tu actividad como comerciante.</p>
+
+                    <div class="rejilla-stats bloque-separado">
+                        <div class="stat-card">
+                            <div class="icon-container"><i data-lucide="store"></i></div>
+                            <p class="stat-numero" id="stat-mis-locales">—</p>
+                            <p class="stat-etiqueta">Locales activos</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon-container icono-azul"><i data-lucide="package"></i></div>
+                            <p class="stat-numero" id="stat-mis-productos">—</p>
+                            <p class="stat-etiqueta">Productos registrados</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon-container icono-ambar"><i data-lucide="alert-triangle"></i></div>
+                            <p class="stat-numero" id="stat-productos-agotados">—</p>
+                            <p class="stat-etiqueta">Productos agotados</p>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-accesos bloque-separado">
+                        <h3>Accesos rápidos</h3>
+                        <div class="accesos-dashboard-grid">
+                            <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-local">
+                                <i data-lucide="plus-circle"></i>
+                                <span>Registrar Local</span>
+                            </button>
+                            <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-producto">
+                                <i data-lucide="package-plus"></i>
+                                <span>Registrar Producto</span>
+                            </button>
+                            <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-seleccionar-local">
+                                <i data-lucide="store"></i>
+                                <span>Mi Local</span>
+                            </button>
+                            <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-mis-productos">
+                                <i data-lucide="package"></i>
+                                <span>Mis Productos</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
 
                 <!-- Vista: Dashboard de Administrador -->
                 <section id="vista-dashboard-admin" class="vista oculto">
@@ -1048,6 +1107,66 @@
                     <div id="modal-local-productos-lista"></div>
                 </div>
             </div>
+        </div>
+    </div>
+
+            <div id="modal-editar-local" class="modal-overlay oculto">
+        <div class="modal-contenido modal-contenido-formulario">
+            <button type="button" id="modal-editar-local-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+            <h3>Editar Local</h3>
+            <form id="form-modal-editar-local" class="formulario" enctype="multipart/form-data">
+                <input type="hidden" id="mel-idLocal">
+
+                <label for="mel-tipoLocal">Tipo de Local</label>
+                <input type="text" id="mel-tipoLocal" required>
+
+                <label for="mel-nombreLocal">Nombre del Local</label>
+                <input type="text" id="mel-nombreLocal" required>
+
+                <label for="mel-descripcion">Descripción</label>
+                <textarea id="mel-descripcion"></textarea>
+
+                <label for="mel-telefono">Teléfono</label>
+                <input type="text" id="mel-telefono" required>
+
+                <label for="mel-logo">Nuevo logo (opcional, deja vacío para mantener el actual)</label>
+                <input type="file" id="mel-logo" accept="image/png, image/jpeg, image/webp">
+
+                <button type="submit">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+        <div id="modal-editar-producto-mp" class="modal-overlay oculto">
+        <div class="modal-contenido modal-contenido-formulario">
+            <button type="button" id="modal-editar-producto-mp-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+            <h3>Editar Producto</h3>
+            <form id="form-modal-editar-producto" class="formulario" enctype="multipart/form-data">
+                <input type="hidden" id="mep-idProducto">
+
+                <label for="mep-tipoProducto">Tipo de Producto</label>
+                <input type="text" id="mep-tipoProducto" required>
+
+                <label for="mep-nombre">Nombre</label>
+                <input type="text" id="mep-nombre" required>
+
+                <label for="mep-precio">Precio</label>
+                <input type="number" id="mep-precio" step="0.01" min="0" required>
+
+                <label for="mep-descuento">Descuento (%, opcional)</label>
+                <input type="number" id="mep-descuento" min="0" max="100">
+
+                <label for="mep-descripcion">Descripción</label>
+                <textarea id="mep-descripcion"></textarea>
+
+                <label for="mep-cantidad">Cantidad disponible</label>
+                <input type="number" id="mep-cantidad" min="0" required>
+
+                <label for="mep-imagen">Nueva imagen (opcional, deja vacío para mantener la actual)</label>
+                <input type="file" id="mep-imagen" accept="image/png, image/jpeg, image/webp">
+
+                <button type="submit">Guardar Cambios</button>
+            </form>
         </div>
     </div>
 

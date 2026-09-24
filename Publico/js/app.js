@@ -34,9 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarComerciantes();
             }
 
-            if (boton.dataset.vista === 'vista-clientes') {
+                       if (boton.dataset.vista === 'vista-clientes') {
                 mostrarListaClientes();
                 cargarClientes();
+            }
+
+                        if (boton.dataset.vista === 'vista-productos-admin') {
+                cargarProductosAdmin();
+            }
+
+            if (boton.dataset.vista === 'vista-mis-productos') {
+                cargarMisProductos();
+            }
+
+            if (boton.dataset.vista === 'vista-dashboard-comerciante') {
+                cargarDashboardComerciante();
             }
 
             if (boton.dataset.vista === 'vista-resenas') {
@@ -51,8 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarDashboardAdmin();
             }
 
-            if (boton.dataset.vista === 'vista-producto') {
+             if (boton.dataset.vista === 'vista-producto') {
                 cargarLocalesComercianteParaProducto();
+            }
+
+            if (boton.dataset.vista === 'vista-seleccionar-local') {
+                mostrarSelectorPerfilesLocal();
             }
 
             if (boton.dataset.vista === 'vista-mi-cuenta-cliente') {
@@ -511,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await mostrarSelectorPerfilesLocal();
             }
         } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
+            mostrarMensaje('Error al crear el local', 'error');
         }
     });
 
@@ -670,58 +686,37 @@ document.addEventListener('DOMContentLoaded', () => {
         panelLista.classList.remove('oculto');
     }
 
-    async function cargarLocales() {
-        const contenedor = document.getElementById('lista-locales');
-        contenedor.innerHTML = '<p>Cargando...</p>';
+     function confirmarEliminarLocal(idLocal, nombreLocal, tarjeta) {
+        Swal.fire({
+            title: `¿Eliminar "${nombreLocal}"?`,
+            text: 'Este local se marcará como inactivo y dejará de verse en la app.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
 
-        const parametros = new URLSearchParams();
+            try {
+                const r = await fetch('api/eliminar_local.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idLocal })
+                });
+                const res = await r.json();
 
-        const nombre = document.getElementById('f-nombre').value.trim();
-        if (nombre) parametros.set('nombre', nombre);
-
-        const idProvincia = document.getElementById('f-provincia').value;
-        if (idProvincia) parametros.set('idProvincia', idProvincia);
-
-        const idCanton = document.getElementById('f-canton').value;
-        if (idCanton) parametros.set('idCanton', idCanton);
-
-        const idDistrito = document.getElementById('f-distrito').value;
-        if (idDistrito) parametros.set('idDistrito', idDistrito);
-
-        try {
-            const r = await fetch(`api/listar_locales.php?${parametros.toString()}`);
-            const res = await r.json();
-
-            if (!res.exito || res.locales.length === 0) {
-                if (nombre) {
-                    await mostrarSugerenciasBusqueda(nombre, contenedor);
+                if (res.exito) {
+                    tarjeta.remove();
+                    mostrarMensaje('Local eliminado correctamente', 'exito');
                 } else {
-                    const hayFiltros = parametros.toString() !== '';
-                    contenedor.innerHTML = hayFiltros
-                        ? '<p>No se encontraron locales con esos filtros.</p>'
-                        : '<p>No hay locales registrados todavía.</p>';
+                    mostrarMensaje(res.mensaje || 'No se pudo eliminar el local', 'error');
                 }
-                return;
+            } catch (e) {
+                mostrarMensaje('Error al eliminar el local', 'error');
             }
-
-            contenedor.innerHTML = '';
-
-            res.locales.forEach(local => {
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta tarjeta-clic';
-                tarjeta.innerHTML = `
-                    ${local.logo ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}" class="imagen-producto">` : ''}
-                    <h3>${local.nombreLocal}</h3>
-                    <p class="etiqueta-tipo">${local.tipoLocal ?? ''}</p>
-                    <p>${local.descripcion ?? ''}</p>
-                    <p>📞 ${local.telefono}</p>
-                `;
-                tarjeta.addEventListener('click', () => abrirDetalleLocal(local.idLocal));
-                contenedor.appendChild(tarjeta);
-            });
-        } catch (e) {
-            contenedor.innerHTML = '<p>Error al cargar los locales.</p>';
-        }
+        });
     }
 
     async function mostrarSugerenciasBusqueda(nombre, contenedor) {
@@ -779,7 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function abrirDetalleLocal(idLocal) {
+      async function abrirDetalleLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
             const res = await r.json();
@@ -791,28 +786,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const { local, ubicacion } = res;
 
-            const esComerciante = usuarioSesionActual?.tipo === 'Comerciante';
             const formEditarLocal = document.getElementById('form-editar-local');
             const infoSoloLectura = document.getElementById('e-info-solo-lectura');
 
-            if (esComerciante) {
-                formEditarLocal.classList.remove('oculto');
-                infoSoloLectura.classList.add('oculto');
+            formEditarLocal.classList.add('oculto');
+            infoSoloLectura.classList.remove('oculto');
 
-                document.getElementById('e-idLocal').value = local.idLocal;
-                document.getElementById('e-tipoLocal').value = local.tipoLocal ?? '';
-                document.getElementById('e-nombreLocal').value = local.nombreLocal;
-                document.getElementById('e-descripcion').value = local.descripcion ?? '';
-                document.getElementById('e-telefono').value = local.telefono;
-            } else {
-                formEditarLocal.classList.add('oculto');
-                infoSoloLectura.classList.remove('oculto');
-
-                document.getElementById('e-solo-tipo').textContent = local.tipoLocal ?? '';
-                document.getElementById('e-solo-nombre').textContent = local.nombreLocal;
-                document.getElementById('e-solo-descripcion').textContent = local.descripcion ?? 'Sin descripción';
-                document.getElementById('e-solo-telefono').textContent = local.telefono;
-            }
+            document.getElementById('e-solo-tipo').textContent = local.tipoLocal ?? '';
+            document.getElementById('e-solo-nombre').textContent = local.nombreLocal;
+            document.getElementById('e-solo-descripcion').textContent = local.descripcion ?? 'Sin descripción';
+            document.getElementById('e-solo-telefono').textContent = local.telefono;
 
             const imgLogo = document.getElementById('e-logo-actual');
             if (local.logo) {
@@ -831,10 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             cargarProductosDelLocal(idLocal);
 
-            document.getElementById('e-panel-actividad-local').classList.toggle('oculto', !esComerciante);
-            if (esComerciante) {
-                cargarHistorialActividadLocal(idLocal);
-            }
+            document.getElementById('e-panel-actividad-local').classList.add('oculto');
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del local', 'error');
         }
@@ -1025,6 +1005,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+                           
+
+        
+
         const btnComprarModalProducto = document.getElementById('modal-producto-comprar');
         if (btnComprarModalProducto) {
             btnComprarModalProducto.disabled = !!producto.agotado;
@@ -1087,88 +1071,87 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${producto.descripcion ?? ''}</p>
                     <p>${precioHtml}</p>
                     <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
-                    ${usuarioSesionActual?.tipo === 'Comerciante' ? `
-                        <button type="button" class="boton-secundario btn-editar-producto" data-id="${producto.idProducto}">Editar</button>
-                        <button type="button" class="boton-peligro btn-eliminar-producto" data-id="${producto.idProducto}">Eliminar</button>
-                    ` : ''}
                 `;
                 contenedor.appendChild(tarjeta);
-                const btnEditar = tarjeta.querySelector('.btn-editar-producto');
-                if (btnEditar) {
-                    btnEditar.addEventListener('click', () => {
-                        abrirEditarProducto(producto.idProducto, idLocal);
-                    });
-                }
-
-                const btnEliminarProducto = tarjeta.querySelector('.btn-eliminar-producto');
-                if (btnEliminarProducto) {
-                    btnEliminarProducto.addEventListener('click', async () => {
-                        const resultado = await Swal.fire({
-                            title: '¿Eliminar producto?',
-                            text: `Se eliminará "${producto.nombre}". Esta acción no se puede deshacer.`,
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Sí, eliminar',
-                            cancelButtonText: 'Cancelar',
-                            confirmButtonColor: '#dc3545'
-                        });
-                        if (!resultado.isConfirmed) return;
-
-                        try {
-                            const r = await fetch('api/eliminar_mi_producto.php', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ idProducto: producto.idProducto })
-                            });
-                            const res = await r.json();
-                            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-                            if (res.exito) {
-                                cargarProductosDelLocal(idLocal);
-                            }
-                        } catch (e) {
-                            mostrarMensaje('Error de conexión con el servidor', 'error');
-                        }
-                    });
-                }
             });
         } catch (e) {
             contenedor.innerHTML = '<p>Error al cargar los productos.</p>';
         }
     }
 
-    document.getElementById('btn-volver-lista')?.addEventListener('click', mostrarListaLocales);
+     let formLocalTieneCambios = false;
+    document.getElementById('form-editar-local')?.addEventListener('input', () => {
+        formLocalTieneCambios = true;
+    });
 
-    document.getElementById('form-editar-local')?.addEventListener('submit', async (evento) => {
+    document.getElementById('btn-volver-lista')?.addEventListener('click', () => {
+        if (!formLocalTieneCambios) {
+            mostrarListaLocales();
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Salir sin guardar?',
+            text: 'Tienes cambios en este local que todavía no se han guardado. Se perderán si sales ahora.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, salir sin guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then((resultado) => {
+            if (resultado.isConfirmed) {
+                formLocalTieneCambios = false;
+                mostrarListaLocales();
+            }
+        });
+    });
+
+    document.getElementById('form-editar-local')?.addEventListener('submit', (evento) => {
         evento.preventDefault();
 
-        const datos = new FormData();
-        datos.append('idLocal', document.getElementById('e-idLocal').value);
-        datos.append('nombreTipoLocal', document.getElementById('e-tipoLocal').value);
-        datos.append('nombreLocal', document.getElementById('e-nombreLocal').value);
-        datos.append('descripcion', document.getElementById('e-descripcion').value);
-        datos.append('telefono', document.getElementById('e-telefono').value);
+        Swal.fire({
+            title: '¿Guardar estos cambios?',
+            text: 'Se van a actualizar los datos de este local.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
 
-        const archivoLogo = document.getElementById('e-logo').files[0];
-        if (archivoLogo) {
-            datos.append('logo', archivoLogo);
-        }
+            const datos = new FormData();
+            datos.append('idLocal', document.getElementById('e-idLocal').value);
+            datos.append('nombreTipoLocal', document.getElementById('e-tipoLocal').value);
+            datos.append('nombreLocal', document.getElementById('e-nombreLocal').value);
+            datos.append('descripcion', document.getElementById('e-descripcion').value);
+            datos.append('telefono', document.getElementById('e-telefono').value);
 
-        try {
-            const r = await fetch('api/editar_local.php', {
-                method: 'POST',
-                body: datos
-            });
-            const res = await r.json();
-
-            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
-
-            if (res.exito) {
-                mostrarListaLocales();
-                cargarLocales();
+            const archivoLogo = document.getElementById('e-logo').files[0];
+            if (archivoLogo) {
+                datos.append('logo', archivoLogo);
             }
-        } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
-        }
+
+            try {
+                const r = await fetch('api/editar_local.php', {
+                    method: 'POST',
+                    body: datos
+                });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    formLocalTieneCambios = false;
+                    mostrarListaLocales();
+                    cargarLocales();
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para guardar los cambios del local. Revisa tu conexión e intenta de nuevo.', 'error');
+            }
+        });
     });
 
     const selectIdLocalProducto = document.getElementById('p-idLocal');
@@ -1364,9 +1347,9 @@ document.addEventListener('DOMContentLoaded', () => {
         panelListaComerciantes.classList.remove('oculto');
     }
 
-    async function cargarComerciantes() {
+      async function cargarComerciantes() {
         const contenedor = document.getElementById('lista-comerciantes');
-        contenedor.innerHTML = '<p>Cargando...</p>';
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         const termino = document.getElementById('com-admin-buscar')?.value.trim() || '';
         const estado = document.getElementById('com-admin-filtro-estado')?.value || 'activos';
@@ -1377,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await r.json();
 
             if (!res.exito || res.comerciantes.length === 0) {
-                contenedor.innerHTML = '<p>No se encontraron comerciantes.</p>';
+                contenedor.innerHTML = '<p class="ayuda">No se encontraron comerciantes.</p>';
                 return;
             }
 
@@ -1385,18 +1368,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             res.comerciantes.forEach(c => {
                 const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta tarjeta-clic';
+                tarjeta.className = 'tarjeta tarjeta-clic tarjeta-persona';
                 tarjeta.innerHTML = `
-                    ${c.fotoPerfil ? `<img src="imagenes/${c.fotoPerfil}" alt="${c.nombre}" class="imagen-producto">` : ''}
-                    <h3>${c.nombre} ${!c.activo ? '<span class="ayuda error">(inactivo)</span>' : ''}</h3>
-                    <p class="etiqueta-tipo">${c.alias}</p>
-                    <p>✉️ ${c.correo}</p>
+                    ${c.fotoPerfil
+                        ? `<img src="imagenes/${c.fotoPerfil}" alt="${escaparHtml(c.nombre)}" class="avatar-persona">`
+                        : `<div class="avatar-persona avatar-iniciales">${escaparHtml(obtenerIniciales(c.nombre))}</div>`}
+                    <h4>${escaparHtml(c.nombre)}</h4>
+                    <p class="etiqueta-tipo">${escaparHtml(c.alias)}</p>
+                    <span class="${c.activo ? 'etiqueta-activo' : 'etiqueta-inactivo'}">${c.activo ? 'Activo' : 'Inactivo'}</span>
+                    <p class="ayuda">✉️ ${escaparHtml(c.correo)}</p>
                 `;
                 tarjeta.addEventListener('click', () => abrirDetalleComerciante(c.idComerciante));
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
-            contenedor.innerHTML = '<p>Error al cargar los comerciantes.</p>';
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los comerciantes.</p>';
         }
     }
 
@@ -1484,7 +1470,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarComerciantes();
             }
         } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
+            mostrarMensaje('Error al eliminar el comerciante', 'error');
         }
     });
 
@@ -1506,7 +1492,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarComerciantes();
             }
         } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
+            mostrarMensaje('No se pudo conectar con el servidor para activar este comerciante. Revisa tu conexión e intenta de nuevo.', 'error');
         }
     });
 
@@ -1518,9 +1504,16 @@ document.addEventListener('DOMContentLoaded', () => {
         panelListaClientes.classList.remove('oculto');
     }
 
+        function obtenerIniciales(nombre) {
+        const partes = (nombre || '').trim().split(/\s+/);
+        const primera = partes[0]?.[0] ?? '';
+        const segunda = partes[1]?.[0] ?? '';
+        return (primera + segunda).toUpperCase();
+    }
+
     async function cargarClientes() {
         const contenedor = document.getElementById('lista-clientes');
-        contenedor.innerHTML = '<p>Cargando...</p>';
+        contenedor.innerHTML = '<p class="ayuda">Cargando...</p>';
 
         const termino = document.getElementById('cl-admin-buscar')?.value.trim() || '';
         const estado = document.getElementById('cl-admin-filtro-estado')?.value || 'activos';
@@ -1531,7 +1524,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await r.json();
 
             if (!res.exito || res.clientes.length === 0) {
-                contenedor.innerHTML = '<p>No se encontraron clientes.</p>';
+                contenedor.innerHTML = '<p class="ayuda">No se encontraron clientes.</p>';
                 return;
             }
 
@@ -1539,20 +1532,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             res.clientes.forEach(c => {
                 const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta tarjeta-clic';
+                tarjeta.className = 'tarjeta tarjeta-clic tarjeta-persona';
                 tarjeta.innerHTML = `
-                    ${c.fotoPerfil ? `<img src="imagenes/${c.fotoPerfil}" alt="${c.nombreCompleto}" class="imagen-producto">` : ''}
-                    <h3>${c.nombreCompleto} ${!c.activo ? '<span class="ayuda error">(inactivo)</span>' : ''}</h3>
-                    <p>✉️ ${c.correo}</p>
+                    ${c.fotoPerfil
+                        ? `<img src="imagenes/${c.fotoPerfil}" alt="${escaparHtml(c.nombreCompleto)}" class="avatar-persona">`
+                        : `<div class="avatar-persona avatar-iniciales">${escaparHtml(obtenerIniciales(c.nombreCompleto))}</div>`}
+                    <h4>${escaparHtml(c.nombreCompleto)}</h4>
+                    <span class="${c.activo ? 'etiqueta-activo' : 'etiqueta-inactivo'}">${c.activo ? 'Activo' : 'Inactivo'}</span>
+                    <p class="ayuda">✉️ ${escaparHtml(c.correo)}</p>
                 `;
                 tarjeta.addEventListener('click', () => abrirDetalleCliente(c.idCliente));
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
-            contenedor.innerHTML = '<p>Error al cargar los clientes.</p>';
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los clientes.</p>';
         }
     }
-
     document.getElementById('cl-admin-buscar')?.addEventListener('input', debounce(cargarClientes, 400));
     document.getElementById('cl-admin-filtro-estado')?.addEventListener('change', cargarClientes);
 
@@ -1635,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarClientes();
             }
         } catch (e) {
-            mostrarMensaje('Error de conexión con el servidor', 'error');
+            mostrarMensaje('Error al editar el cliente', 'error');
         }
     });
 
@@ -1703,7 +1698,9 @@ document.addEventListener('DOMContentLoaded', () => {
         Pasaporte: { patron: /^[A-Za-z0-9]{6,15}$/, maxlength: 15, placeholder: 'Ej: AB1234567', ayuda: 'Entre 6 y 15 caracteres, letras y números' }
     };
 
-    function activarValidacionIdentificacion(selectTipoEl, inputNumeroEl, mensajeFormatoEl) {
+       function activarValidacionIdentificacion(selectTipoEl, inputNumeroEl, mensajeFormatoEl) {
+        if (!selectTipoEl || !inputNumeroEl || !mensajeFormatoEl) return;
+
         function aplicarReglasDelTipo() {
             const regla = reglasIdentificacion[selectTipoEl.value];
             if (!regla) return;
@@ -1753,6 +1750,108 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectDistritoFiltro = document.getElementById('f-distrito');
 
     activarCascadaUbicacion(selectProvinciaFiltro, selectCantonFiltro, selectDistritoFiltro);
+
+        function confirmarEliminarLocal(idLocal, nombreLocal, tarjeta) {
+        Swal.fire({
+            title: `¿Eliminar "${nombreLocal}"?`,
+            text: 'Este local se marcará como inactivo y dejará de verse en la app.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/eliminar_local.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idLocal })
+                });
+                const res = await r.json();
+
+                if (res.exito) {
+                    tarjeta.remove();
+                    mostrarMensaje('Local eliminado correctamente', 'exito');
+                } else {
+                    mostrarMensaje(res.mensaje || 'No se pudo eliminar el local', 'error');
+                }
+            } catch (e) {
+                mostrarMensaje('Error al eliminar el local', 'error');
+            }
+        });
+    }
+
+    async function cargarLocales() {
+        const contenedor = document.getElementById('lista-locales');
+        contenedor.innerHTML = '<p>Cargando...</p>';
+
+        const parametros = new URLSearchParams();
+
+        const nombre = document.getElementById('f-nombre').value.trim();
+        if (nombre) parametros.set('nombre', nombre);
+
+        const idProvincia = document.getElementById('f-provincia').value;
+        if (idProvincia) parametros.set('idProvincia', idProvincia);
+
+        const idCanton = document.getElementById('f-canton').value;
+        if (idCanton) parametros.set('idCanton', idCanton);
+
+        const idDistrito = document.getElementById('f-distrito').value;
+        if (idDistrito) parametros.set('idDistrito', idDistrito);
+
+        try {
+            const r = await fetch(`api/listar_locales.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito || res.locales.length === 0) {
+                if (nombre) {
+                    await mostrarSugerenciasBusqueda(nombre, contenedor);
+                } else {
+                    const hayFiltros = parametros.toString() !== '';
+                    contenedor.innerHTML = hayFiltros
+                        ? '<p>No se encontraron locales con esos filtros.</p>'
+                        : '<p>No hay locales registrados todavía.</p>';
+                }
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.locales.forEach(local => {
+                const esAdmin = usuarioSesionActual?.tipo === 'SuperAdmin';
+
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-clic';
+                if (esAdmin) tarjeta.classList.add('tarjeta-con-borrar');
+                                tarjeta.innerHTML = `
+                    ${esAdmin ? `<button type="button" class="tarjeta-local-btn-eliminar" aria-label="Eliminar local"><i data-lucide="trash-2"></i></button>` : ''}
+                    ${local.logo
+                        ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}" class="imagen-producto">`
+                        : `<div class="imagen-producto imagen-producto-vacia"><i data-lucide="store"></i></div>`}
+                    <h3>${local.nombreLocal}</h3>
+                    <p class="etiqueta-tipo">${local.tipoLocal ?? ''}</p>
+                    <p>${local.descripcion ?? ''}</p>
+                    <p>📞 ${local.telefono}</p>
+                `;
+                tarjeta.addEventListener('click', () => abrirDetalleLocal(local.idLocal));
+
+                if (esAdmin) {
+                    tarjeta.querySelector('.tarjeta-local-btn-eliminar').addEventListener('click', (evento) => {
+                        evento.stopPropagation();
+                        confirmarEliminarLocal(local.idLocal, local.nombreLocal, tarjeta);
+                    });
+                }
+                contenedor.appendChild(tarjeta);
+            });
+
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            contenedor.innerHTML = '<p>Error al cargar los locales.</p>';
+        }
+    }
 
     const buscarLocalesDebounced = debounce(cargarLocales, 400);
 
@@ -2159,8 +2258,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const barraLateral = document.getElementById('barra-lateral');
         const topbarPublica = document.getElementById('topbar-publica');
-        if (barraLateral) barraLateral.classList.remove('oculto');
-        if (topbarPublica) topbarPublica.classList.add('oculto');
+        if (barraLateral) barraLateral.classList.toggle('oculto', !usuario);
+        if (topbarPublica) topbarPublica.classList.toggle('oculto', !!usuario);
 
         const menuSecundario = document.getElementById('menu-secundario');
         if (menuSecundario) {
@@ -2186,11 +2285,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const botonEmpezarVender = document.getElementById('btn-empezar-vender');
+               const botonEmpezarVender = document.getElementById('btn-empezar-vender');
         if (botonEmpezarVender) {
             botonEmpezarVender.classList.toggle('oculto', !usuario || usuario.tipo !== 'Cliente');
         }
+
+               const botonMiPerfil = document.getElementById('btn-mi-perfil');
+        if (botonMiPerfil) {
+            botonMiPerfil.classList.toggle('oculto', usuario?.tipo !== 'SuperAdmin');
+        }
+
+        const botonMiCuentaCliente = document.getElementById('btn-mi-cuenta-cliente');
+        if (botonMiCuentaCliente) {
+            botonMiCuentaCliente.classList.toggle('oculto', usuario?.tipo !== 'Cliente');
+        }
+
+        const botonMiCuentaComerciante = document.getElementById('btn-mi-cuenta-comerciante');
+        if (botonMiCuentaComerciante) {
+            botonMiCuentaComerciante.classList.toggle('oculto', usuario?.tipo !== 'Comerciante');
+        }
+
+        const piePagina = document.getElementById('pie-pagina');
+        if (piePagina) piePagina.classList.toggle('oculto', !!usuario);
     }
+    
 
     document.getElementById('btn-empezar-vender')?.addEventListener('click', () => {
         mostrarVistaLogin('vista-local');
@@ -2321,7 +2439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarVistaLogin('vista-login');
     });
 
-    async function mostrarSelectorPerfilesLocal() {
+        async function mostrarSelectorPerfilesLocal() {
         mostrarVistaLogin('vista-seleccionar-local');
 
         const contenedor = document.getElementById('grid-perfiles-local');
@@ -2341,16 +2459,58 @@ document.addEventListener('DOMContentLoaded', () => {
             res.locales.forEach(local => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta-perfil';
+                tarjeta.classList.add('tarjeta-con-borrar');
                 tarjeta.innerHTML = `
+                    <button type="button" class="tarjeta-local-btn-editar" aria-label="Editar local"><i data-lucide="pencil"></i></button>
+                    <button type="button" class="tarjeta-local-btn-eliminar" aria-label="Eliminar local"><i data-lucide="trash-2"></i></button>
                     ${local.logo
                         ? `<img src="imagenes/${local.logo}" alt="${local.nombreLocal}">`
-                        : `<div class="icono-perfil">🏪</div>`}
+                        : `<div class="icono-perfil"><i data-lucide="store"></i></div>`}
                     <span class="nombre-perfil">${local.nombreLocal}</span>
                     ${!local.activo ? '<span class="etiqueta-inactivo">Inactivo por falta de uso</span>' : ''}
                 `;
                 tarjeta.addEventListener('click', () => entrarPerfilLocal(local.idLocal));
+
+                tarjeta.querySelector('.tarjeta-local-btn-editar').addEventListener('click', (evento) => {
+                    evento.stopPropagation();
+                    abrirModalEditarLocal(local.idLocal);
+                });
+
+                tarjeta.querySelector('.tarjeta-local-btn-eliminar').addEventListener('click', (evento) => {
+                    evento.stopPropagation();
+                    Swal.fire({
+                        title: `¿Eliminar "${local.nombreLocal}"?`,
+                        text: 'Este local se marcará como inactivo y dejará de verse en la app. Esta acción no se puede deshacer.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#DC2626',
+                        cancelButtonColor: '#8E7CC3'
+                    }).then(async (resultado) => {
+                        if (!resultado.isConfirmed) return;
+
+                        try {
+                            const r2 = await fetch('api/eliminar_mi_local.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ idLocal: local.idLocal })
+                            });
+                            const res2 = await r2.json();
+                            mostrarMensaje(res2.mensaje, res2.exito ? 'exito' : 'error');
+                            if (res2.exito) {
+                                await mostrarSelectorPerfilesLocal();
+                            }
+                        } catch (e) {
+                            mostrarMensaje('No se pudo conectar con el servidor para eliminar el local. Revisa tu conexión e intenta de nuevo.', 'error');
+                        }
+                    });
+                });
+
                 contenedor.appendChild(tarjeta);
             });
+
+            if (window.lucide) lucide.createIcons();
 
             const tarjetaNueva = document.createElement('div');
             tarjetaNueva.className = 'tarjeta-perfil crear-nuevo';
@@ -2703,11 +2863,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        pista.innerHTML = carruselLocales.map(local => `
+               pista.innerHTML = carruselLocales.map(local => `
             <div class="carrusel-slide">
                 ${local.logo
                 ? `<img src="imagenes/${local.logo}" alt="${escaparHtml(local.nombreLocal)}">`
-                : `<div class="carrusel-slide-sin-logo">🏪</div>`}
+                : `<div class="carrusel-slide-sin-logo"><i data-lucide="store"></i></div>`}
                 <div class="carrusel-slide-info">
                     <span class="etiqueta-tipo">${escaparHtml(local.tipoLocal ?? '')}</span>
                     <h3>${escaparHtml(local.nombreLocal)}</h3>
@@ -2716,6 +2876,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `).join('');
+
+        if (window.lucide) lucide.createIcons();
 
         pista.style.transform = `translateX(-${carruselIndice * 100}%)`;
 
@@ -2758,48 +2920,20 @@ document.addEventListener('DOMContentLoaded', () => {
         carruselIntervalo = setInterval(() => moverCarrusel(1), 5000);
     }
 
-    function renderizarCatalogoInicio(locales) {
-        const contenedor = document.getElementById('catalogo-inicio');
+       document.getElementById('inicio-buscar')?.addEventListener('input', debounce(() => {
         const termino = (document.getElementById('inicio-buscar')?.value || '').trim().toLowerCase();
 
         const filtrados = termino
-            ? locales.filter(l =>
-                l.nombreLocal.toLowerCase().includes(termino) ||
-                (l.tipoLocal ?? '').toLowerCase().includes(termino))
-            : locales;
+            ? productosInicioCache.filter(p =>
+                p.nombre.toLowerCase().includes(termino) ||
+                p.nombreLocal.toLowerCase().includes(termino) ||
+                (p.categoria ?? '').toLowerCase().includes(termino))
+            : productosInicioCache;
 
-        if (filtrados.length === 0) {
-            contenedor.innerHTML = '<p class="ayuda">No se encontraron locales.</p>';
-            return;
-        }
-
-        contenedor.innerHTML = '';
-        filtrados.forEach(local => {
-            const tarjeta = document.createElement('div');
-            tarjeta.className = 'tarjeta tarjeta-clic';
-            tarjeta.innerHTML = `
-                ${local.logo ? `<img src="imagenes/${local.logo}" alt="${escaparHtml(local.nombreLocal)}" class="imagen-producto">` : ''}
-                <h3>${escaparHtml(local.nombreLocal)}</h3>
-                <p class="etiqueta-tipo">${escaparHtml(local.tipoLocal ?? '')}</p>
-                <p>${escaparHtml(local.descripcion ?? '')}</p>
-            `;
-            tarjeta.addEventListener('click', () => {
-                abrirModalLocal(local.idLocal);
-            });
-            contenedor.appendChild(tarjeta);
-        });
-    }
-
-    document.getElementById('inicio-buscar')?.addEventListener('input', debounce(() => {
-        renderizarCatalogoInicio(localesInicioCache);
+        renderizarSeccionesProductos(filtrados);
     }, 300));
 
     async function cargarInicio() {
-        const contenedorCatalogo = document.getElementById('catalogo-inicio');
-        if (!contenedorCatalogo) return;
-
-        contenedorCatalogo.innerHTML = '<p class="ayuda">Cargando locales...</p>';
-
         try {
             const locales = await obtenerLocalesActivos();
             localesInicioCache = locales;
@@ -2809,13 +2943,11 @@ document.addEventListener('DOMContentLoaded', () => {
             renderizarCarrusel();
             iniciarAutoplayCarrusel();
 
-            renderizarCatalogoInicio(locales);
             cargarProductosRecientesInicio();
         } catch (e) {
-            contenedorCatalogo.innerHTML = '<p class="ayuda error">No se pudieron cargar los locales.</p>';
+            mostrarMensaje('No se pudieron cargar los locales de Inicio', 'error');
         }
     }
-
     cargarInicio();
 
 
@@ -2842,6 +2974,121 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+       let productosInicioCache = [];
+
+    function formatearTiempoRestante(ms) {
+        const totalSegundos = Math.floor(ms / 1000);
+        const horas = Math.floor(totalSegundos / 3600);
+        const minutos = Math.floor((totalSegundos % 3600) / 60);
+        const segundos = totalSegundos % 60;
+
+        return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+    }
+
+    function actualizarCronometros() {
+        const ahora = Date.now();
+        document.querySelectorAll('[data-vence]').forEach(elemento => {
+            const vence = new Date(elemento.dataset.vence).getTime();
+            const restante = vence - ahora;
+            const textoSpan = elemento.querySelector('.cronometro-texto') || elemento;
+
+            if (isNaN(vence) || restante <= 0) {
+                textoSpan.textContent = 'Vencido';
+                elemento.classList.add('cronometro-vencido');
+                return;
+            }
+
+            elemento.classList.remove('cronometro-vencido');
+            textoSpan.textContent = formatearTiempoRestante(restante);
+        });
+    }
+
+    setInterval(actualizarCronometros, 1000);
+
+    function agruparProductosPorCategoria(productos) {
+        const grupos = {};
+        productos.forEach(p => {
+            const cat = p.categoria || 'Otros';
+            if (!grupos[cat]) grupos[cat] = [];
+            grupos[cat].push(p);
+        });
+        return grupos;
+    }
+
+    function crearTarjetaProducto(p) {
+        const div = document.createElement('div');
+        div.className = 'tarjeta-producto';
+        div.innerHTML = `
+            <div class="tarjeta-producto-imagen">
+                ${p.imagen
+                ? `<img src="imagenes/${p.imagen}" alt="${escaparHtml(p.nombre)}">`
+                : `<div class="tarjeta-producto-sin-imagen"><i data-lucide="package"></i></div>`}
+                ${p.porcentajeDescuento ? `<span class="tarjeta-producto-badge">-${p.porcentajeDescuento}%</span>` : ''}
+                ${p.logoLocal ? `<img class="tarjeta-producto-logo-local" src="imagenes/${p.logoLocal}" alt="${escaparHtml(p.nombreLocal)}">` : ''}
+            </div>
+            <div class="tarjeta-producto-info">
+                <span class="tarjeta-producto-local">${escaparHtml(p.nombreLocal)}</span>
+                <h4>${escaparHtml(p.nombre)}</h4>
+                <p class="tarjeta-producto-disponibles">Disponibles: ${p.cantidadDisponible}</p>
+                ${p.fechaVencimiento ? `
+                <p class="tarjeta-producto-cronometro" data-vence="${p.fechaVencimiento}">
+                    <i data-lucide="timer"></i> <span class="cronometro-texto">--:--:--</span>
+                </p>` : ''}
+                <p class="tarjeta-producto-precio">
+                    ${p.porcentajeDescuento ? `<s>₡${p.precioOriginal}</s>` : ''}
+                    <strong>₡${p.precioFinal}</strong>
+                </p>
+            </div>
+        `;
+        div.addEventListener('click', () => {
+            abrirModalProducto(p);
+        });
+        return div;
+    }
+
+    function renderizarSeccionesProductos(productos) {
+        const contenedor = document.getElementById('productos-recientes-inicio');
+        if (!contenedor) return;
+
+        if (productos.length === 0) {
+            contenedor.innerHTML = '<p class="ayuda">Todavía no hay productos disponibles.</p>';
+            return;
+        }
+
+        const grupos = agruparProductosPorCategoria(productos);
+        contenedor.innerHTML = '';
+
+        Object.keys(grupos).sort().forEach(categoria => {
+            const seccion = document.createElement('section');
+            seccion.className = 'seccion-categoria';
+            seccion.innerHTML = `
+                <div class="seccion-categoria-encabezado">
+                    <h3>${escaparHtml(categoria)}</h3>
+                    <div class="seccion-categoria-flechas">
+                        <button type="button" class="carrusel-flecha-mini" data-dir="-1" aria-label="Anterior">&#10094;</button>
+                        <button type="button" class="carrusel-flecha-mini" data-dir="1" aria-label="Siguiente">&#10095;</button>
+                    </div>
+                </div>
+                <div class="fila-productos-carrusel"></div>
+            `;
+
+            const fila = seccion.querySelector('.fila-productos-carrusel');
+            grupos[categoria].forEach(p => fila.appendChild(crearTarjetaProducto(p)));
+
+            seccion.querySelectorAll('.carrusel-flecha-mini').forEach(boton => {
+                boton.addEventListener('click', () => {
+                    const direccion = Number(boton.dataset.dir);
+                    fila.scrollBy({ left: direccion * 240, behavior: 'smooth' });
+                });
+            });
+
+            contenedor.appendChild(seccion);
+        });
+
+        if (window.lucide) lucide.createIcons();
+        actualizarCronometros();
+    }
+
     async function cargarProductosRecientesInicio() {
         const contenedor = document.getElementById('productos-recientes-inicio');
         if (!contenedor) return;
@@ -2849,34 +3096,16 @@ document.addEventListener('DOMContentLoaded', () => {
         contenedor.innerHTML = '<p class="ayuda">Cargando productos...</p>';
 
         try {
-            const r = await fetch('api/listar_productos_recientes.php?limite=8');
+            const r = await fetch('api/listar_productos_publicos.php');
             const res = await r.json();
 
-            if (!res.exito || res.productos.length === 0) {
-                contenedor.innerHTML = '<p class="ayuda">Todavía no hay productos registrados.</p>';
+            if (!res.exito) {
+                contenedor.innerHTML = '<p class="ayuda error">No se pudieron cargar los productos.</p>';
                 return;
             }
 
-            contenedor.innerHTML = '';
-            res.productos.forEach(producto => {
-                const precioHtml = producto.porcentajeDescuento
-                    ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
-                    : `₡${producto.precioOriginal}`;
-
-                const tarjeta = document.createElement('div');
-                tarjeta.className = 'tarjeta tarjeta-clic';
-                tarjeta.innerHTML = `
-                    ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${escaparHtml(producto.nombre)}" class="imagen-producto">` : ''}
-                    <h3>${escaparHtml(producto.nombre)}</h3>
-                    <p class="etiqueta-tipo">${escaparHtml(producto.nombreLocal)}</p>
-                    <p>${precioHtml}</p>
-                    ${producto.agotado ? '<span class="ayuda error">Agotado</span>' : ''}
-                `;
-                tarjeta.addEventListener('click', () => {
-                    abrirModalProducto(producto);
-                });
-                contenedor.appendChild(tarjeta);
-            });
+            productosInicioCache = res.productos;
+            renderizarSeccionesProductos(productosInicioCache);
         } catch (e) {
             contenedor.innerHTML = '<p class="ayuda error">Error al cargar los productos.</p>';
         }
@@ -3365,5 +3594,551 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
+    });
+
+
+        // ------------------------------------------------------------
+    // Colapsar sidebar a solo íconos
+    // ------------------------------------------------------------
+    const barraLateralEl = document.getElementById('barra-lateral');
+    const btnColapsarSidebar = document.getElementById('btn-colapsar-sidebar');
+
+    function aplicarEstadoSidebar() {
+        const colapsada = localStorage.getItem('sidebarColapsada') === '1';
+        barraLateralEl?.classList.toggle('colapsada', colapsada);
+    }
+
+    btnColapsarSidebar?.addEventListener('click', () => {
+        const estaColapsada = barraLateralEl.classList.toggle('colapsada');
+        localStorage.setItem('sidebarColapsada', estaColapsada ? '1' : '0');
+    });
+
+    aplicarEstadoSidebar();
+
+    // ------------------------------------------------------------
+    // Mi Perfil (Admin)
+    // ------------------------------------------------------------
+       document.getElementById('btn-mi-perfil')?.addEventListener('click', () => {
+        mostrarVistaLogin('vista-mi-perfil');
+        cargarMiPerfil();
+    });
+
+    document.getElementById('btn-mi-cuenta-cliente')?.addEventListener('click', () => {
+        mostrarVistaLogin('vista-mi-cuenta-cliente');
+        cargarMiCuentaCliente();
+    });
+
+    document.getElementById('btn-mi-cuenta-comerciante')?.addEventListener('click', () => {
+        mostrarVistaLogin('vista-mi-cuenta-comerciante');
+        cargarMiCuentaComerciante();
+    });
+    async function cargarMiPerfil() {
+        const infoSoloLectura = document.getElementById('mp-info-solo-lectura');
+        const formEditar = document.getElementById('form-editar-mi-perfil');
+
+        formEditar.classList.add('oculto');
+        infoSoloLectura.classList.remove('oculto');
+
+        try {
+            const r = await fetch('api/buscar_superadmin.php');
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar tu perfil', 'error');
+                return;
+            }
+
+            const a = res.admin;
+            document.getElementById('mp-solo-nombre').textContent = a.nombreCompleto;
+            document.getElementById('mp-solo-correo').textContent = a.correo;
+            document.getElementById('mp-nombreCompleto').value = a.nombreCompleto;
+            document.getElementById('mp-correo').value = a.correo;
+        } catch (e) {
+            mostrarMensaje('Error al cargar tu perfil', 'error');
+        }
+    }
+
+    document.getElementById('btn-editar-mi-perfil')?.addEventListener('click', () => {
+        document.getElementById('mp-info-solo-lectura').classList.add('oculto');
+        document.getElementById('form-editar-mi-perfil').classList.remove('oculto');
+    });
+
+    document.getElementById('form-editar-mi-perfil')?.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const nombreCompleto = document.getElementById('mp-nombreCompleto').value.trim();
+        const correo = document.getElementById('mp-correo').value.trim();
+
+        try {
+            const r = await fetch('api/editar_superadmin.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombreCompleto, correo })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            if (res.exito) {
+                actualizarIndicadorSesion({ ...usuarioSesionActual, nombre: nombreCompleto });
+                await cargarMiPerfil();
+            }
+        } catch (e) {
+            mostrarMensaje('Error de conexión con el servidor', 'error');
+        }
+    });
+
+     activarValidacionPassword(
+        document.getElementById('mp-password-nueva'),
+        document.getElementById('mp-password-msg')
+    );
+
+    document.querySelectorAll('.toggle-pwd[data-toggle-para]').forEach(boton => {
+        boton.addEventListener('click', () => {
+            const input = document.getElementById(boton.dataset.togglePara);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                boton.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                boton.textContent = '👁️';
+            }
+        });
+    });
+
+    document.getElementById('form-cambiar-password-superadmin')?.addEventListener('submit', (evento) => {
+        evento.preventDefault();
+
+        const passwordActual = document.getElementById('mp-password-actual').value;
+        const passwordNueva = document.getElementById('mp-password-nueva').value;
+
+        Swal.fire({
+            title: '¿Cambiar tu contraseña?',
+            text: 'Vas a necesitar la nueva contraseña la próxima vez que inicies sesión.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cambiarla',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/cambiar_password_superadmin.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ passwordActual, passwordNueva })
+                });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    document.getElementById('mp-password-actual').value = '';
+                    document.getElementById('mp-password-nueva').value = '';
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para cambiar tu contraseña. Revisa tu conexión e intenta de nuevo.', 'error');
+            }
+        });
+    });
+
+    // ------------------------------------------------------------
+    // Ver Productos (Admin)
+    // ------------------------------------------------------------
+    function confirmarEliminarProducto(idProducto, nombreProducto, tarjeta) {
+        Swal.fire({
+            title: `¿Eliminar "${nombreProducto}"?`,
+            text: 'Este producto se marcará como inactivo y dejará de verse en la app.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            try {
+                const r = await fetch('api/eliminar_producto.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idProducto })
+                });
+                const res = await r.json();
+
+                if (res.exito) {
+                    tarjeta.remove();
+                    mostrarMensaje('Producto eliminado correctamente', 'exito');
+                } else {
+                    mostrarMensaje(res.mensaje || 'No se pudo eliminar el producto', 'error');
+                }
+            } catch (e) {
+                mostrarMensaje('Error al eliminar el producto', 'error');
+            }
+        });
+    }
+
+    async function cargarProductosAdmin() {
+        const contenedor = document.getElementById('lista-productos-admin');
+        contenedor.innerHTML = '<p class="ayuda">Cargando productos...</p>';
+
+        const parametros = new URLSearchParams();
+
+        const nombre = document.getElementById('pa-buscar').value.trim();
+        if (nombre) parametros.set('nombre', nombre);
+
+        const soloActivos = document.getElementById('pa-inactivos').checked ? '0' : '1';
+        parametros.set('soloActivos', soloActivos);
+
+        try {
+            const r = await fetch(`api/listar_productos_admin.php?${parametros.toString()}`);
+            const res = await r.json();
+
+            if (!res.exito || res.productos.length === 0) {
+                contenedor.innerHTML = '<p class="ayuda">No se encontraron productos.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+
+            res.productos.forEach(producto => {
+                const tarjeta = document.createElement('div');
+                tarjeta.className = 'tarjeta tarjeta-con-borrar';
+
+                const precioFinal = producto.porcentajeDescuento
+                    ? (producto.precioOriginal * (1 - producto.porcentajeDescuento / 100)).toFixed(2)
+                    : producto.precioOriginal;
+
+                const precioHtml = producto.porcentajeDescuento
+                    ? `<s>₡${producto.precioOriginal}</s> ₡${precioFinal}`
+                    : `₡${producto.precioOriginal}`;
+
+                tarjeta.innerHTML = `
+                    <button type="button" class="tarjeta-local-btn-eliminar" aria-label="Eliminar producto"><i data-lucide="trash-2"></i></button>
+                    ${producto.imagen
+                        ? `<img src="imagenes/${producto.imagen}" alt="${producto.nombre}" class="imagen-producto">`
+                        : `<div class="imagen-producto imagen-producto-vacia"><i data-lucide="package"></i></div>`}
+                    <h4>${producto.nombre}</h4>
+                    <p class="etiqueta-tipo">${producto.categoria}</p>
+                    <p>Local: ${producto.nombreLocal}</p>
+                    <p>${precioHtml}</p>
+                    ${producto.activo ? '' : '<p><span class="etiqueta-inactivo">Inactivo</span></p>'}
+                `;
+
+                contenedor.appendChild(tarjeta);
+
+                tarjeta.querySelector('.tarjeta-local-btn-eliminar').addEventListener('click', (evento) => {
+                    evento.stopPropagation();
+                    confirmarEliminarProducto(producto.idProducto, producto.nombre, tarjeta);
+                });
+            });
+
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error al cargar los productos.</p>';
+        }
+    }
+
+    document.getElementById('pa-buscar')?.addEventListener('input', debounce(() => cargarProductosAdmin(), 300));
+    document.getElementById('pa-inactivos')?.addEventListener('change', () => cargarProductosAdmin());
+    // ------------------------------------------------------------
+    // Mis Productos (Comerciante)
+    // ------------------------------------------------------------
+    let misProductosCache = [];
+
+    function crearTarjetaMiProducto(p) {
+        const div = document.createElement('div');
+        div.className = 'tarjeta tarjeta-con-borrar';
+
+        const precioHtml = p.porcentajeDescuento
+            ? `<s>₡${p.precioOriginal}</s> ₡${p.precioFinal} <span class="etiqueta-tipo">-${p.porcentajeDescuento}%</span>`
+            : `₡${p.precioOriginal}`;
+
+        div.innerHTML = `
+            <button type="button" class="tarjeta-local-btn-editar" aria-label="Editar producto"><i data-lucide="pencil"></i></button>
+            <button type="button" class="tarjeta-local-btn-eliminar" aria-label="Eliminar producto"><i data-lucide="trash-2"></i></button>
+            ${p.imagen
+                ? `<img src="imagenes/${p.imagen}" alt="${escaparHtml(p.nombre)}" class="imagen-producto">`
+                : `<div class="imagen-producto imagen-producto-vacia"><i data-lucide="package"></i></div>`}
+            <h4>${escaparHtml(p.nombre)}</h4>
+            <p class="etiqueta-tipo">${escaparHtml(p.nombreLocal)}</p>
+            <p>${precioHtml}</p>
+            <p>${p.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${p.cantidadDisponible}`}</p>
+        `;
+
+                div.querySelector('.tarjeta-local-btn-editar').addEventListener('click', (evento) => {
+            evento.stopPropagation();
+            abrirModalEditarMiProducto(p.idProducto);
+        });
+
+        div.querySelector('.tarjeta-local-btn-eliminar').addEventListener('click', (evento) => {
+            evento.stopPropagation();
+            Swal.fire({
+                title: `¿Eliminar "${p.nombre}"?`,
+                text: 'Este producto se marcará como inactivo y dejará de verse en la app.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#8E7CC3'
+            }).then(async (resultado) => {
+                if (!resultado.isConfirmed) return;
+
+                try {
+                    const r = await fetch('api/eliminar_mi_producto.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idProducto: p.idProducto })
+                    });
+                    const res = await r.json();
+                    if (res.exito) {
+                        div.remove();
+                        mostrarMensaje('Producto eliminado correctamente', 'exito');
+                    } else {
+                        mostrarMensaje(res.mensaje || 'No se pudo eliminar el producto', 'error');
+                    }
+                } catch (e) {
+                    mostrarMensaje('No se pudo conectar con el servidor para eliminar el producto. Revisa tu conexión e intenta de nuevo.', 'error');
+                }
+            });
+        });
+
+        return div;
+    }
+
+    function renderizarMisProductos(productos) {
+        const contenedor = document.getElementById('lista-mis-productos');
+        if (!contenedor) return;
+
+        if (productos.length === 0) {
+            contenedor.innerHTML = '<p class="ayuda">Todavía no tienes productos registrados.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        productos.forEach(p => contenedor.appendChild(crearTarjetaMiProducto(p)));
+        if (window.lucide) lucide.createIcons();
+    }
+
+    async function cargarMisProductos() {
+        const contenedor = document.getElementById('lista-mis-productos');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando productos...</p>';
+
+        try {
+            const r = await fetch('api/listar_mis_productos.php');
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron cargar tus productos')}</p>`;
+                return;
+            }
+
+            misProductosCache = res.productos;
+            renderizarMisProductos(misProductosCache);
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar tus productos.</p>';
+        }
+    }
+
+    document.getElementById('mp-productos-buscar')?.addEventListener('input', debounce(() => {
+        const termino = (document.getElementById('mp-productos-buscar')?.value || '').trim().toLowerCase();
+        const filtrados = termino
+            ? misProductosCache.filter(p =>
+                p.nombre.toLowerCase().includes(termino) ||
+                p.nombreLocal.toLowerCase().includes(termino))
+            : misProductosCache;
+        renderizarMisProductos(filtrados);
+    }, 300));
+
+    // ------------------------------------------------------------
+    // Dashboard del Comerciante
+    // ------------------------------------------------------------
+    async function cargarDashboardComerciante() {
+        const statLocales = document.getElementById('stat-mis-locales');
+        if (!statLocales) return;
+
+        statLocales.textContent = '—';
+        document.getElementById('stat-mis-productos').textContent = '—';
+        document.getElementById('stat-productos-agotados').textContent = '—';
+
+        try {
+            const [rLocales, rProductos] = await Promise.all([
+                fetch('api/listar_locales_comerciante.php').then(r => r.json()),
+                fetch('api/listar_mis_productos.php').then(r => r.json())
+            ]);
+
+            const locales = rLocales.exito ? rLocales.locales : [];
+            const productos = rProductos.exito ? rProductos.productos : [];
+
+            statLocales.textContent = locales.filter(l => l.activo).length;
+            document.getElementById('stat-mis-productos').textContent = productos.length;
+            document.getElementById('stat-productos-agotados').textContent = productos.filter(p => p.agotado).length;
+
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            mostrarMensaje('No se pudo cargar tu dashboard', 'error');
+        }
+    }
+
+        // ------------------------------------------------------------
+    // Modal: Editar Mi Local
+    // ------------------------------------------------------------
+    async function abrirModalEditarLocal(idLocal) {
+        try {
+            const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar el local', 'error');
+                return;
+            }
+
+            const { local } = res;
+            document.getElementById('mel-idLocal').value = local.idLocal;
+            document.getElementById('mel-tipoLocal').value = local.tipoLocal ?? '';
+            document.getElementById('mel-nombreLocal').value = local.nombreLocal;
+            document.getElementById('mel-descripcion').value = local.descripcion ?? '';
+            document.getElementById('mel-telefono').value = local.telefono;
+
+            document.getElementById('modal-editar-local').classList.remove('oculto');
+        } catch (e) {
+            mostrarMensaje('Error al cargar el local', 'error');
+        }
+    }
+
+    function cerrarModalEditarLocal() {
+        document.getElementById('modal-editar-local').classList.add('oculto');
+    }
+
+    document.getElementById('modal-editar-local-cerrar')?.addEventListener('click', cerrarModalEditarLocal);
+    document.getElementById('modal-editar-local')?.addEventListener('click', (evento) => {
+        if (evento.target.id === 'modal-editar-local') cerrarModalEditarLocal();
+    });
+
+    document.getElementById('form-modal-editar-local')?.addEventListener('submit', (evento) => {
+        evento.preventDefault();
+
+        Swal.fire({
+            title: '¿Guardar estos cambios?',
+            text: 'Se van a actualizar los datos de este local.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            const datos = new FormData();
+            datos.append('idLocal', document.getElementById('mel-idLocal').value);
+            datos.append('nombreTipoLocal', document.getElementById('mel-tipoLocal').value);
+            datos.append('nombreLocal', document.getElementById('mel-nombreLocal').value);
+            datos.append('descripcion', document.getElementById('mel-descripcion').value);
+            datos.append('telefono', document.getElementById('mel-telefono').value);
+
+            const archivoLogo = document.getElementById('mel-logo').files[0];
+            if (archivoLogo) datos.append('logo', archivoLogo);
+
+            try {
+                const r = await fetch('api/editar_local.php', { method: 'POST', body: datos });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    cerrarModalEditarLocal();
+                    await mostrarSelectorPerfilesLocal();
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para guardar los cambios. Revisa tu conexión e intenta de nuevo.', 'error');
+            }
+        });
+    });
+
+    // ------------------------------------------------------------
+    // Modal: Editar Mi Producto
+    // ------------------------------------------------------------
+    async function abrirModalEditarMiProducto(idProducto) {
+        try {
+            const r = await fetch(`api/buscar_producto.php?id=${idProducto}`);
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo cargar el producto', 'error');
+                return;
+            }
+
+            const p = res.producto;
+            document.getElementById('mep-idProducto').value = p.idProducto;
+            document.getElementById('mep-tipoProducto').value = p.tipoProducto ?? '';
+            document.getElementById('mep-nombre').value = p.nombre;
+            document.getElementById('mep-precio').value = p.precioOriginal;
+            document.getElementById('mep-descuento').value = p.porcentajeDescuento ?? '';
+            document.getElementById('mep-descripcion').value = p.descripcion ?? '';
+            document.getElementById('mep-cantidad').value = p.cantidadDisponible;
+
+            document.getElementById('modal-editar-producto-mp').classList.remove('oculto');
+        } catch (e) {
+            mostrarMensaje('Error al cargar el producto', 'error');
+        }
+    }
+
+    function cerrarModalEditarMiProducto() {
+        document.getElementById('modal-editar-producto-mp').classList.add('oculto');
+    }
+
+    document.getElementById('modal-editar-producto-mp-cerrar')?.addEventListener('click', cerrarModalEditarMiProducto);
+    document.getElementById('modal-editar-producto-mp')?.addEventListener('click', (evento) => {
+        if (evento.target.id === 'modal-editar-producto-mp') cerrarModalEditarMiProducto();
+    });
+
+    document.getElementById('form-modal-editar-producto')?.addEventListener('submit', (evento) => {
+        evento.preventDefault();
+
+        Swal.fire({
+            title: '¿Guardar estos cambios?',
+            text: 'Se van a actualizar los datos de este producto.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Seguir editando',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (!resultado.isConfirmed) return;
+
+            const datos = new FormData();
+            datos.append('idProducto', document.getElementById('mep-idProducto').value);
+            datos.append('nombreTipoProducto', document.getElementById('mep-tipoProducto').value);
+            datos.append('nombre', document.getElementById('mep-nombre').value);
+            datos.append('precioOriginal', document.getElementById('mep-precio').value);
+            datos.append('porcentajeDescuento', document.getElementById('mep-descuento').value);
+            datos.append('descripcion', document.getElementById('mep-descripcion').value);
+            datos.append('cantidadDisponible', document.getElementById('mep-cantidad').value);
+
+            const archivoImagen = document.getElementById('mep-imagen').files[0];
+            if (archivoImagen) datos.append('imagen', archivoImagen);
+
+            try {
+                const r = await fetch('api/editar_producto.php', { method: 'POST', body: datos });
+                const res = await r.json();
+
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+                if (res.exito) {
+                    cerrarModalEditarMiProducto();
+                    await cargarMisProductos();
+                }
+            } catch (e) {
+                mostrarMensaje('No se pudo conectar con el servidor para guardar los cambios. Revisa tu conexión e intenta de nuevo.', 'error');
+            }
+        });
     });
 });
