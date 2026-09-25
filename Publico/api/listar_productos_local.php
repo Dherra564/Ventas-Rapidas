@@ -10,14 +10,6 @@ $usuario = Sesion::usuarioActual();
 $idLocal = (int) ($_GET['idLocal'] ?? 0);
 
 try {
-    if ($usuario !== null && $usuario['tipo'] === Sesion::TIPO_COMERCIANTE) {
-        $localControlador = new LocalController();
-        if (!$localControlador->perteneceAComerciante($idLocal, $usuario['id'])) {
-            http_response_code(403);
-            echo json_encode(['exito' => false, 'mensaje' => 'Ese local no pertenece a tu cuenta']);
-            exit;
-        }
-    }
 
     $controlador = new ProductoController();
     $productos = $controlador->listarPorLocal($idLocal);

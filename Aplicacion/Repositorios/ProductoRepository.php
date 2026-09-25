@@ -12,12 +12,14 @@ class ProductoRepository
     private PDO $conexion;
     private HistorialCampoRepository $historialPrecio;
     private HistorialCampoRepository $historialDescuento;
+    private HistorialCampoRepository $historialCantidad;
 
     public function __construct()
     {
         $this->conexion = BaseDatos::obtenerConexion();
         $this->historialPrecio = new HistorialCampoRepository("tbproductopreciohistorico", "tbproductopreciohistoricoid", "tbproductoid", $this->conexion);
         $this->historialDescuento = new HistorialCampoRepository("tbproductodescuentoporcentajehistorico", "tbproductodescuentoporcentajehistoricoid", "tbproductoid", $this->conexion);
+        $this->historialCantidad = new HistorialCampoRepository("tbproductocantidadhistorico", "tbproductocantidadhistoricoid", "tbproductoid", $this->conexion);
     }
 
     private function resolverIdUsuarioDeComerciante(?int $idComerciante): ?int
@@ -89,6 +91,7 @@ class ProductoRepository
         if ($exito) {
             $idUsuarioAutor = $this->resolverIdUsuarioDeComerciante($idComercianteAutor);
             $this->historialPrecio->registrar($id, null, $producto->getPrecioOriginal(), $idUsuarioAutor, 'Comerciante');
+            $this->historialCantidad->registrar($id, null, $producto->getCantidadDisponible(), $idUsuarioAutor, 'Comerciante');
             if ($producto->getPorcentajeDescuento() !== null) {
                 $this->historialDescuento->registrar($id, null, $producto->getPorcentajeDescuento(), $idUsuarioAutor, 'Comerciante');
             }
@@ -249,6 +252,7 @@ class ProductoRepository
             $idUsuarioAutor = $this->resolverIdUsuarioDeComerciante($idComercianteAutor);
             $this->historialPrecio->registrarSiCambio($id, $anterior->getPrecioOriginal(), $producto->getPrecioOriginal(), $idUsuarioAutor, 'Comerciante');
             $this->historialDescuento->registrarSiCambio($id, $anterior->getPorcentajeDescuento(), $producto->getPorcentajeDescuento(), $idUsuarioAutor, 'Comerciante');
+            $this->historialCantidad->registrarSiCambio($id, $anterior->getCantidadDisponible(), $producto->getCantidadDisponible(), $idUsuarioAutor, 'Comerciante');
         }
 
         return $exito;

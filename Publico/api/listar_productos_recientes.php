@@ -21,6 +21,7 @@ try {
             'porcentajeDescuento' => $p->getPorcentajeDescuento(),
             'precioFinal' => $p->getPrecioFinal(),
             'imagen' => $p->getImagen(),
+            'cantidadDisponible' => $p->getCantidadDisponible(),
             'agotado' => $p->isAgotado()
         ];
     }, $resultados);

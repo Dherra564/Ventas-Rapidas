@@ -31,7 +31,7 @@
                 </button>
             </div>
 
-                   <nav class="menu" id="menu-principal">
+            <nav class="menu" id="menu-principal">
                 <button class="menu-boton activo" data-vista="vista-inicio"><i data-lucide="home"></i><span class="menu-boton-texto">Inicio</span></button>
                 <button class="menu-boton" data-vista="vista-login"><i data-lucide="log-in"></i><span class="menu-boton-texto">Iniciar Sesión</span></button>
                 <button class="menu-boton" data-vista="vista-dashboard-admin" data-rol="SuperAdmin"><i data-lucide="layout-dashboard"></i><span class="menu-boton-texto">Dashboard</span></button>
@@ -40,7 +40,9 @@
                 <button class="menu-boton" data-vista="vista-producto" data-rol="Comerciante"><i data-lucide="package-plus"></i><span class="menu-boton-texto">Registrar Producto</span></button>
                 <button class="menu-boton" data-vista="vista-seleccionar-local" data-rol="Comerciante"><i data-lucide="store"></i><span class="menu-boton-texto">Mi Local</span></button>
                 <button class="menu-boton" data-vista="vista-mis-productos" data-rol="Comerciante"><i data-lucide="package"></i><span class="menu-boton-texto">Mis Productos</span></button>
+                <button class="menu-boton" data-vista="vista-pedidos-recibidos" data-rol="Comerciante"><i data-lucide="clipboard-list"></i><span class="menu-boton-texto">Pedidos Recibidos</span></button>
                 <button class="menu-boton" data-vista="vista-listado"><i data-lucide="store"></i><span class="menu-boton-texto">Ver Locales</span></button>
+                <button class="menu-boton" data-vista="vista-mis-pedidos" data-rol="Cliente,Comerciante"><i data-lucide="shopping-bag"></i><span class="menu-boton-texto">Mis Pedidos</span></button>
                 <!-- <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button> -->
                 <button class="menu-boton" data-vista="vista-resenas" data-rol="SuperAdmin"><i data-lucide="star"></i><span class="menu-boton-texto">Reseñas</span></button>
                 <button class="menu-boton" data-vista="vista-comerciantes" data-rol="SuperAdmin"><i data-lucide="briefcase"></i><span class="menu-boton-texto">Ver Comerciantes</span></button>
@@ -49,7 +51,7 @@
                 <button class="menu-boton" data-vista="vista-historiales" data-rol="SuperAdmin"><i data-lucide="history"></i><span class="menu-boton-texto">Historiales</span></button>
             </nav>
 
-                        <div id="sesion-indicador" class="sesion-indicador oculto">
+            <div id="sesion-indicador" class="sesion-indicador oculto">
                 <button type="button" id="btn-mi-perfil" class="btn-mi-perfil oculto" aria-label="Mi perfil" title="Mi perfil">
                     <i data-lucide="user-circle"></i>
                 </button>
@@ -403,6 +405,44 @@
                         <input type="text" id="mp-productos-buscar" placeholder="Buscar producto o local...">
                     </div>
                     <div id="lista-mis-productos" class="tarjetas"></div>
+                </section>
+
+                <!-- Vista: Mis Pedidos (Cliente y Comerciante como comprador) -->
+                <section id="vista-mis-pedidos" class="vista oculto">
+                    <h2>Mis Pedidos</h2>
+                    <p class="ayuda">Aquí ves el estado de tus compras. Cuando el local confirme un pedido, aparecerá tu código de retiro.</p>
+
+                    <div class="pedidos-filtros" id="mpe-filtros">
+                        <button type="button" class="pedidos-filtro activo" data-estado="">Todos</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Pendiente">Pendientes</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Confirmado">Confirmados</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Entregado">Entregados</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Cancelado">Cancelados</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Rechazado">Rechazados</button>
+                    </div>
+
+                    <div id="lista-mis-pedidos" class="pedidos-lista"></div>
+                </section>
+
+                <!-- Vista: Pedidos Recibidos (Comerciante) -->
+                <section id="vista-pedidos-recibidos" class="vista oculto">
+                    <h2>Pedidos Recibidos</h2>
+                    <p class="ayuda">Pedidos que llegaron a tus locales. Confirma o rechaza los pendientes, y cuando el cliente llegue pídele su código de retiro.</p>
+
+                    <div class="pedidos-filtros" id="pr-filtros">
+                        <button type="button" class="pedidos-filtro activo" data-estado="">Todos</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Pendiente">Pendientes</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Confirmado">Por entregar</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Entregado">Entregados</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Cancelado">Cancelados</button>
+                        <button type="button" class="pedidos-filtro" data-estado="Rechazado">Rechazados</button>
+                    </div>
+
+                    <div class="filtros-busqueda">
+                        <input type="text" id="pr-buscar" placeholder="Buscar por número, cliente o local...">
+                    </div>
+
+                    <div id="lista-pedidos-recibidos" class="pedidos-lista"></div>
                 </section>
 
                 <!-- Vista: Mi Cuenta (Cliente) -->
@@ -907,6 +947,11 @@
                             <p class="stat-numero" id="stat-productos-agotados">—</p>
                             <p class="stat-etiqueta">Productos agotados</p>
                         </div>
+                        <div class="stat-card">
+                            <div class="icon-container icono-verde"><i data-lucide="clipboard-list"></i></div>
+                            <p class="stat-numero" id="stat-pedidos-pendientes">—</p>
+                            <p class="stat-etiqueta">Pedidos pendientes</p>
+                        </div>
                     </div>
 
                     <div class="dashboard-accesos bloque-separado">
@@ -927,6 +972,14 @@
                             <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-mis-productos">
                                 <i data-lucide="package"></i>
                                 <span>Mis Productos</span>
+                            </button>
+                            <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-pedidos-recibidos">
+                                <i data-lucide="clipboard-list"></i>
+                                <span>Pedidos Recibidos</span>
+                            </button>
+                            <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-mis-pedidos">
+                                <i data-lucide="shopping-bag"></i>
+                                <span>Mis Compras</span>
                             </button>
                         </div>
                     </div>
@@ -1050,6 +1103,7 @@
             </footer>
         </div> <!-- cierra .area-principal -->
     </div> <!-- cierra .app-shell -->
+
     <div id="modal-permiso-ubicacion" class="modal-overlay oculto">
         <div class="modal-contenido modal-permiso-contenido">
             <button type="button" id="permiso-ubicacion-cerrar" class="modal-cerrar"
@@ -1206,6 +1260,49 @@
 
                 <button type="button" id="modal-producto-comprar" class="btn-comprar-producto">Comprar</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-compra" class="modal-overlay oculto">
+        <div class="modal-contenido modal-compra-contenido">
+            <button type="button" id="modal-compra-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <h3>Confirmar pedido</h3>
+
+            <div class="compra-producto">
+                <img id="compra-imagen" src="" alt="" class="compra-producto-imagen">
+                <div id="compra-sin-imagen" class="compra-producto-imagen compra-producto-sin-imagen oculto">
+                    <i data-lucide="package"></i>
+                </div>
+                <div class="compra-producto-info">
+                    <span id="compra-local-nombre" class="compra-local-nombre"></span>
+                    <strong id="compra-producto-nombre" class="compra-producto-nombre"></strong>
+                    <span id="compra-precio-unitario" class="compra-precio-unitario"></span>
+                </div>
+            </div>
+
+            <label for="compra-cantidad" class="compra-etiqueta">Cantidad</label>
+            <div class="compra-cantidad-control">
+                <button type="button" id="compra-menos" class="compra-cantidad-boton" aria-label="Menos">
+                    <i data-lucide="minus"></i>
+                </button>
+                <input type="number" id="compra-cantidad" class="compra-cantidad-input" min="1" step="1" value="1">
+                <button type="button" id="compra-mas" class="compra-cantidad-boton" aria-label="Más">
+                    <i data-lucide="plus"></i>
+                </button>
+            </div>
+            <span id="compra-disponibles" class="ayuda"></span>
+
+            <div class="compra-resumen">
+                <span>Total a pagar</span>
+                <strong id="compra-total">₡0</strong>
+            </div>
+
+            <p class="ayuda compra-nota">
+                El local debe confirmar tu pedido. Cuando lo haga, verás tu código de retiro en "Mis Pedidos".
+            </p>
+
+            <button type="button" id="compra-confirmar" class="btn-comprar-producto">Confirmar pedido</button>
         </div>
     </div>
 

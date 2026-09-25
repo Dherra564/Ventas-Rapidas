@@ -47,6 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarMisProductos();
             }
 
+            if (boton.dataset.vista === 'vista-mis-pedidos') {
+                cargarMisPedidos();
+            }
+
+            if (boton.dataset.vista === 'vista-pedidos-recibidos') {
+                cargarPedidosRecibidos();
+            }
+
             if (boton.dataset.vista === 'vista-dashboard-comerciante') {
                 cargarDashboardComerciante();
             }
@@ -812,8 +820,8 @@ document.addEventListener('DOMContentLoaded', () => {
             panelLista.classList.add('oculto');
             panelDetalle.classList.remove('oculto');
 
-            cargarProductosDelLocal(idLocal);
-
+            cargarProductosDelLocal(idLocal, local);
+            
             document.getElementById('e-panel-actividad-local').classList.add('oculto');
         } catch (e) {
             mostrarMensaje('Error al cargar el detalle del local', 'error');
@@ -890,7 +898,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const btnComprar = tarjeta.querySelector('.boton-comprar-modal');
                     if (btnComprar) {
                         btnComprar.addEventListener('click', () => {
-                            mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
+                            
+                            abrirModalCompra({
+                                ...producto,
+                                nombreLocal: local.nombreLocal,
+                                logoLocal: local.logo
+                            }, idLocal);
                         });
                     }
 
@@ -1005,10 +1018,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-                           
-
-        
-
         const btnComprarModalProducto = document.getElementById('modal-producto-comprar');
         if (btnComprarModalProducto) {
             btnComprarModalProducto.disabled = !!producto.agotado;
@@ -1018,7 +1027,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             btnComprarModalProducto.onclick = () => {
                 if (usuarioSesionActual) {
-                    mostrarMensaje('La compra directa estará disponible muy pronto 🛒', 'exito');
+                    cerrarModalProducto();
+                    abrirModalCompra(producto, producto.idLocal);
                 } else {
                     compraProductoPendiente = producto;
                     cerrarModalProducto();
@@ -1042,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    async function cargarProductosDelLocal(idLocal) {
+    async function cargarProductosDelLocal(idLocal, local = null) {
         const contenedor = document.getElementById('e-productos-lista');
         contenedor.innerHTML = '<p>Cargando productos...</p>';
 
@@ -1057,6 +1067,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             contenedor.innerHTML = '';
 
+            const puedeComprar = local !== null
+                && usuarioSesionActual !== null
+                && usuarioSesionActual.tipo !== 'SuperAdmin';
+
             res.productos.forEach(producto => {
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta';
@@ -1065,13 +1079,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<s>₡${producto.precioOriginal}</s> ₡${producto.precioFinal} <span class="etiqueta-tipo">-${producto.porcentajeDescuento}%</span>`
                     : `₡${producto.precioOriginal}`;
 
+                const botonComprarHtml = puedeComprar
+                    ? `<button type="button" class="boton-comprar-modal" ${producto.agotado ? 'disabled' : ''}>Comprar</button>`
+                    : '';
+
                 tarjeta.innerHTML = `
-                    ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${producto.nombre}" class="imagen-producto">` : ''}
-                    <h4>${producto.nombre} ${producto.compartido ? '<span class="etiqueta-tipo">Compartido</span>' : ''}</h4>
-                    <p>${producto.descripcion ?? ''}</p>
+                    ${producto.imagen ? `<img src="imagenes/${producto.imagen}" alt="${escaparHtml(producto.nombre)}" class="imagen-producto">` : ''}
+                    <h4>${escaparHtml(producto.nombre)} ${producto.compartido ? '<span class="etiqueta-tipo">Compartido</span>' : ''}</h4>
+                    <p>${escaparHtml(producto.descripcion ?? '')}</p>
                     <p>${precioHtml}</p>
                     <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
+                    ${botonComprarHtml}
                 `;
+
+                tarjeta.querySelector('.boton-comprar-modal')?.addEventListener('click', () => {
+                    abrirModalCompra({
+                        ...producto,
+                        nombreLocal: local.nombreLocal,
+                        logoLocal: local.logo
+                    }, idLocal);
+                });
+
                 contenedor.appendChild(tarjeta);
             });
         } catch (e) {
@@ -1239,7 +1267,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.exito) {
                 evento.target.reset();
+                document.getElementById('p-fechaVencimiento-wrap')?.classList.add('oculto');
+                irAVista('vista-mis-productos');
             }
+            
         } catch (e) {
             mostrarMensaje('Error de conexión con el servidor', 'error');
         }
@@ -2244,7 +2275,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 boton.classList.remove('oculto');
                 return;
             }
-            boton.classList.toggle('oculto', rol !== tipoUsuario);
+
+            const rolesPermitidos = rol.split(',').map(r => r.trim());
+            boton.classList.toggle('oculto', !rolesPermitidos.includes(tipoUsuario));
         });
     }
 
@@ -3963,22 +3996,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const statLocales = document.getElementById('stat-mis-locales');
         if (!statLocales) return;
 
+        const statPedidosPendientes = document.getElementById('stat-pedidos-pendientes');
+
         statLocales.textContent = '—';
         document.getElementById('stat-mis-productos').textContent = '—';
         document.getElementById('stat-productos-agotados').textContent = '—';
+        if (statPedidosPendientes) statPedidosPendientes.textContent = '—';
 
         try {
-            const [rLocales, rProductos] = await Promise.all([
+            const [rLocales, rProductos, rPedidos] = await Promise.all([
                 fetch('api/listar_locales_comerciante.php').then(r => r.json()),
-                fetch('api/listar_mis_productos.php').then(r => r.json())
+                fetch('api/listar_mis_productos.php').then(r => r.json()),
+                fetch('api/listar_pedidos_recibidos.php?estado=Pendiente').then(r => r.json())
             ]);
 
             const locales = rLocales.exito ? rLocales.locales : [];
             const productos = rProductos.exito ? rProductos.productos : [];
+            const pedidosPendientes = rPedidos.exito ? rPedidos.pedidos : [];
 
             statLocales.textContent = locales.filter(l => l.activo).length;
             document.getElementById('stat-mis-productos').textContent = productos.length;
             document.getElementById('stat-productos-agotados').textContent = productos.filter(p => p.agotado).length;
+            if (statPedidosPendientes) statPedidosPendientes.textContent = pedidosPendientes.length;
 
             if (window.lucide) lucide.createIcons();
         } catch (e) {
@@ -3986,7 +4025,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-        // ------------------------------------------------------------
+    // ------------------------------------------------------------
     // Modal: Editar Mi Local
     // ------------------------------------------------------------
     async function abrirModalEditarLocal(idLocal) {
@@ -4141,4 +4180,543 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // ============================================================
+    // Módulo de compras: ventana para elegir cantidad y generar pedido
+    // ============================================================
+    const CANTIDAD_MAXIMA_POR_PRODUCTO = 99;
+
+    let compraActual = null;
+
+    function formatearColones(monto) {
+        return '₡' + Number(monto || 0).toLocaleString('es-CR', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function irAVista(idVista) {
+        const boton = document.querySelector(`.menu-boton[data-vista="${idVista}"]`);
+        if (boton) boton.click();
+    }
+
+    function abrirModalCompra(producto, idLocal) {
+        if (!usuarioSesionActual) {
+            compraProductoPendiente = producto;
+            mostrarVistaLogin('vista-login');
+            return;
+        }
+
+        if (usuarioSesionActual.tipo === 'SuperAdmin') {
+            mostrarMensaje('El administrador no puede realizar compras', 'error');
+            return;
+        }
+
+        const disponibles = Number(producto.cantidadDisponible);
+        const conoceDisponibles = Number.isFinite(disponibles);
+
+        if (producto.agotado || (conoceDisponibles && disponibles <= 0)) {
+            mostrarMensaje('Este producto está agotado', 'error');
+            return;
+        }
+
+        const maximo = conoceDisponibles
+            ? Math.min(disponibles, CANTIDAD_MAXIMA_POR_PRODUCTO)
+            : CANTIDAD_MAXIMA_POR_PRODUCTO;
+
+        const precioUnitario = Number(producto.precioFinal ?? producto.precioOriginal);
+
+        compraActual = {
+            producto,
+            idLocal: Number(idLocal || producto.idLocal),
+            maximo,
+            precioUnitario
+        };
+
+        const imagen = document.getElementById('compra-imagen');
+        const sinImagen = document.getElementById('compra-sin-imagen');
+        if (producto.imagen) {
+            imagen.src = `imagenes/${producto.imagen}`;
+            imagen.alt = producto.nombre;
+            imagen.classList.remove('oculto');
+            sinImagen.classList.add('oculto');
+        } else {
+            imagen.classList.add('oculto');
+            sinImagen.classList.remove('oculto');
+        }
+
+        document.getElementById('compra-local-nombre').textContent = producto.nombreLocal ?? '';
+        document.getElementById('compra-producto-nombre').textContent = producto.nombre;
+        document.getElementById('compra-precio-unitario').textContent = producto.porcentajeDescuento
+            ? `${formatearColones(precioUnitario)} c/u (-${producto.porcentajeDescuento}%)`
+            : `${formatearColones(precioUnitario)} c/u`;
+
+        const inputCantidad = document.getElementById('compra-cantidad');
+        inputCantidad.value = 1;
+        inputCantidad.max = maximo;
+
+        document.getElementById('compra-disponibles').textContent = conoceDisponibles
+            ? `Disponibles: ${disponibles}`
+            : '';
+
+        const botonConfirmar = document.getElementById('compra-confirmar');
+        botonConfirmar.disabled = false;
+        botonConfirmar.textContent = 'Confirmar pedido';
+
+        actualizarTotalCompra();
+
+        document.getElementById('modal-compra').classList.remove('oculto');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalCompra() {
+        document.getElementById('modal-compra').classList.add('oculto');
+        compraActual = null;
+    }
+
+    function leerCantidadCompra() {
+        if (!compraActual) return 1;
+
+        let cantidad = parseInt(document.getElementById('compra-cantidad').value, 10);
+        if (!Number.isFinite(cantidad) || cantidad < 1) cantidad = 1;
+        if (cantidad > compraActual.maximo) cantidad = compraActual.maximo;
+
+        return cantidad;
+    }
+
+    function actualizarTotalCompra() {
+        if (!compraActual) return;
+
+        const cantidad = leerCantidadCompra();
+        const total = Math.round(compraActual.precioUnitario * cantidad * 100) / 100;
+
+        document.getElementById('compra-total').textContent = formatearColones(total);
+        document.getElementById('compra-menos').disabled = cantidad <= 1;
+        document.getElementById('compra-mas').disabled = cantidad >= compraActual.maximo;
+    }
+
+    function cambiarCantidadCompra(diferencia) {
+        const input = document.getElementById('compra-cantidad');
+        input.value = leerCantidadCompra() + diferencia;
+        input.value = leerCantidadCompra(); // lo vuelve a acomodar entre 1 y el máximo
+        actualizarTotalCompra();
+    }
+
+    document.getElementById('compra-menos')?.addEventListener('click', () => cambiarCantidadCompra(-1));
+    document.getElementById('compra-mas')?.addEventListener('click', () => cambiarCantidadCompra(1));
+
+    document.getElementById('compra-cantidad')?.addEventListener('input', actualizarTotalCompra);
+    document.getElementById('compra-cantidad')?.addEventListener('change', (evento) => {
+        evento.target.value = leerCantidadCompra();
+        actualizarTotalCompra();
+    });
+
+    document.getElementById('modal-compra-cerrar')?.addEventListener('click', cerrarModalCompra);
+    document.getElementById('modal-compra')?.addEventListener('click', (evento) => {
+        if (evento.target.id === 'modal-compra') cerrarModalCompra();
+    });
+
+    document.getElementById('compra-confirmar')?.addEventListener('click', async () => {
+        if (!compraActual) return;
+
+        const botonConfirmar = document.getElementById('compra-confirmar');
+        const cantidad = leerCantidadCompra();
+
+        botonConfirmar.disabled = true;
+        botonConfirmar.textContent = 'Generando pedido...';
+
+        try {
+            const r = await fetch('api/crear_pedido.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    idLocal: compraActual.idLocal,
+                    items: [{ idProducto: compraActual.producto.idProducto, cantidad }]
+                })
+            });
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo generar el pedido', 'error');
+                return;
+            }
+
+            cerrarModalCompra();
+            cerrarModalLocal();
+
+            const resultado = await Swal.fire({
+                icon: 'success',
+                title: `¡Pedido ${res.numero} generado!`,
+                text: `Total: ${formatearColones(res.total)}. El local debe confirmarlo; cuando lo haga verás tu código de retiro en "Mis Pedidos".`,
+                showCancelButton: true,
+                confirmButtonText: 'Ver mis pedidos',
+                cancelButtonText: 'Seguir comprando',
+                confirmButtonColor: '#8E7CC3',
+                cancelButtonColor: '#6B7280'
+            });
+
+            if (resultado.isConfirmed) {
+                irAVista('vista-mis-pedidos');
+            } else if (!document.getElementById('vista-inicio').classList.contains('oculto')) {
+                cargarInicio(); // refresca el catálogo porque cambió el inventario
+            }
+        } catch (e) {
+            mostrarMensaje('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.', 'error');
+        } finally {
+            botonConfirmar.disabled = false;
+            botonConfirmar.textContent = 'Confirmar pedido';
+        }
+    });
+
+    // ============================================================
+    // Pedidos: piezas compartidas por "Mis Pedidos" y "Pedidos Recibidos"
+    // ============================================================
+
+    function abrirComprobantePedido(idPedido) {
+        window.open(`api/comprobante_pedido.php?idPedido=${idPedido}`, '_blank');
+    }
+
+    function activarFiltrosPedidos(idContenedor, alCambiar) {
+        const contenedor = document.getElementById(idContenedor);
+        if (!contenedor) return;
+
+        contenedor.querySelectorAll('.pedidos-filtro').forEach(boton => {
+            boton.addEventListener('click', () => {
+                contenedor.querySelectorAll('.pedidos-filtro').forEach(b => b.classList.remove('activo'));
+                boton.classList.add('activo');
+                alCambiar(boton.dataset.estado);
+            });
+        });
+    }
+
+    function crearTarjetaPedido(pedido, modo, alAccionar) {
+        const tarjeta = document.createElement('article');
+        tarjeta.className = 'pedido-tarjeta';
+
+        const claseEstado = `estado-pedido-${pedido.estado.toLowerCase()}`;
+
+        const lineasHtml = pedido.detalles.map(detalle => `
+            <li class="pedido-detalle">
+                <span>${detalle.cantidad} × ${escaparHtml(detalle.productoNombre)}</span>
+                <span>${formatearColones(detalle.subtotal)}</span>
+            </li>
+        `).join('');
+
+        const contraparteHtml = modo === 'cliente'
+            ? `<p class="pedido-contraparte"><i data-lucide="store"></i> ${escaparHtml(pedido.localNombre)}</p>`
+            : `<p class="pedido-contraparte"><i data-lucide="user"></i> ${escaparHtml(pedido.clienteNombre)}</p>
+               <p class="pedido-contraparte pedido-contraparte-secundaria"><i data-lucide="store"></i> ${escaparHtml(pedido.localNombre)}</p>`;
+
+        let avisoHtml = '';
+
+        if (modo === 'cliente' && pedido.estado === 'Confirmado' && pedido.retiroCodigo) {
+            avisoHtml = `
+                <div class="pedido-codigo">
+                    <span class="pedido-codigo-etiqueta">Tu código de retiro</span>
+                    <span class="pedido-codigo-valor">${escaparHtml(pedido.retiroCodigo)}</span>
+                    <span class="ayuda">Muéstralo en el local para recibir tu pedido.</span>
+                </div>`;
+        } else if (pedido.estado === 'Pendiente') {
+            avisoHtml = modo === 'cliente'
+                ? '<p class="pedido-aviso">Esperando que el local confirme tu pedido.</p>'
+                : '<p class="pedido-aviso">Este pedido espera tu respuesta.</p>';
+        } else if (modo === 'comerciante' && pedido.estado === 'Confirmado') {
+            avisoHtml = '<p class="pedido-aviso">Cuando el cliente llegue, pídele su código de retiro.</p>';
+        }
+
+        const motivoHtml = pedido.motivo && (pedido.estado === 'Rechazado' || pedido.estado === 'Cancelado')
+            ? `<p class="pedido-motivo"><strong>Motivo:</strong> ${escaparHtml(pedido.motivo)}</p>`
+            : '';
+
+        const botones = [];
+
+        if (modo === 'cliente') {
+            if (pedido.estado === 'Pendiente' || pedido.estado === 'Confirmado') {
+                botones.push('<button type="button" class="pedido-boton pedido-boton-peligro" data-accion="cancelar">Cancelar pedido</button>');
+            }
+        } else {
+            if (pedido.estado === 'Pendiente') {
+                botones.push('<button type="button" class="pedido-boton pedido-boton-principal" data-accion="confirmar">Confirmar</button>');
+                botones.push('<button type="button" class="pedido-boton pedido-boton-peligro" data-accion="rechazar">Rechazar</button>');
+            }
+            if (pedido.estado === 'Confirmado') {
+                botones.push('<button type="button" class="pedido-boton pedido-boton-principal" data-accion="entregar">Confirmar entrega</button>');
+            }
+        }
+
+        botones.push('<button type="button" class="pedido-boton pedido-boton-secundario" data-accion="comprobante"><i data-lucide="file-text"></i> Comprobante</button>');
+
+        tarjeta.innerHTML = `
+            <div class="pedido-encabezado">
+                <div>
+                    <span class="pedido-numero">${escaparHtml(pedido.numero)}</span>
+                    <span class="pedido-fecha">${escaparHtml(formatearFecha(pedido.registroFecha))}</span>
+                </div>
+                <span class="estado-pedido ${claseEstado}">${escaparHtml(pedido.estado)}</span>
+            </div>
+            ${contraparteHtml}
+            <ul class="pedido-detalles">${lineasHtml}</ul>
+            <div class="pedido-total">
+                <span>Total</span>
+                <strong>${formatearColones(pedido.total)}</strong>
+            </div>
+            ${avisoHtml}
+            ${motivoHtml}
+            <div class="pedido-acciones">${botones.join('')}</div>
+        `;
+
+        tarjeta.querySelectorAll('[data-accion]').forEach(boton => {
+            boton.addEventListener('click', () => {
+                if (boton.dataset.accion === 'comprobante') {
+                    abrirComprobantePedido(pedido.idPedido);
+                    return;
+                }
+                alAccionar(boton.dataset.accion, pedido);
+            });
+        });
+
+        return tarjeta;
+    }
+
+    function renderizarListaPedidos(contenedor, pedidos, modo, alAccionar, mensajeVacio) {
+        if (pedidos.length === 0) {
+            contenedor.innerHTML = `
+                <div class="estado-vacio">
+                    <i data-lucide="shopping-bag"></i>
+                    <p>${escaparHtml(mensajeVacio)}</p>
+                </div>`;
+        } else {
+            contenedor.innerHTML = '';
+            pedidos.forEach(pedido => contenedor.appendChild(crearTarjetaPedido(pedido, modo, alAccionar)));
+        }
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    // ============================================================
+    // Vista: Mis Pedidos (lo que YO compré)
+    // ============================================================
+    let misPedidosCache = [];
+    let misPedidosFiltroEstado = '';
+
+    async function cargarMisPedidos() {
+        const contenedor = document.getElementById('lista-mis-pedidos');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando tus pedidos...</p>';
+
+        try {
+            const r = await fetch('api/listar_mis_pedidos.php');
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron cargar tus pedidos')}</p>`;
+                return;
+            }
+
+            misPedidosCache = res.pedidos;
+            renderizarMisPedidos();
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar tus pedidos.</p>';
+        }
+    }
+
+    function renderizarMisPedidos() {
+        const contenedor = document.getElementById('lista-mis-pedidos');
+        if (!contenedor) return;
+
+        const pedidos = misPedidosFiltroEstado
+            ? misPedidosCache.filter(p => p.estado === misPedidosFiltroEstado)
+            : misPedidosCache;
+
+        const mensajeVacio = misPedidosCache.length === 0
+            ? 'Todavía no has hecho ningún pedido. ¡Explora los locales y compra algo!'
+            : 'No tienes pedidos con este estado.';
+
+        renderizarListaPedidos(contenedor, pedidos, 'cliente', manejarAccionMiPedido, mensajeVacio);
+    }
+
+    activarFiltrosPedidos('mpe-filtros', (estado) => {
+        misPedidosFiltroEstado = estado;
+        renderizarMisPedidos();
+    });
+
+    async function manejarAccionMiPedido(accion, pedido) {
+        if (accion !== 'cancelar') return;
+
+        const resultado = await Swal.fire({
+            title: `¿Cancelar el pedido ${pedido.numero}?`,
+            text: 'Los productos volverán al inventario del local.',
+            icon: 'warning',
+            input: 'text',
+            inputPlaceholder: 'Motivo (opcional)',
+            inputAttributes: { maxlength: 255 },
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cancelar pedido',
+            cancelButtonText: 'No, mantenerlo',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#8E7CC3'
+        });
+
+        if (!resultado.isConfirmed) return;
+
+        try {
+            const r = await fetch('api/cancelar_pedido.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idPedido: pedido.idPedido, motivo: resultado.value || '' })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            await cargarMisPedidos();
+        } catch (e) {
+            mostrarMensaje('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.', 'error');
+        }
+    }
+
+    // ============================================================
+    // Vista: Pedidos Recibidos (Comerciante)
+    // ============================================================
+    let pedidosRecibidosCache = [];
+    let pedidosRecibidosFiltroEstado = '';
+
+    async function cargarPedidosRecibidos() {
+        const contenedor = document.getElementById('lista-pedidos-recibidos');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<p class="ayuda">Cargando pedidos...</p>';
+
+        try {
+            const r = await fetch('api/listar_pedidos_recibidos.php');
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudieron cargar los pedidos')}</p>`;
+                return;
+            }
+
+            pedidosRecibidosCache = res.pedidos;
+            renderizarPedidosRecibidos();
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar los pedidos.</p>';
+        }
+    }
+
+    function renderizarPedidosRecibidos() {
+        const contenedor = document.getElementById('lista-pedidos-recibidos');
+        if (!contenedor) return;
+
+        const termino = (document.getElementById('pr-buscar')?.value || '').trim().toLowerCase();
+
+        const pedidos = pedidosRecibidosCache.filter(pedido => {
+            const cumpleEstado = !pedidosRecibidosFiltroEstado || pedido.estado === pedidosRecibidosFiltroEstado;
+            const cumpleBusqueda = !termino
+                || pedido.numero.toLowerCase().includes(termino)
+                || (pedido.clienteNombre || '').toLowerCase().includes(termino)
+                || (pedido.localNombre || '').toLowerCase().includes(termino);
+            return cumpleEstado && cumpleBusqueda;
+        });
+
+        const mensajeVacio = pedidosRecibidosCache.length === 0
+            ? 'Todavía no has recibido pedidos en tus locales.'
+            : 'No hay pedidos que coincidan con el filtro.';
+
+        renderizarListaPedidos(contenedor, pedidos, 'comerciante', manejarAccionPedidoRecibido, mensajeVacio);
+    }
+
+    activarFiltrosPedidos('pr-filtros', (estado) => {
+        pedidosRecibidosFiltroEstado = estado;
+        renderizarPedidosRecibidos();
+    });
+
+    document.getElementById('pr-buscar')?.addEventListener('input', debounce(renderizarPedidosRecibidos, 300));
+
+    async function enviarAccionPedido(idPedido, accion, datosExtra = {}) {
+        try {
+            const r = await fetch('api/gestionar_pedido.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idPedido, accion, ...datosExtra })
+            });
+            const res = await r.json();
+
+            mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+
+            await cargarPedidosRecibidos();
+            return res.exito;
+        } catch (e) {
+            mostrarMensaje('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.', 'error');
+            return false;
+        }
+    }
+
+    async function manejarAccionPedidoRecibido(accion, pedido) {
+        if (accion === 'confirmar') {
+            const resultado = await Swal.fire({
+                title: `¿Confirmar el pedido ${pedido.numero}?`,
+                text: `Total: ${formatearColones(pedido.total)}. Se generará un código de retiro para el cliente.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, confirmar',
+                cancelButtonText: 'Volver',
+                confirmButtonColor: '#8E7CC3',
+                cancelButtonColor: '#6B7280'
+            });
+
+            if (resultado.isConfirmed) {
+                await enviarAccionPedido(pedido.idPedido, 'confirmar');
+            }
+            return;
+        }
+
+        if (accion === 'rechazar') {
+            const resultado = await Swal.fire({
+                title: `¿Rechazar el pedido ${pedido.numero}?`,
+                text: 'Los productos volverán a tu inventario. Cuéntale al cliente por qué.',
+                icon: 'warning',
+                input: 'text',
+                inputPlaceholder: 'Motivo del rechazo',
+                inputAttributes: { maxlength: 255 },
+                inputValidator: (valor) => (!valor || !valor.trim())
+                    ? 'Escribe el motivo del rechazo'
+                    : undefined,
+                showCancelButton: true,
+                confirmButtonText: 'Rechazar pedido',
+                cancelButtonText: 'Volver',
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#8E7CC3'
+            });
+
+            if (resultado.isConfirmed) {
+                await enviarAccionPedido(pedido.idPedido, 'rechazar', { motivo: resultado.value.trim() });
+            }
+            return;
+        }
+
+        if (accion === 'entregar') {
+            const resultado = await Swal.fire({
+                title: `Entregar pedido ${pedido.numero}`,
+                text: `Pídele a ${pedido.clienteNombre} su código de retiro y escríbelo aquí.`,
+                icon: 'info',
+                input: 'text',
+                inputPlaceholder: 'Ej: ABC234',
+                inputAttributes: { maxlength: 10, autocapitalize: 'characters', autocomplete: 'off' },
+                inputValidator: (valor) => (!valor || !valor.trim())
+                    ? 'Escribe el código que te dicta el cliente'
+                    : undefined,
+                showCancelButton: true,
+                confirmButtonText: 'Confirmar entrega',
+                cancelButtonText: 'Volver',
+                confirmButtonColor: '#8E7CC3',
+                cancelButtonColor: '#6B7280'
+            });
+
+            if (resultado.isConfirmed) {
+                await enviarAccionPedido(pedido.idPedido, 'entregar', { retiroCodigo: resultado.value.trim() });
+            }
+        }
+    }
+
 });

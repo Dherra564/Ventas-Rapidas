@@ -2286,3 +2286,621 @@ body {
     padding: 0.9rem;
     font-size: 1.02rem;
 }
+
+/* ============================================================
+   ESTADOS DE PEDIDO (se usan en el comprobante y en las vistas
+   "Mis Pedidos" y "Pedidos Recibidos")
+   ============================================================ */
+.estado-pedido {
+    display: inline-block;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.estado-pedido-pendiente { background: #FEF3C7; color: #B45309; }
+.estado-pedido-confirmado { background: #DBEAFE; color: #1D4ED8; }
+.estado-pedido-entregado { background: #D1FAE5; color: #047857; }
+.estado-pedido-rechazado,
+.estado-pedido-cancelado { background: #FEE2E2; color: #B91C1C; }
+
+/* ============================================================
+   COMPROBANTE DE PEDIDO (api/comprobante_pedido.php)
+   ============================================================ */
+body.comprobante-pagina {
+    display: block;
+    min-height: auto;
+    background: var(--background-secondary) !important;
+    color: var(--color-gray-900);
+    padding: 2rem 1rem !important;
+}
+
+.comprobante-acciones {
+    max-width: 720px;
+    margin: 0 auto 1rem;
+    text-align: right;
+}
+
+.comprobante-btn-imprimir {
+    background: var(--color-primary);
+    color: var(--text-white);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.65rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.comprobante-btn-imprimir:hover { background: var(--color-primary-hover); }
+
+.comprobante-hoja {
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--color-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+}
+
+.comprobante-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 1rem;
+    margin-bottom: 1.4rem;
+}
+
+.comprobante-marca {
+    font-family: var(--font-primary);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+.comprobante-marca span { color: var(--color-primary); }
+
+.comprobante-titulo {
+    font-size: 1.05rem;
+    color: var(--color-primary-dark);
+    text-align: right;
+}
+
+.comprobante-numero {
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: right;
+}
+
+.comprobante-datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.4rem;
+    font-size: 0.9rem;
+}
+
+.comprobante-dato-titulo {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: var(--color-primary-dark);
+    margin-bottom: 0.2rem;
+}
+
+.comprobante-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+.comprobante-tabla th {
+    text-align: left;
+    background: var(--color-lilac-100);
+    color: var(--color-primary-dark);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    padding: 0.55rem;
+}
+.comprobante-tabla td {
+    padding: 0.6rem 0.55rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.comprobante-tabla .comprobante-num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.comprobante-descuento {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--color-primary-dark);
+}
+
+.comprobante-tachado {
+    text-decoration: line-through;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-right: 0.3rem;
+}
+
+.comprobante-total {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    padding: 0.6rem 0.55rem;
+}
+
+.comprobante-codigo {
+    margin: 1.2rem 0;
+    text-align: center;
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+.comprobante-codigo-etiqueta {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+.comprobante-codigo-valor {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.35rem;
+    font-family: 'Courier New', monospace;
+}
+
+.comprobante-motivo {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: var(--radius-md);
+    padding: 0.7rem 0.9rem;
+    margin: 1rem 0;
+    font-size: 0.88rem;
+}
+
+.comprobante-subtitulo {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--color-primary-dark);
+    margin: 1.4rem 0 0.5rem;
+}
+
+.comprobante-historial li {
+    list-style: none;
+    font-size: 0.82rem;
+    padding: 0.25rem 0;
+    color: var(--text-secondary);
+}
+
+.comprobante-pie {
+    margin-top: 1.6rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.comprobante-error h2 {
+    font-family: var(--font-primary);
+    font-size: 1.3rem;
+    margin-bottom: 0.6rem;
+}
+.comprobante-error p { color: var(--text-secondary); }
+
+@media (max-width: 560px) {
+    .comprobante-datos { grid-template-columns: 1fr; }
+    .comprobante-hoja { padding: 1.2rem; }
+}
+
+@media print {
+    body.comprobante-pagina {
+        background: var(--color-white) !important;
+        padding: 0 !important;
+    }
+    .comprobante-hoja { border: none; }
+    .comprobante-acciones { display: none; }
+}
+
+/* ============================================================
+   MÓDULO DE COMPRAS: FILTROS POR ESTADO
+   (vistas "Mis Pedidos" y "Pedidos Recibidos")
+   ============================================================ */
+.pedidos-filtros {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0 1.2rem;
+    overflow-x: auto;
+    padding-bottom: 0.3rem;
+}
+
+.pedidos-filtro {
+    flex-shrink: 0;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.pedidos-filtro:hover { background: var(--color-lilac-100); color: var(--color-primary); }
+.pedidos-filtro.activo {
+    background: var(--color-primary);
+    color: var(--text-white);
+    border-color: var(--color-primary);
+}
+
+/* ============================================================
+   MÓDULO DE COMPRAS: TARJETAS DE PEDIDO
+   ============================================================ */
+.pedidos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pedido-tarjeta {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.2rem 1.3rem;
+    transition: all 0.2s ease;
+}
+.pedido-tarjeta:hover { box-shadow: var(--shadow-md); }
+
+.pedido-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.7rem;
+}
+
+.pedido-numero {
+    display: block;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.pedido-fecha {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.pedido-contraparte {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+    margin-bottom: 0.3rem;
+}
+.pedido-contraparte svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.pedido-contraparte-secundaria {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.pedido-detalles {
+    list-style: none;
+    margin: 0.8rem 0;
+    padding: 0.7rem 0.9rem;
+    background: var(--background-secondary);
+    border-radius: var(--radius-md);
+}
+
+.pedido-detalle {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    padding: 0.25rem 0;
+}
+.pedido-detalle span:last-child { white-space: nowrap; color: var(--text-secondary); }
+
+.pedido-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.8rem;
+}
+.pedido-total strong {
+    font-family: var(--font-primary);
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.pedido-codigo {
+    text-align: center;
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--surface-hover);
+    padding: 0.9rem;
+    margin-bottom: 0.9rem;
+}
+
+.pedido-codigo-etiqueta {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-primary-dark);
+    margin-bottom: 0.2rem;
+}
+
+.pedido-codigo-valor {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: 0.35rem;
+    color: var(--text-primary);
+}
+
+.pedido-aviso {
+    font-size: 0.85rem;
+    color: #B45309;
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: var(--radius-md);
+    padding: 0.55rem 0.8rem;
+    margin-bottom: 0.9rem;
+}
+
+.pedido-motivo {
+    font-size: 0.85rem;
+    color: #B91C1C;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: var(--radius-md);
+    padding: 0.55rem 0.8rem;
+    margin-bottom: 0.9rem;
+}
+
+.pedido-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.pedido-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.87rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+.pedido-boton svg { width: 15px; height: 15px; }
+
+.pedido-boton-principal {
+    background: var(--color-primary);
+    color: var(--text-white);
+}
+.pedido-boton-principal:hover { background: var(--color-primary-hover); }
+
+.pedido-boton-peligro {
+    background: var(--color-white);
+    color: #DC2626;
+    border-color: #FECACA;
+}
+.pedido-boton-peligro:hover { background: #DC2626; color: var(--text-white); border-color: #DC2626; }
+
+.pedido-boton-secundario {
+    background: var(--color-white);
+    color: var(--color-primary);
+    border-color: var(--border-color);
+}
+.pedido-boton-secundario:hover { background: var(--color-lilac-100); border-color: var(--color-primary); }
+
+@media (max-width: 600px) {
+    .pedido-tarjeta { padding: 1rem; }
+    .pedido-boton { flex: 1 1 auto; }
+    .pedido-codigo-valor { font-size: 1.6rem; letter-spacing: 0.25rem; }
+}
+
+/* ============================================================
+   MÓDULO DE COMPRAS: VENTANA DE COMPRA (modal-compra)
+   ============================================================ */
+.modal-compra-contenido {
+    max-width: 440px;
+    padding: 1.8rem;
+}
+.modal-compra-contenido h3 {
+    font-family: var(--font-primary);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 2.5rem 1.2rem 0;
+}
+
+.compra-producto {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.8rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1.2rem;
+}
+
+.compra-producto-imagen {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--color-white);
+}
+
+.compra-producto-sin-imagen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.compra-producto-sin-imagen svg {
+    width: 30px;
+    height: 30px;
+    color: var(--color-lilac-300);
+    stroke-width: 1.5;
+}
+
+.compra-producto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.compra-local-nombre {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-primary-dark);
+}
+
+.compra-producto-nombre {
+    font-family: var(--font-primary);
+    font-size: 1.02rem;
+    color: var(--text-primary);
+}
+
+.compra-precio-unitario {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.compra-etiqueta {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.compra-cantidad-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.compra-cantidad-boton {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    color: var(--color-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.compra-cantidad-boton:hover:not(:disabled) {
+    background: var(--color-primary);
+    color: var(--text-white);
+    border-color: var(--color-primary);
+}
+.compra-cantidad-boton:disabled {
+    color: var(--text-muted);
+    background: var(--background-secondary);
+    cursor: not-allowed;
+}
+.compra-cantidad-boton svg { width: 18px; height: 18px; }
+
+.compra-cantidad-input {
+    width: 80px;
+    height: 42px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.compra-cantidad-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(142, 124, 195, 0.12);
+}
+.compra-cantidad-input::-webkit-outer-spin-button,
+.compra-cantidad-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.compra-resumen {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1.1rem 0 0.6rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+.compra-resumen strong {
+    font-family: var(--font-primary);
+    font-size: 1.5rem;
+    color: var(--color-primary-dark);
+}
+
+.compra-nota { margin-bottom: 1rem; }
+
+#compra-confirmar:disabled {
+    background: var(--color-gray-200);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+/* ---------- Opciones de duración del producto (radios) ---------- */
+.opciones-duracion {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    margin-top: 0.4rem;
+}
+
+.formulario .opciones-duracion label {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.formulario .opciones-duracion input[type="radio"] {
+    width: auto;
+    margin: 0;
+    accent-color: var(--color-primary);
+}
