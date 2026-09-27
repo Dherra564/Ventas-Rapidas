@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ventas Rápidas</title>
     <link rel="stylesheet" href="css/estilos.css">
+     <link rel="stylesheet" href="js/leaflet.css" />
+    <script src="js/leaflet.js"></script>
 </head>
 
 <body>
@@ -105,10 +107,15 @@
                             </div>
                         </div>
 
-                        <div class="hero-inicio-imagen">
+                                              <div class="hero-inicio-imagen">
                             <img src="imagenes/hero-ilustracion.svg"
                                 alt="Ilustración de una bolsa de compras con productos de RapiVentas">
                         </div>
+                    </div>
+
+                <div id="mapa-inicio-wrap" class="oculto">
+                        <p class="ayuda" id="mapa-inicio-ayuda">Toca el mapa en el punto donde quieras buscar locales cercanos.</p>
+                        <div id="mapa-inicio" class="mapa-inicio"></div>
                     </div>
 
                     <div class="carrusel" id="carrusel-locales">
@@ -318,9 +325,13 @@
                         <label for="l-referencia">Punto de referencia</label>
                         <input type="text" id="l-referencia">
 
-                        <button type="button" id="btn-gps-local" class="boton-secundario">📍 Usar mi ubicación
+                    <button type="button" id="btn-gps-local" class="boton-secundario">📍 Usar mi ubicación
                             GPS</button>
                         <span class="ayuda" id="l-gps-msg"></span>
+
+                        <label class="ayuda" style="margin-top: 0.6rem;">O ajustá el pin directamente en el mapa</label>
+                        <div id="l-mapa" class="mapa-registro"></div>
+
                         <input type="hidden" id="l-latitud">
                         <input type="hidden" id="l-longitud">
 
@@ -584,6 +595,7 @@
                         <div class="campo-lectura">
                             <strong>Ubicación registrada</strong>
                             <p id="e-ubicacion-texto"></p>
+                            <div id="e-mapa-ubicacion" class="mapa-registro oculto"></div>
                         </div>
 
                         <div class="campo-lectura">

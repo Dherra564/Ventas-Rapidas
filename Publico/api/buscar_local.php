@@ -25,7 +25,7 @@ try {
     $canton = (new CantonController())->buscar($ubicacion->getIdCanton());
     $distrito = (new DistritoController())->buscar($ubicacion->getIdDistrito());
 
-    echo json_encode([
+       echo json_encode([
         'exito' => true,
         'local' => [
             'idLocal' => $local->getIdLocal(),
@@ -41,7 +41,9 @@ try {
             'canton' => $canton?->getNombre(),
             'distrito' => $distrito?->getNombre(),
             'direccionExacta' => $ubicacion->getDireccionExacta(),
-            'referencia' => $ubicacion->getReferencia()
+            'referencia' => $ubicacion->getReferencia(),
+            'latitud' => $ubicacion->getLatitud(),
+            'longitud' => $ubicacion->getLongitud()
         ]
     ]);
 

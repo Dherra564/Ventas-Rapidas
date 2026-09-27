@@ -17,9 +17,17 @@ try {
 
     $locales = $controlador->buscarConFiltros($nombre, $idTipoLocal, $idProvincia, $idCanton, $idDistrito, true);
 
-    $datos = [];
+       $datos = [];
     foreach ($locales as $local) {
         $tipo = $controlador->buscarTipoLocal($local->getIdTipoLocal());
+
+        $latitud = null;
+        $longitud = null;
+        $conUbicacion = $controlador->buscarConUbicacion($local->getIdLocal());
+        if ($conUbicacion !== null && $conUbicacion['ubicacion']->tieneCoordenadas()) {
+            $latitud = $conUbicacion['ubicacion']->getLatitud();
+            $longitud = $conUbicacion['ubicacion']->getLongitud();
+        }
 
         $datos[] = [
             'idLocal' => $local->getIdLocal(),
@@ -27,7 +35,9 @@ try {
             'descripcion' => $local->getDescripcion(),
             'telefono' => $local->getTelefono(),
             'tipoLocal' => $tipo?->getNombre(),
-            'logo' => $local->getLogo()
+            'logo' => $local->getLogo(),
+            'latitud' => $latitud,
+            'longitud' => $longitud
         ];
     }
 

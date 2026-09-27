@@ -75,6 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarLocalesComercianteParaProducto();
             }
 
+
+            if (boton.dataset.vista === 'vista-local' && typeof inicializarMapaLocal === 'function') {
+                inicializarMapaLocal();
+                setTimeout(() => mapaLocal?.invalidateSize(), 150);
+            }
+
             if (boton.dataset.vista === 'vista-seleccionar-local') {
                 mostrarSelectorPerfilesLocal();
             }
@@ -469,6 +475,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+        let mapaLocal = null;
+    let marcadorLocal = null;
+
+    function inicializarMapaLocal() {
+        const contenedorMapa = document.getElementById('l-mapa');
+        if (!contenedorMapa || typeof L === 'undefined') return;
+        if (mapaLocal) return;
+
+        const latInicial = 9.9281;
+        const lngInicial = -84.0907;
+
+        mapaLocal = L.map('l-mapa').setView([latInicial, lngInicial], 8);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(mapaLocal);
+
+            const iconoPinRapiVentas = L.divIcon({
+             className: 'pin-rapiventas',
+             html: '<div class="pin-rapiventas-punta"></div>',
+             iconSize: [30, 42],
+             iconAnchor: [15, 42],
+             popupAnchor: [0, -42]
+            });
+
+        marcadorLocal = L.marker([latInicial, lngInicial], {
+             draggable: true,
+            icon: iconoPinRapiVentas
+        }).addTo(mapaLocal);
+
+        marcadorLocal.on('dragend', () => {
+            const pos = marcadorLocal.getLatLng();
+            actualizarUbicacionDesdeMapa(pos.lat, pos.lng);
+        });
+
+        mapaLocal.on('click', (evento) => {
+            const { lat, lng } = evento.latlng;
+            marcadorLocal.setLatLng([lat, lng]);
+            actualizarUbicacionDesdeMapa(lat, lng);
+        });
+    }
+
+    async function actualizarUbicacionDesdeMapa(lat, lng) {
+        if (inputLatitudLocal) inputLatitudLocal.value = lat;
+        if (inputLongitudLocal) inputLongitudLocal.value = lng;
+
+        if (mensajeGpsLocal) mensajeGpsLocal.textContent = `Ubicación seleccionada (${lat.toFixed(5)}, ${lng.toFixed(5)}). Buscando provincia, cantón y distrito...`;
+
+        const completado = await autocompletarUbicacionPorGPS(lat, lng, selectProvinciaLocal, selectCantonLocal, selectDistritoLocal);
+
+        if (mensajeGpsLocal) {
+            mensajeGpsLocal.textContent = completado
+                ? `Ubicación seleccionada (${lat.toFixed(5)}, ${lng.toFixed(5)}). Provincia, cantón y distrito rellenados automáticamente — revísalos antes de guardar.`
+                : `Ubicación seleccionada (${lat.toFixed(5)}, ${lng.toFixed(5)}). No se pudo identificar provincia/cantón/distrito automáticamente, selecciónalos a mano.`;
+        }
+    }
+
     document.getElementById('btn-gps-local')?.addEventListener('click', async () => {
         if (mensajeGpsLocal) mensajeGpsLocal.textContent = 'Obteniendo ubicación...';
         try {
@@ -476,6 +540,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (inputLatitudLocal) inputLatitudLocal.value = coords.lat;
             if (inputLongitudLocal) inputLongitudLocal.value = coords.lng;
             if (mensajeGpsLocal) mensajeGpsLocal.textContent = `Ubicación capturada (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}). Buscando provincia, cantón y distrito...`;
+
+            if (mapaLocal && marcadorLocal) {
+                mapaLocal.setView([coords.lat, coords.lng], 16);
+                marcadorLocal.setLatLng([coords.lat, coords.lng]);
+            }
 
             const completado = await autocompletarUbicacionPorGPS(coords.lat, coords.lng, selectProvinciaLocal, selectCantonLocal, selectDistritoLocal);
 
@@ -781,6 +850,47 @@ document.addEventListener('DOMContentLoaded', () => {
             contenedor.innerHTML = '<p>Error al buscar sugerencias.</p>';
         }
     }
+            let mapaDetalleLocal = null;
+    let marcadorDetalleLocal = null;
+
+    function mostrarMapaDetalleLocal(ubicacion) {
+        const contenedorMapa = document.getElementById('e-mapa-ubicacion');
+        if (!contenedorMapa) return;
+
+        if (!ubicacion.latitud || !ubicacion.longitud) {
+            contenedorMapa.classList.add('oculto');
+            return;
+        }
+
+        contenedorMapa.classList.remove('oculto');
+
+        if (typeof L === 'undefined') return;
+
+        const iconoPinRapiVentas = L.divIcon({
+            className: 'pin-rapiventas',
+            html: '<div class="pin-rapiventas-punta"></div>',
+            iconSize: [30, 42],
+            iconAnchor: [15, 42],
+            popupAnchor: [0, -42]
+        });
+
+        if (!mapaDetalleLocal) {
+            mapaDetalleLocal = L.map('e-mapa-ubicacion', { scrollWheelZoom: false })
+                .setView([ubicacion.latitud, ubicacion.longitud], 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19
+            }).addTo(mapaDetalleLocal);
+
+            marcadorDetalleLocal = L.marker([ubicacion.latitud, ubicacion.longitud], { icon: iconoPinRapiVentas }).addTo(mapaDetalleLocal);
+        } else {
+            mapaDetalleLocal.setView([ubicacion.latitud, ubicacion.longitud], 16);
+            marcadorDetalleLocal.setLatLng([ubicacion.latitud, ubicacion.longitud]);
+        }
+
+        setTimeout(() => mapaDetalleLocal?.invalidateSize(), 150);
+        }
 
       async function abrirDetalleLocal(idLocal) {
         try {
@@ -819,6 +929,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             panelLista.classList.add('oculto');
             panelDetalle.classList.remove('oculto');
+
+            mostrarMapaDetalleLocal(ubicacion);
 
             cargarProductosDelLocal(idLocal, local);
             
@@ -2241,11 +2353,17 @@ document.addEventListener('DOMContentLoaded', () => {
             menuPrincipal.classList.toggle('oculto', esRegistro);
         }
 
-        if (idVista === 'vista-listado' && typeof mostrarListaLocales === 'function') {
+     if (idVista === 'vista-listado' && typeof mostrarListaLocales === 'function') {
             mostrarListaLocales();
             cargarLocales();
         }
+
+        if (idVista === 'vista-local' && typeof inicializarMapaLocal === 'function') {
+            inicializarMapaLocal();
+            setTimeout(() => mapaLocal?.invalidateSize(), 150);
+        }
     }
+    
 
     async function verificarSesionActual() {
         try {
@@ -2965,8 +3083,159 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderizarSeccionesProductos(filtrados);
     }, 300));
+    let mapaInicio = null;
+    let marcadoresInicio = [];
+    let marcadorPuntoElegido = null;
 
-    async function cargarInicio() {
+    function inicializarMapaInicio() {
+        const contenedorMapa = document.getElementById('mapa-inicio');
+        if (!contenedorMapa || typeof L === 'undefined') return;
+        if (mapaInicio) return;
+
+        mapaInicio = L.map('mapa-inicio', { scrollWheelZoom: false }).setView([9.9281, -84.0907], 8);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(mapaInicio);
+    }
+
+    function pintarPinesLocalesInicio(locales) {
+        if (!mapaInicio) return;
+
+        marcadoresInicio.forEach(m => mapaInicio.removeLayer(m));
+        marcadoresInicio = [];
+
+        const iconoPinRapiVentas = L.divIcon({
+            className: 'pin-rapiventas',
+            html: '<div class="pin-rapiventas-punta"></div>',
+            iconSize: [30, 42],
+            iconAnchor: [15, 42],
+            popupAnchor: [0, -42]
+        });
+
+        const localesConUbicacion = locales.filter(l => l.latitud && l.longitud);
+
+        localesConUbicacion.forEach(local => {
+            const marcador = L.marker([local.latitud, local.longitud], { icon: iconoPinRapiVentas }).addTo(mapaInicio);
+            marcador.bindTooltip(local.nombreLocal, { direction: 'top', offset: [0, -42] });
+            marcador.on('click', () => abrirModalLocal(local.idLocal));
+            marcadoresInicio.push(marcador);
+        });
+
+        if (localesConUbicacion.length > 0) {
+            const grupo = L.featureGroup(marcadoresInicio);
+            mapaInicio.fitBounds(grupo.getBounds().pad(0.2));
+        }
+    }
+
+    function distanciaKm(lat1, lng1, lat2, lng2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function aplicarFiltroUbicacionCercana(lat, lng, etiquetaOrigen) {
+        const radioKm = 15;
+
+        const cercanos = localesInicioCache
+            .filter(l => l.latitud && l.longitud)
+            .map(l => ({ ...l, distanciaKm: distanciaKm(lat, lng, l.latitud, l.longitud) }))
+            .filter(l => l.distanciaKm <= radioKm)
+            .sort((a, b) => a.distanciaKm - b.distanciaKm);
+
+        carruselLocales = cercanos.slice(0, 8);
+        carruselIndice = 0;
+        renderizarCarrusel();
+        iniciarAutoplayCarrusel();
+
+        const indicador = document.getElementById('hero-ubicacion-activa');
+        const textoIndicador = document.getElementById('hero-ubicacion-activa-texto');
+        if (indicador && textoIndicador) {
+            textoIndicador.textContent = cercanos.length > 0
+                ? `Mostrando ${cercanos.length} local${cercanos.length === 1 ? '' : 'es'} cerca de ${etiquetaOrigen}`
+                : `No encontramos locales registrados cerca de ${etiquetaOrigen}`;
+            indicador.classList.remove('oculto');
+        }
+    }
+
+    async function buscarLocalesCercanosPorGPS() {
+        try {
+            const coords = await obtenerCoordenadasGPS();
+            aplicarFiltroUbicacionCercana(coords.lat, coords.lng, 'tu ubicación actual (GPS)');
+        } catch (e) {
+            mostrarMensaje('No se pudo obtener tu ubicación GPS. Intenta con el mapa.', 'error');
+        }
+    }
+
+    function mostrarMapaSeleccionUbicacion() {
+        const wrap = document.getElementById('mapa-inicio-wrap');
+        const ayuda = document.getElementById('mapa-inicio-ayuda');
+        if (!wrap) return;
+
+        wrap.classList.remove('oculto');
+        if (ayuda) ayuda.textContent = 'Toca el mapa en el punto donde quieras buscar locales cercanos.';
+
+        inicializarMapaInicio();
+        pintarPinesLocalesInicio(localesInicioCache);
+        setTimeout(() => mapaInicio?.invalidateSize(), 150);
+
+        if (mapaInicio && !mapaInicio.__clickCercanosListo) {
+            mapaInicio.on('click', (evento) => {
+                const { lat, lng } = evento.latlng;
+
+                if (marcadorPuntoElegido) mapaInicio.removeLayer(marcadorPuntoElegido);
+                marcadorPuntoElegido = L.circleMarker([lat, lng], {
+                    radius: 9,
+                    color: '#2563eb',
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.9
+                }).addTo(mapaInicio);
+
+                if (ayuda) ayuda.textContent = 'Punto elegido. Buscando locales cercanos...';
+
+                aplicarFiltroUbicacionCercana(lat, lng, 'el punto que elegiste en el mapa');
+
+                setTimeout(() => wrap.classList.add('oculto'), 800);
+            });
+            mapaInicio.__clickCercanosListo = true;
+        }
+    }
+
+    document.getElementById('hero-ubicacion-actual')?.addEventListener('click', () => {
+        Swal.fire({
+            title: '¿Cómo quieres buscar locales cercanos?',
+            text: 'Podemos usar tu ubicación GPS en tiempo real, o dejar que elijas el punto en un mapa.',
+            icon: 'question',
+            showDenyButton: true,
+            confirmButtonText: 'Ubicación en tiempo real',
+            denyButtonText: 'Prefiero el mapa',
+            confirmButtonColor: '#8E7CC3',
+            denyButtonColor: '#6B7280'
+        }).then(async (resultado) => {
+            if (resultado.isConfirmed) {
+                document.getElementById('mapa-inicio-wrap')?.classList.add('oculto');
+                await buscarLocalesCercanosPorGPS();
+            } else if (resultado.isDenied) {
+                mostrarMapaSeleccionUbicacion();
+            }
+        });
+    });
+
+    document.getElementById('hero-ubicacion-limpiar')?.addEventListener('click', () => {
+        document.getElementById('hero-ubicacion-activa')?.classList.add('oculto');
+        document.getElementById('mapa-inicio-wrap')?.classList.add('oculto');
+        carruselLocales = localesInicioCache.slice(0, 8);
+        carruselIndice = 0;
+        renderizarCarrusel();
+        iniciarAutoplayCarrusel();
+    });
+
+       async function cargarInicio() {
         try {
             const locales = await obtenerLocalesActivos();
             localesInicioCache = locales;

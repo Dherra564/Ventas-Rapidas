@@ -245,7 +245,7 @@ class LocalRepository
 
         $local = $this->mapearFila($fila);
 
-        $ubicacion = new Ubicacion(
+              $ubicacion = new Ubicacion(
             (int) $fila["tblocalid"],
             (int) $fila["tbprovinciaid"],
             (int) $fila["tbcantonid"],
@@ -254,7 +254,9 @@ class LocalRepository
             $fila["tbubicaciondereferencia"],
             $fila["tbclienteid"] !== null ? (int) $fila["tbclienteid"] : null,
             (bool) $fila["tbubicacionactivo"],
-            (int) $fila["tbubicacionid"]
+            (int) $fila["tbubicacionid"],
+            $fila["tbubicacionlatitud"] !== null ? (float) $fila["tbubicacionlatitud"] : null,
+            $fila["tbubicacionlongitud"] !== null ? (float) $fila["tbubicacionlongitud"] : null
         );
 
         return ["local" => $local, "ubicacion" => $ubicacion];

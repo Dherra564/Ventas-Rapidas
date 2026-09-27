@@ -2904,3 +2904,57 @@ body.comprobante-pagina {
     margin: 0;
     accent-color: var(--color-primary);
 }
+
+.mapa-registro {
+    height: 300px;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    margin: 0.6rem 0;
+    z-index: 1;
+}
+
+.pin-rapiventas {
+    background: transparent;
+    border: none;
+}
+
+.pin-rapiventas-punta {
+    position: relative;
+    width: 30px;
+    height: 42px;
+}
+
+.pin-rapiventas-punta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    background: #8b5cf6;
+    border: 3px solid #ffffff;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
+}
+
+.pin-rapiventas-punta::after {
+    content: '';
+    position: absolute;
+    top: 9px;
+    left: 9px;
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-radius: 50%;
+}
+
+.mapa-inicio {
+    height: 340px;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    margin: 1rem 0 1.6rem;
+    z-index: 1;
+}
