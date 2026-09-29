@@ -57,7 +57,7 @@ class EditarProductoHandler
             true,
             $idProducto,
             null,
-            $fechaVencimiento !== false ? $fechaVencimiento : null
+            $fechaVencimiento
         );
 
         $actualizado = $controlador->editar($producto, $idComerciante);

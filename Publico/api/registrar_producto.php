@@ -25,6 +25,17 @@ class RegistrarProductoHandler
 
         $porcentajeDescuento = trim($_POST['porcentajeDescuento'] ?? '');
 
+        $fechaVencimiento = null;
+        if (!empty($_POST['fechaVencimiento'])) {
+            $fechaVencimiento = DateTime::createFromFormat('Y-m-d\TH:i', $_POST['fechaVencimiento']);
+            if ($fechaVencimiento === false) {
+                throw new InvalidArgumentException('La fecha de disponibilidad no es válida');
+            }
+            if ($fechaVencimiento <= new DateTime()) {
+                throw new InvalidArgumentException('La fecha de disponibilidad debe ser posterior a este momento');
+            }
+        }
+
         $nombreImagen = $this->subirImagenPerfil($_FILES['imagen'] ?? null, 'producto');
 
         $fechaVencimiento = !empty($_POST['fechaVencimiento'])
@@ -40,7 +51,7 @@ class RegistrarProductoHandler
             $_POST['descripcion'] ?? null,
             (int) ($_POST['cantidadDisponible'] ?? 0),
             $nombreImagen !== false ? $nombreImagen : null,
-            $fechaVencimiento !== false ? $fechaVencimiento : null,
+            $fechaVencimiento,
             $idComerciante
         );
 

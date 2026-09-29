@@ -1635,7 +1635,7 @@ body {
     position: absolute; top: 8px; left: 8px; background: var(--color-danger); color: var(--color-white);
     font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 20px;
 }
-.tarjeta-producto-logo-local {
+.tarjeta-producto-imagen .tarjeta-producto-logo-local{
     position: absolute; bottom: -14px; left: 10px; width: 34px; height: 34px; border-radius: 50%;
     border: 2px solid var(--color-white); object-fit: cover; background: var(--color-white);
 }

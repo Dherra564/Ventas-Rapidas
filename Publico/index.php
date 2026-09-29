@@ -698,8 +698,8 @@
                                 required>
 
                             <label for="e-numeroSinpe">Número SINPE Móvil</label>
-                            <input type="text" id="e-numeroSinpe" inputmode="numeric" placeholder="8888-8888" maxlength="9"
-                                required>
+                            <input type="text" id="e-numeroSinpe" inputmode="numeric" placeholder="8888-8888"
+                                maxlength="9" required>
 
                             <label for="e-logo">Nuevo logo (opcional, deja vacío para mantener el actual)</label>
                             <input type="file" id="e-logo" accept="image/png, image/jpeg, image/webp">
@@ -1301,7 +1301,8 @@
                 <input type="text" id="mel-telefono" required>
 
                 <label for="mel-numeroSinpe">Número SINPE Móvil</label>
-                <input type="text" id="mel-numeroSinpe" inputmode="numeric" placeholder="8888-8888" maxlength="9" required>
+                <input type="text" id="mel-numeroSinpe" inputmode="numeric" placeholder="8888-8888" maxlength="9"
+                    required>
 
                 <label for="mel-provincia">Provincia</label>
                 <select id="mel-provincia" required>
@@ -1363,7 +1364,15 @@
 
                 <label for="mep-cantidad">Cantidad disponible</label>
                 <input type="number" id="mep-cantidad" min="0" required>
-
+                <label>Duración del producto</label>
+                <div class="opciones-duracion">
+                    <label><input type="radio" name="mep-duracion" value="permanente" checked> Permanente</label>
+                    <label><input type="radio" name="mep-duracion" value="temporal"> Por tiempo limitado</label>
+                </div>
+                <div id="mep-fechaVencimiento-wrap" class="oculto">
+                    <label for="mep-fechaVencimiento">Disponible hasta</label>
+                    <input type="datetime-local" id="mep-fechaVencimiento">
+                </div>
                 <label for="mep-imagen">Nueva imagen (opcional, deja vacío para mantener la actual)</label>
                 <input type="file" id="mep-imagen" accept="image/png, image/jpeg, image/webp">
 
@@ -1502,7 +1511,8 @@
                                     <i data-lucide="copy"></i> Copiar
                                 </button>
                             </div>
-                            <p class="pago-codigo-nota">Con el código el local valida tu pago. Sin él, no se puede confirmar.</p>
+                            <p class="pago-codigo-nota">Con el código el local valida tu pago. Sin él, no se puede
+                                confirmar.</p>
                         </div>
                     </div>
                 </div>
@@ -1512,12 +1522,15 @@
                     <div class="pago-paso-cuerpo">
                         <strong class="pago-paso-titulo">Sube el comprobante</strong>
                         <label for="pago-comprobante" class="pago-subir">
-                            <img id="pago-comprobante-vista" class="pago-subir-vista oculto" alt="Comprobante del SINPE">
-                            <span id="pago-subir-icono" class="pago-subir-icono"><i data-lucide="upload-cloud"></i></span>
+                            <img id="pago-comprobante-vista" class="pago-subir-vista oculto"
+                                alt="Comprobante del SINPE">
+                            <span id="pago-subir-icono" class="pago-subir-icono"><i
+                                    data-lucide="upload-cloud"></i></span>
                             <strong id="pago-subir-texto">Subir comprobante</strong>
                             <span class="ayuda">PNG, JPG o captura de pantalla</span>
                         </label>
-                        <input type="file" id="pago-comprobante" class="oculto" accept="image/png, image/jpeg, image/webp">
+                        <input type="file" id="pago-comprobante" class="oculto"
+                            accept="image/png, image/jpeg, image/webp">
                     </div>
                 </div>
 
@@ -1526,8 +1539,8 @@
                     <div class="pago-paso-cuerpo">
                         <strong class="pago-paso-titulo">Referencia del SINPE</strong>
                         <span class="ayuda">Últimos 4 dígitos del número de referencia</span>
-                        <input type="text" id="pago-referencia" class="pago-referencia" inputmode="numeric" maxlength="4"
-                            placeholder="0000">
+                        <input type="text" id="pago-referencia" class="pago-referencia" inputmode="numeric"
+                            maxlength="4" placeholder="0000">
                         <span class="ayuda">Aparece en el comprobante como "Referencia" o "N° de comprobante".</span>
                     </div>
                 </div>

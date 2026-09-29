@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . "/Configuracion.php";
-
+date_default_timezone_set('America/Costa_Rica');
 
 class BaseDatos
 {
