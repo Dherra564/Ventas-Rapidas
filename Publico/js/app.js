@@ -413,6 +413,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     formatearTelefono(document.getElementById("l-telefono"));
     formatearTelefono(document.getElementById("e-telefono"));
+    formatearTelefono(document.getElementById("l-numeroSinpe"));
+    formatearTelefono(document.getElementById("e-numeroSinpe"));
+    formatearTelefono(document.getElementById("mel-numeroSinpe"));
 
     const formLocal = document.getElementById("form-local");
     const inputLatitudLocal = document.getElementById("l-latitud");
@@ -632,6 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
         datos.append("nombreLocal", inputNombreLocal.value);
         datos.append("descripcion", document.getElementById("l-descripcion").value);
         datos.append("telefono", document.getElementById("l-telefono").value);
+        datos.append("numeroSinpe", document.getElementById("l-numeroSinpe").value);
         datos.append("idProvincia", selectProvinciaLocal.value);
         datos.append("idCanton", selectCantonLocal.value);
         datos.append("idDistrito", selectDistritoLocal.value);
@@ -1176,6 +1180,9 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("e-solo-descripcion").textContent =
                 local.descripcion ?? "Sin descripción";
             document.getElementById("e-solo-telefono").textContent = local.telefono;
+            document.getElementById("e-solo-numeroSinpe").textContent = local.numeroSinpe
+                ? formatearNumeroOchoDigitos(local.numeroSinpe)
+                : "Sin registrar";
 
             const imgLogo = document.getElementById("e-logo-actual");
             if (local.logo) {
@@ -1616,6 +1623,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById("e-descripcion").value,
                 );
                 datos.append("telefono", document.getElementById("e-telefono").value);
+                datos.append("numeroSinpe", document.getElementById("e-numeroSinpe").value);
 
                 const archivoLogo = document.getElementById("e-logo").files[0];
                 if (archivoLogo) {
@@ -4576,6 +4584,7 @@ document.addEventListener("DOMContentLoaded", () => {
         nombre: "Cambio de nombre",
         correo: "Cambio de correo",
         telefono: "Cambio de teléfono",
+        numeroSinpe: "Cambio de SINPE Móvil",
         logo: "Cambio de logo",
         precio: "Cambio de precio",
         descuento: "Cambio de descuento",
@@ -4588,6 +4597,7 @@ document.addEventListener("DOMContentLoaded", () => {
         nombre: "✏️",
         correo: "✉️",
         telefono: "📞",
+        numeroSinpe: "📱",
         logo: "🏷️",
         precio: "💲",
         descuento: "🏷️",
@@ -5359,6 +5369,9 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("mel-descripcion").value =
                 local.descripcion ?? "";
             document.getElementById("mel-telefono").value = local.telefono;
+            document.getElementById("mel-numeroSinpe").value = local.numeroSinpe
+                ? formatearNumeroOchoDigitos(local.numeroSinpe)
+                : "";
 
             document.getElementById("modal-editar-local").classList.remove("oculto");
         } catch (e) {
@@ -5411,6 +5424,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById("mel-descripcion").value,
                 );
                 datos.append("telefono", document.getElementById("mel-telefono").value);
+                datos.append("numeroSinpe", document.getElementById("mel-numeroSinpe").value);
 
                 const archivoLogo = document.getElementById("mel-logo").files[0];
                 if (archivoLogo) datos.append("logo", archivoLogo);
@@ -5720,64 +5734,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document
         .getElementById("compra-confirmar")
-        ?.addEventListener("click", async () => {
+        ?.addEventListener("click", () => {
             if (!compraActual) return;
 
-            const botonConfirmar = document.getElementById("compra-confirmar");
             const cantidad = leerCantidadCompra();
+            const datosPago = {
+                tipo: "directo",
+                idLocal: compraActual.idLocal,
+                items: [{ idProducto: compraActual.producto.idProducto, cantidad }],
+                total: Math.round(compraActual.precioUnitario * cantidad * 100) / 100,
+            };
 
-            botonConfirmar.disabled = true;
-            botonConfirmar.textContent = "Generando pedido...";
-
-            try {
-                const r = await fetch("api/crear_pedido.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        idLocal: compraActual.idLocal,
-                        items: [{ idProducto: compraActual.producto.idProducto, cantidad }],
-                    }),
-                });
-                const res = await r.json();
-
-                if (!res.exito) {
-                    mostrarMensaje(
-                        res.mensaje || "No se pudo generar el pedido",
-                        "error",
-                    );
-                    return;
-                }
-
-                cerrarModalCompra();
-                cerrarModalLocal();
-
-                const resultado = await Swal.fire({
-                    icon: "success",
-                    title: `¡Pedido ${res.numero} generado!`,
-                    text: `Total: ${formatearColones(res.total)}. El local debe confirmarlo; cuando lo haga verás tu código de retiro en "Mis Pedidos".`,
-                    showCancelButton: true,
-                    confirmButtonText: "Ver mis pedidos",
-                    cancelButtonText: "Seguir comprando",
-                    confirmButtonColor: "#8E7CC3",
-                    cancelButtonColor: "#6B7280",
-                });
-
-                if (resultado.isConfirmed) {
-                    irAVista("vista-mis-pedidos");
-                } else if (
-                    !document.getElementById("vista-inicio").classList.contains("oculto")
-                ) {
-                    cargarInicio(); // refresca el catálogo porque cambió el inventario
-                }
-            } catch (e) {
-                mostrarMensaje(
-                    "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.",
-                    "error",
-                );
-            } finally {
-                botonConfirmar.disabled = false;
-                botonConfirmar.textContent = "Comprar ahora";
-            }
+            cerrarModalCompra();
+            abrirPago(datosPago);
         });
 
     // ============================================================
@@ -5826,6 +5795,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 : `<p class="pedido-contraparte"><i data-lucide="user"></i> ${escaparHtml(pedido.clienteNombre)}</p>
                <p class="pedido-contraparte pedido-contraparte-secundaria"><i data-lucide="store"></i> ${escaparHtml(pedido.localNombre)}</p>`;
 
+        const pagoHtml = pedido.pago
+            ? `
+                <div class="pedido-pago">
+                    <div class="pedido-pago-info">
+                        <span class="pedido-pago-titulo"><i data-lucide="smartphone"></i> Pago por SINPE Móvil</span>
+                        <span>Código: <strong>${escaparHtml(pedido.pago.codigo)}</strong> · Referencia: <strong>${escaparHtml(pedido.pago.referencia)}</strong></span>
+                        <span class="pedido-pago-dato">${escaparHtml(pedido.pago.nombre)} · ${escaparHtml(formatearNumeroOchoDigitos(pedido.pago.telefono))}</span>
+                    </div>
+                    <a href="imagenes/${escaparHtml(pedido.pago.comprobante)}" target="_blank" class="pedido-pago-comprobante" title="Ver comprobante">
+                        <img src="imagenes/${escaparHtml(pedido.pago.comprobante)}" alt="Comprobante del SINPE">
+                    </a>
+                </div>`
+            : "";
+
         let avisoHtml = "";
 
         if (
@@ -5842,8 +5825,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (pedido.estado === "Pendiente") {
             avisoHtml =
                 modo === "cliente"
-                    ? '<p class="pedido-aviso">Esperando que el local confirme tu pedido.</p>'
-                    : '<p class="pedido-aviso">Este pedido espera tu respuesta.</p>';
+                    ? '<p class="pedido-aviso">El local está revisando que le haya llegado tu SINPE.</p>'
+                    : '<p class="pedido-aviso">Revisa que te llegó el SINPE con este código y referencia antes de confirmar.</p>';
         } else if (modo === "comerciante" && pedido.estado === "Confirmado") {
             avisoHtml =
                 '<p class="pedido-aviso">Cuando el cliente llegue, pídele su código de retiro.</p>';
@@ -5866,7 +5849,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             if (pedido.estado === "Pendiente") {
                 botones.push(
-                    '<button type="button" class="pedido-boton pedido-boton-principal" data-accion="confirmar">Confirmar</button>',
+                    '<button type="button" class="pedido-boton pedido-boton-principal" data-accion="confirmar">Confirmar pago</button>',
                 );
                 botones.push(
                     '<button type="button" class="pedido-boton pedido-boton-peligro" data-accion="rechazar">Rechazar</button>',
@@ -5879,8 +5862,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        const textoDocumento = pedido.pago?.recibo ? "Recibo" : "Comprobante";
         botones.push(
-            '<button type="button" class="pedido-boton pedido-boton-secundario" data-accion="comprobante"><i data-lucide="file-text"></i> Comprobante</button>',
+            `<button type="button" class="pedido-boton pedido-boton-secundario" data-accion="comprobante"><i data-lucide="file-text"></i> ${textoDocumento}</button>`,
         );
 
         tarjeta.innerHTML = `
@@ -5897,6 +5881,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span>Total</span>
                 <strong>${formatearColones(pedido.total)}</strong>
             </div>
+            ${pagoHtml}
             ${avisoHtml}
             ${motivoHtml}
             <div class="pedido-acciones">${botones.join("")}</div>
@@ -6132,11 +6117,13 @@ document.addEventListener("DOMContentLoaded", () => {
     async function manejarAccionPedidoRecibido(accion, pedido) {
         if (accion === "confirmar") {
             const resultado = await Swal.fire({
-                title: `¿Confirmar el pedido ${pedido.numero}?`,
-                text: `Total: ${formatearColones(pedido.total)}. Se generará un código de retiro para el cliente.`,
+                title: `¿Te llegó el SINPE del pedido ${pedido.numero}?`,
+                text: pedido.pago
+                    ? `Monto: ${formatearColones(pedido.total)} · Código: ${pedido.pago.codigo} · Referencia: ${pedido.pago.referencia}. Al confirmar se genera el recibo y el código de retiro.`
+                    : `Total: ${formatearColones(pedido.total)}. Se generará un código de retiro para el cliente.`,
                 icon: "question",
                 showCancelButton: true,
-                confirmButtonText: "Sí, confirmar",
+                confirmButtonText: "Sí, me llegó",
                 cancelButtonText: "Volver",
                 confirmButtonColor: "#8E7CC3",
                 cancelButtonColor: "#6B7280",
@@ -6561,46 +6548,244 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    async function confirmarCarrito(carrito) {
-        const resultado = await Swal.fire({
-            title: "Comprar ahora",
-            text: `Se enviará un pedido a ${carrito.localNombre} por ${formatearColones(carrito.total)}.`,
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonText: "Comprar ahora",
-            cancelButtonText: "Volver",
-            confirmButtonColor: "#8E7CC3",
-            cancelButtonColor: "#6B7280",
+    function confirmarCarrito(carrito) {
+        abrirPago({
+            tipo: "carrito",
+            idLocal: carrito.idLocal,
+            items: [],
+            total: carrito.total,
         });
+    }
 
-        if (!resultado.isConfirmed) return;
+    let pagoActual = null;
 
-        ejecutarAccionCarrito(async () => {
-            const res = await enviarAccionCarrito("api/confirmar_carrito.php", {
-                idLocal: carrito.idLocal,
-            });
+    function formatearNumeroOchoDigitos(valor) {
+        const digitos = String(valor ?? "").replace(/\D/g, "");
+        return digitos.length === 8 ? `${digitos.slice(0, 4)}-${digitos.slice(4)}` : digitos;
+    }
+
+    async function copiarTexto(texto) {
+        try {
+            await navigator.clipboard.writeText(texto);
+            return true;
+        } catch (e) {
+            const campo = document.createElement("textarea");
+            campo.value = texto;
+            document.body.appendChild(campo);
+            campo.select();
+            const copiado = document.execCommand("copy");
+            campo.remove();
+            return copiado;
+        }
+    }
+
+    formatearTelefono(document.getElementById("pago-telefono"));
+
+    document.getElementById("pago-referencia")?.addEventListener("input", (evento) => {
+        evento.target.value = evento.target.value.replace(/\D/g, "").slice(0, 4);
+    });
+
+    function mostrarPasoPago(paso) {
+        const enDatos = paso === "datos";
+        document.getElementById("pago-paso-datos").classList.toggle("oculto", !enDatos);
+        document.getElementById("pago-paso-sinpe").classList.toggle("oculto", enDatos);
+        document.getElementById("pago-continuar").classList.toggle("oculto", !enDatos);
+        document.getElementById("pago-confirmar").classList.toggle("oculto", enDatos);
+    }
+
+    function limpiarComprobantePago() {
+        const input = document.getElementById("pago-comprobante");
+        const vista = document.getElementById("pago-comprobante-vista");
+        input.value = "";
+        vista.src = "";
+        vista.classList.add("oculto");
+        document.getElementById("pago-subir-icono").classList.remove("oculto");
+        document.getElementById("pago-subir-texto").textContent = "Subir comprobante";
+    }
+
+    async function abrirPago(datos) {
+        try {
+            const res = await enviarAccionCarrito("api/iniciar_pago_sinpe.php", { idLocal: datos.idLocal });
 
             if (!res.exito) {
-                mostrarMensaje(res.mensaje || "No se pudo generar el pedido", "error");
-                await cargarCarritos();
+                mostrarMensaje(res.mensaje || "No se pudo iniciar el pago", "error");
                 return;
             }
 
-            mostrarContadorCarrito(res.totalProductos);
-            await cargarCarritos();
+            pagoActual = { ...datos, codigo: res.pago.codigo };
 
-            const siguiente = await Swal.fire({
+            document.getElementById("pago-local-nombre").textContent = res.pago.localNombre;
+            document.getElementById("pago-nombre").value = res.pago.nombre ?? "";
+            document.getElementById("pago-telefono").value = formatearNumeroOchoDigitos(res.pago.telefono);
+            document.getElementById("pago-numero-sinpe").textContent = formatearNumeroOchoDigitos(res.pago.numeroSinpe);
+            document.getElementById("pago-sinpe-titular").textContent = res.pago.localNombre;
+            document.getElementById("pago-codigo").textContent = res.pago.codigo;
+            document.getElementById("pago-referencia").value = "";
+            document.getElementById("pago-total").textContent = formatearColones(datos.total);
+            limpiarComprobantePago();
+            mostrarPasoPago("datos");
+
+            const botonConfirmar = document.getElementById("pago-confirmar");
+            botonConfirmar.disabled = false;
+            botonConfirmar.textContent = "Confirmar compra";
+
+            document.getElementById("modal-pago").classList.remove("oculto");
+            if (window.lucide) lucide.createIcons();
+        } catch (e) {
+            mostrarMensaje("No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.", "error");
+        }
+    }
+
+    function cerrarPago() {
+        document.getElementById("modal-pago").classList.add("oculto");
+        pagoActual = null;
+    }
+
+    document.getElementById("modal-pago-cerrar")?.addEventListener("click", cerrarPago);
+    document.getElementById("modal-pago")?.addEventListener("click", (evento) => {
+        if (evento.target.id === "modal-pago") cerrarPago();
+    });
+
+    document.getElementById("pago-continuar")?.addEventListener("click", async () => {
+        if (!pagoActual) return;
+
+        const nombre = document.getElementById("pago-nombre").value.trim();
+        const telefono = document.getElementById("pago-telefono").value.replace(/\D/g, "");
+
+        if (nombre === "") {
+            mostrarMensaje("Escribe tu nombre completo", "error");
+            return;
+        }
+
+        if (telefono.length !== 8) {
+            mostrarMensaje("El teléfono debe tener 8 dígitos", "error");
+            return;
+        }
+
+        await Swal.fire({
+            title: "Importante",
+            html: `
+                <p class="pago-alerta-codigo">${escaparHtml(pagoActual.codigo)}</p>
+                <p>Copiá este código y ponelo en el detalle (descripción) del SINPE para que el local pueda validar tu pago. Sin el código, tu pago no se puede validar.</p>`,
+            showDenyButton: true,
+            confirmButtonText: "Entendido",
+            denyButtonText: "Copiar código",
+            confirmButtonColor: "#8E7CC3",
+            denyButtonColor: "#6B7280",
+            allowOutsideClick: false,
+            preDeny: async () => {
+                const copiado = await copiarTexto(pagoActual.codigo);
+                Swal.getDenyButton().textContent = copiado ? "¡Copiado!" : "No se pudo copiar";
+                return false;
+            }
+        });
+
+        mostrarPasoPago("sinpe");
+        document.getElementById("modal-pago").querySelector(".modal-contenido").scrollTop = 0;
+    });
+
+    document.getElementById("pago-copiar-codigo")?.addEventListener("click", async () => {
+        if (!pagoActual) return;
+
+        const boton = document.getElementById("pago-copiar-codigo");
+        const copiado = await copiarTexto(pagoActual.codigo);
+        boton.innerHTML = copiado ? '<i data-lucide="check"></i> Copiado' : "No se pudo copiar";
+        if (window.lucide) lucide.createIcons();
+
+        setTimeout(() => {
+            boton.innerHTML = '<i data-lucide="copy"></i> Copiar';
+            if (window.lucide) lucide.createIcons();
+        }, 2000);
+    });
+
+    document.getElementById("pago-comprobante")?.addEventListener("change", (evento) => {
+        const archivo = evento.target.files[0];
+        if (!archivo) {
+            limpiarComprobantePago();
+            return;
+        }
+
+        const vista = document.getElementById("pago-comprobante-vista");
+        vista.src = URL.createObjectURL(archivo);
+        vista.classList.remove("oculto");
+        document.getElementById("pago-subir-icono").classList.add("oculto");
+        document.getElementById("pago-subir-texto").textContent = "Cambiar comprobante";
+    });
+
+    document.getElementById("pago-confirmar")?.addEventListener("click", async () => {
+        if (!pagoActual) return;
+
+        const archivo = document.getElementById("pago-comprobante").files[0];
+        const referencia = document.getElementById("pago-referencia").value.trim();
+
+        if (!archivo) {
+            mostrarMensaje("Sube el comprobante del SINPE", "error");
+            return;
+        }
+
+        if (!/^\d{4}$/.test(referencia)) {
+            mostrarMensaje("Escribe los últimos 4 dígitos de la referencia del SINPE", "error");
+            return;
+        }
+
+        const datos = new FormData();
+        datos.append("idLocal", pagoActual.idLocal);
+        datos.append("nombre", document.getElementById("pago-nombre").value.trim());
+        datos.append("telefono", document.getElementById("pago-telefono").value);
+        datos.append("codigo", pagoActual.codigo);
+        datos.append("referencia", referencia);
+        datos.append("comprobante", archivo);
+
+        if (pagoActual.tipo === "directo") {
+            datos.append("items", JSON.stringify(pagoActual.items));
+        }
+
+        const url = pagoActual.tipo === "carrito" ? "api/confirmar_carrito.php" : "api/crear_pedido.php";
+        const tipo = pagoActual.tipo;
+
+        const botonConfirmar = document.getElementById("pago-confirmar");
+        botonConfirmar.disabled = true;
+        botonConfirmar.textContent = "Enviando...";
+
+        try {
+            const r = await fetch(url, { method: "POST", body: datos });
+            const res = await r.json();
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || "No se pudo enviar el pedido", "error");
+                return;
+            }
+
+            cerrarPago();
+            cerrarModalLocal();
+
+            if (tipo === "carrito") {
+                mostrarContadorCarrito(res.totalProductos);
+                await cargarCarritos();
+            }
+
+            const resultado = await Swal.fire({
                 icon: "success",
-                title: `¡Pedido ${res.numero} generado!`,
-                text: `Total: ${formatearColones(res.total)}. El local debe confirmarlo; cuando lo haga verás tu código de retiro en "Mis Pedidos".`,
+                title: `¡Pedido ${res.numero} enviado!`,
+                text: `Total: ${formatearColones(res.total)}. El local va a confirmar que le llegó el SINPE; cuando lo haga verás tu recibo y tu código de retiro en "Mis Pedidos".`,
                 showCancelButton: true,
                 confirmButtonText: "Ver mis pedidos",
-                cancelButtonText: "Quedarme aquí",
+                cancelButtonText: "Seguir comprando",
                 confirmButtonColor: "#8E7CC3",
-                cancelButtonColor: "#6B7280",
+                cancelButtonColor: "#6B7280"
             });
 
-            if (siguiente.isConfirmed) irAVista("vista-mis-pedidos");
-        });
-    }
+            if (resultado.isConfirmed) {
+                irAVista("vista-mis-pedidos");
+            } else if (!document.getElementById("vista-inicio").classList.contains("oculto")) {
+                cargarInicio();
+            }
+        } catch (e) {
+            mostrarMensaje("No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.", "error");
+        } finally {
+            botonConfirmar.disabled = false;
+            botonConfirmar.textContent = "Confirmar compra";
+        }
+    });
+
 });
