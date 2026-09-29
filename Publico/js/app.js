@@ -6249,7 +6249,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const resultado = await Swal.fire({
                     icon: "success",
                     title: "Agregado al carrito",
-                    text: `${cantidad} × ${res.productoNombre}. En tu carrito de ${res.localNombre} ahora tienes ${res.cantidadEnCarrito} de este producto.`,
+                    text: `${cantidad} × ${res.productoNombre}. En tu carrito de ${res.localNombre}.`,
                     showCancelButton: true,
                     confirmButtonText: "Ver mi carrito",
                     cancelButtonText: "Seguir comprando",
