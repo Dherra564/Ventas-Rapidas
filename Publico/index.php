@@ -534,9 +534,9 @@
                         <button type="submit">Guardar Cambios</button>
                     </form>
 
-                     <div class="bloque-separado">
+                    <div class="bloque-separado">
                         <h3>Mi ubicación</h3>
-                        <form id="form-mi-cuenta-cliente-ubicacion" class="formulario">
+                        <form id="form-mc-ubicacion" class="formulario">
                             <label for="mc-ubicacion-provincia">Provincia</label>
                             <select id="mc-ubicacion-provincia" required>
                             <option value="">Seleccione...</option>
@@ -557,6 +557,13 @@
 
                             <label for="mc-ubicacion-referencia">Punto de referencia</label>
                             <input type="text" id="mc-ubicacion-referencia">
+
+                            <button type="button" id="btn-gps-mc-ubicacion" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                            <span class="ayuda" id="mc-ubicacion-gps-msg">También puedes tocar el mapa o arrastrar el pin.</span>
+                            <input type="hidden" id="mc-ubicacion-latitud">
+                            <input type="hidden" id="mc-ubicacion-longitud">
+
+                            <div id="mc-ubicacion-mapa" class="mapa-registro"></div>
 
                             <button type="submit">Guardar ubicación</button>
                         </form>
@@ -613,7 +620,7 @@
 
                     <div class="bloque-separado">
                         <h3>Mi ubicación</h3>
-                        <form id="form-mi-cuenta-comerciante-ubicacion" class="formulario">
+                        <form id="form-mco-ubicacion" class="formulario">
                             <label for="mco-ubicacion-provincia">Provincia</label>
                             <select id="mco-ubicacion-provincia" required>
                             <option value="">Seleccione...</option>
@@ -634,6 +641,13 @@
 
                             <label for="mco-ubicacion-referencia">Punto de referencia</label>
                             <input type="text" id="mco-ubicacion-referencia">
+
+                            <button type="button" id="btn-gps-mco-ubicacion" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                            <span class="ayuda" id="mco-ubicacion-gps-msg">También puedes tocar el mapa o arrastrar el pin.</span>
+                            <input type="hidden" id="mco-ubicacion-latitud">
+                            <input type="hidden" id="mco-ubicacion-longitud">
+
+                            <div id="mco-ubicacion-mapa" class="mapa-registro"></div>
 
                             <button type="submit">Guardar ubicación</button>
                         </form>

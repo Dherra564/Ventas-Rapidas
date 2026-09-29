@@ -44,6 +44,8 @@ try {
     $idDistrito = (int) ($datos['idDistrito'] ?? 0);
     $direccionExacta = trim($datos['direccionExacta'] ?? '');
     $referencia = trim($datos['referencia'] ?? '');
+    $latitud = isset($datos['latitud']) && is_numeric($datos['latitud']) ? (float) $datos['latitud'] : null;
+    $longitud = isset($datos['longitud']) && is_numeric($datos['longitud']) ? (float) $datos['longitud'] : null;
 
     $controlador = new UbicacionController();
     $exito = $controlador->actualizarUbicacionCliente(
@@ -52,7 +54,9 @@ try {
         $idCanton,
         $idDistrito,
         $direccionExacta,
-        $referencia !== '' ? $referencia : null
+        $referencia !== '' ? $referencia : null,
+        $latitud,
+        $longitud
     );
 
     echo json_encode([

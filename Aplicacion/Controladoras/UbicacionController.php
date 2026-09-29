@@ -64,13 +64,15 @@ class UbicacionController
         return $this->ubicacionRepository->obtenerPorCliente($idCliente);
     }
 
-    public function actualizarUbicacionCliente(
+        public function actualizarUbicacionCliente(
         int $idCliente,
         int $idProvincia,
         int $idCanton,
         int $idDistrito,
         string $direccionExacta,
-        ?string $referencia
+        ?string $referencia,
+        ?float $latitud = null,
+        ?float $longitud = null
     ): bool {
         $actual = $this->ubicacionRepository->obtenerPorCliente($idCliente);
 
@@ -84,8 +86,8 @@ class UbicacionController
             $idCliente,
             true,
             $actual?->getIdUbicacion() ?? 0,
-            $actual?->getLatitud(),
-            $actual?->getLongitud()
+            $latitud ?? $actual?->getLatitud(),
+            $longitud ?? $actual?->getLongitud()
         );
 
         return $this->ubicacionRepository->actualizar($ubicacion);
