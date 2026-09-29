@@ -2,6 +2,7 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
 require_once __DIR__ . '/../../Aplicacion/Modelos/Local.php';
+require_once __DIR__ . '/../../Aplicacion/Modelos/Ubicacion.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/ManejadorImagenes.php';
 require_once __DIR__ . '/../../Aplicacion/Comun/Sesion.php';
 
@@ -45,10 +46,37 @@ class EditarLocalHandler
             $_POST['descripcion'] ?? null,
             $logoFinal,
             true,
-            $idLocal
+            $idLocal,
+            null,
+            preg_replace('/\D/', '', $_POST['numeroSinpe'] ?? '')
         );
 
-        $actualizado = $controlador->editar($local, $idComerciante);
+        $ubicacion = null;
+        $idProvincia = (int) ($_POST['idProvincia'] ?? 0);
+
+        if ($idProvincia > 0) {
+            $datosActuales = $controlador->buscarConUbicacion($idLocal);
+            $ubicacionActual = $datosActuales['ubicacion'] ?? null;
+
+            $latitud = isset($_POST['latitud']) && $_POST['latitud'] !== '' ? (float) $_POST['latitud'] : $ubicacionActual?->getLatitud();
+            $longitud = isset($_POST['longitud']) && $_POST['longitud'] !== '' ? (float) $_POST['longitud'] : $ubicacionActual?->getLongitud();
+
+            $ubicacion = new Ubicacion(
+                $idLocal,
+                $idProvincia,
+                (int) ($_POST['idCanton'] ?? 0),
+                (int) ($_POST['idDistrito'] ?? 0),
+                $_POST['direccionExacta'] ?? '',
+                $_POST['referencia'] ?? null,
+                null,
+                true,
+                $ubicacionActual?->getIdUbicacion() ?? 0,
+                $latitud,
+                $longitud
+            );
+        }
+
+        $actualizado = $controlador->editar($local, $idComerciante, $ubicacion);
 
         return [
             'exito' => $actualizado,

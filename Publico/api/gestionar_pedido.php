@@ -16,7 +16,7 @@ try {
     switch ($accion) {
         case 'confirmar':
             $controlador->confirmarPedido($usuario['id'], $idPedido);
-            $mensaje = 'Pedido confirmado. El cliente ya puede ver su código de retiro.';
+            $mensaje = 'Pago confirmado. Se generó el recibo y el cliente ya puede ver su código de retiro.';
             break;
 
         case 'rechazar':

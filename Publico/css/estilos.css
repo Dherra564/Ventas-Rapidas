@@ -3096,6 +3096,272 @@ body.comprobante-pagina {
     .carrito-item-quitar { grid-area: quitar; justify-self: end; }
 }
 
+/* ============================================================
+   MÓDULO DE COMPRAS: PAGO POR SINPE MÓVIL
+   ============================================================ */
+.modal-pago-contenido { max-width: 480px; }
+.modal-pago-contenido .compra-local-nombre { display: block; margin: -0.8rem 0 1.1rem; }
+
+.pago-datos { display: flex; flex-direction: column; }
+.pago-datos .compra-etiqueta { margin-top: 0.4rem; }
+
+.pago-campo {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--background-secondary);
+    font-size: 1rem;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+.pago-campo:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-white);
+    box-shadow: 0 0 0 3px rgba(142, 124, 195, 0.12);
+}
+
+.pago-pasos { display: flex; flex-direction: column; gap: 1.2rem; }
+
+.pago-paso { display: flex; gap: 0.8rem; align-items: flex-start; }
+
+.pago-paso-numero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--text-white);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.pago-paso-cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.pago-paso-titulo {
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    color: var(--text-primary);
+    line-height: 28px;
+}
+
+.pago-sinpe {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.9rem;
+    border-radius: var(--radius-md);
+    background: var(--color-lilac-100);
+    text-align: center;
+}
+
+.pago-sinpe-numero {
+    font-family: var(--font-primary);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08rem;
+    color: var(--color-primary-dark);
+}
+
+.pago-sinpe-titular { font-size: 0.85rem; color: var(--text-secondary); }
+
+.pago-codigo {
+    padding: 0.9rem;
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--surface-hover);
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+.pago-codigo strong { color: var(--color-primary-dark); }
+
+.pago-codigo-fila {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    margin: 0.5rem 0;
+}
+
+.pago-codigo-valor,
+.pago-alerta-codigo {
+    font-family: 'Courier New', monospace;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 0.35rem;
+    color: var(--color-primary-dark);
+}
+.pago-alerta-codigo { margin: 0.3rem 0 0.8rem; font-size: 2rem; }
+
+.pago-codigo-nota { font-size: 0.8rem; }
+
+.pago-copiar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.9rem;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: var(--text-white);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pago-copiar:hover { background: var(--color-primary-hover); }
+.pago-copiar svg { width: 15px; height: 15px; }
+
+.pago-subir {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 1.1rem;
+    border: 2px dashed var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--background-secondary);
+    text-align: center;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pago-subir:hover { border-color: var(--color-primary); background: var(--surface-hover); }
+.pago-subir .ayuda { margin: 0; min-height: 0; }
+
+.pago-subir-icono { color: var(--color-primary); }
+.pago-subir-icono svg { width: 34px; height: 34px; }
+
+.pago-subir-vista {
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.3rem;
+}
+
+.pago-referencia {
+    width: 140px;
+    padding: 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.4rem;
+    color: var(--text-primary);
+}
+.pago-referencia:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(142, 124, 195, 0.12);
+}
+
+#pago-confirmar:disabled {
+    background: var(--color-gray-200);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.pedido-pago {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--surface-hover);
+}
+
+.pedido-pago-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 0;
+}
+.pedido-pago-info strong { color: var(--text-primary); }
+
+.pedido-pago-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+}
+.pedido-pago-titulo svg { width: 15px; height: 15px; }
+
+.pedido-pago-dato { font-size: 0.8rem; }
+
+.pedido-pago-comprobante {
+    flex-shrink: 0;
+    width: 56px;
+    height: 72px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-white);
+}
+.pedido-pago-comprobante img { width: 100%; height: 100%; object-fit: cover; }
+.pedido-pago-comprobante:hover { border-color: var(--color-primary); }
+
+.comprobante-pedido-numero {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+.comprobante-pago {
+    display: flex;
+    gap: 1.2rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+.comprobante-pago .comprobante-datos { flex: 1; margin-bottom: 0; }
+
+.comprobante-pago-imagen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    width: 120px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    text-align: center;
+}
+.comprobante-pago-imagen img {
+    width: 120px;
+    height: 160px;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+@media (max-width: 560px) {
+    .comprobante-pago { flex-direction: column; }
+}
+
+@media print {
+    .comprobante-pago-imagen span { display: none; }
+}
+
 /* ---------- Opciones de duración del producto (radios) ---------- */
 .opciones-duracion {
     display: flex;

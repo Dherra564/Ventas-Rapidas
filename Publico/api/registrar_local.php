@@ -20,10 +20,6 @@ class RegistrarLocalHandler
 
         $nombreLocal = $_POST['nombreLocal'] ?? '';
 
-        if ($controlador->existeNombreLocal($nombreLocal)) {
-            return ['exito' => false, 'mensaje' => 'Ya existe un local con ese nombre'];
-        }
-
         $nombreLogo = $this->subirImagenPerfil($_FILES['logo'] ?? null, 'local');
 
         $idLocal = $controlador->registrar(
@@ -39,7 +35,8 @@ class RegistrarLocalHandler
             $_POST['direccionExacta'] ?? '',
             $_POST['referencia'] ?? null,
             isset($_POST['latitud']) && $_POST['latitud'] !== '' ? (float) $_POST['latitud'] : null,
-            isset($_POST['longitud']) && $_POST['longitud'] !== '' ? (float) $_POST['longitud'] : null
+            isset($_POST['longitud']) && $_POST['longitud'] !== '' ? (float) $_POST['longitud'] : null,
+            preg_replace('/\D/', '', $_POST['numeroSinpe'] ?? '')
         );
 
         if ($idLocal !== false) {

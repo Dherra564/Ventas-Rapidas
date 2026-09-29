@@ -5,6 +5,8 @@ require_once __DIR__ . "/../Repositorios/ProductoRepository.php";
 require_once __DIR__ . "/../Repositorios/ComercianteLocalRepository.php";
 require_once __DIR__ . "/../Modelos/Pedido.php";
 require_once __DIR__ . "/../Modelos/DetallePedido.php";
+require_once __DIR__ . "/../Modelos/PedidoPago.php";
+require_once __DIR__ . "/../Comun/FormateadorPedido.php";
 require_once __DIR__ . "/ClienteController.php";
 require_once __DIR__ . "/ComercianteController.php";
 require_once __DIR__ . "/LocalController.php";
@@ -15,6 +17,8 @@ class PedidoController
     private const CANTIDAD_MAXIMA_POR_PRODUCTO = 99;
     private const RETIRO_CODIGO_LARGO = 6;
     private const RETIRO_CODIGO_CARACTERES = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    private const PAGO_CODIGO_LARGO = 5;
+    private const SESION_PAGOS_SINPE = "pagosSinpe";
 
     private PedidoRepository $pedidoRepository;
     private ProductoRepository $productoRepository;
@@ -29,19 +33,32 @@ class PedidoController
         $this->localController = new LocalController();
     }
 
-    public function crearPedido(array $usuarioSesion, int $idLocal, array $items): array
+    public function iniciarPagoSinpe(array $usuarioSesion, int $idLocal): array
+    {
+        $cliente = $this->resolverCliente($usuarioSesion);
+        $local = $this->validarLocalParaPagar($usuarioSesion, $idLocal);
+
+        return [
+            "codigo" => $this->obtenerCodigoPagoSinpe($idLocal),
+            "numeroSinpe" => $local->getNumeroSinpe(),
+            "localNombre" => $local->getNombreLocal(),
+            "nombre" => $cliente->getNombreCompleto(),
+            "telefono" => $this->pedidoRepository->ultimoTelefonoDeCliente($cliente->getIdCliente()) ?? ""
+        ];
+    }
+
+    public function crearPedido(array $usuarioSesion, int $idLocal, array $items, PedidoPago $pago): array
     {
         $cliente = $this->resolverCliente($usuarioSesion);
 
-        $local = $this->localController->buscar($idLocal);
-        if ($local === null || !$local->isActivo()) {
-            throw new InvalidArgumentException("Este local no está disponible para recibir pedidos en este momento");
+        $local = $this->validarLocalParaPagar($usuarioSesion, $idLocal);
+
+        $codigoEsperado = $this->codigoPagoSinpeGuardado($idLocal);
+        if ($codigoEsperado === null || $codigoEsperado !== $pago->getCodigo()) {
+            throw new InvalidArgumentException("El código del SINPE ya no es válido. Vuelve a iniciar el pago.");
         }
 
-        if ($usuarioSesion["tipo"] === Sesion::TIPO_COMERCIANTE
-            && $this->localController->perteneceAComerciante($idLocal, $usuarioSesion["id"])) {
-            throw new InvalidArgumentException("No puedes comprar en tu propio local");
-        }
+        $pago->setNumeroSinpe($local->getNumeroSinpe());
 
         $cantidades = $this->normalizarItems($items);
 
@@ -80,7 +97,9 @@ class PedidoController
             ));
         }
 
-        $idPedido = $this->pedidoRepository->insertar($pedido, $cliente->getIdUsuario(), Sesion::TIPO_CLIENTE);
+        $idPedido = $this->pedidoRepository->insertar($pedido, $cliente->getIdUsuario(), Sesion::TIPO_CLIENTE, $pago);
+
+        $this->olvidarCodigoPagoSinpe($idLocal);
 
         return ["idPedido" => $idPedido, "total" => $pedido->getTotal()];
     }
@@ -139,6 +158,8 @@ class PedidoController
             $this->idUsuarioDeComerciante($idComerciante),
             Sesion::TIPO_COMERCIANTE
         );
+
+        $this->pedidoRepository->generarRecibo($idPedido, FormateadorPedido::numeroRecibo($idPedido));
 
         return $retiroCodigo;
     }
@@ -316,6 +337,57 @@ class PedidoController
         }
 
         return $cantidades;
+    }
+
+    private function validarLocalParaPagar(array $usuarioSesion, int $idLocal): Local
+    {
+        $local = $this->localController->buscar($idLocal);
+        if ($local === null || !$local->isActivo()) {
+            throw new InvalidArgumentException("Este local no está disponible para recibir pedidos en este momento");
+        }
+
+        if ($usuarioSesion["tipo"] === Sesion::TIPO_COMERCIANTE
+            && $this->localController->perteneceAComerciante($idLocal, $usuarioSesion["id"])) {
+            throw new InvalidArgumentException("No puedes comprar en tu propio local");
+        }
+
+        if (!$local->tieneNumeroSinpe()) {
+            throw new InvalidArgumentException("Este local todavía no tiene un número SINPE Móvil para recibir pagos");
+        }
+
+        return $local;
+    }
+
+    private function obtenerCodigoPagoSinpe(int $idLocal): string
+    {
+        $codigo = $this->codigoPagoSinpeGuardado($idLocal);
+        if ($codigo !== null) {
+            return $codigo;
+        }
+
+        $caracteres = self::RETIRO_CODIGO_CARACTERES;
+        $maximo = strlen($caracteres) - 1;
+        $codigo = "";
+        for ($i = 0; $i < self::PAGO_CODIGO_LARGO; $i++) {
+            $codigo .= $caracteres[random_int(0, $maximo)];
+        }
+
+        Sesion::iniciar();
+        $_SESSION[self::SESION_PAGOS_SINPE][$idLocal] = $codigo;
+
+        return $codigo;
+    }
+
+    private function codigoPagoSinpeGuardado(int $idLocal): ?string
+    {
+        Sesion::iniciar();
+        return $_SESSION[self::SESION_PAGOS_SINPE][$idLocal] ?? null;
+    }
+
+    private function olvidarCodigoPagoSinpe(int $idLocal): void
+    {
+        Sesion::iniciar();
+        unset($_SESSION[self::SESION_PAGOS_SINPE][$idLocal]);
     }
 
     private function generarRetiroCodigo(int $idLocal): string

@@ -33,10 +33,14 @@ try {
             'nombreLocal' => $local->getNombreLocal(),
             'descripcion' => $local->getDescripcion(),
             'telefono' => $local->getTelefono(),
+            'numeroSinpe' => $local->getNumeroSinpe(),
             'logo' => $local->getLogo(),
             'idComerciante' => $idComercianteDueno
         ],
         'ubicacion' => [
+            'idProvincia' => $ubicacion->getIdProvincia(),
+            'idCanton' => $ubicacion->getIdCanton(),
+            'idDistrito' => $ubicacion->getIdDistrito(),
             'provincia' => $provincia['nombre'] ?? null,
             'canton' => $canton['nombre'] ?? null,
             'distrito' => $distrito['nombre'] ?? null,

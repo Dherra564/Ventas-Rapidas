@@ -5,6 +5,7 @@ require_once __DIR__ . "/../Modelos/Pedido.php";
 require_once __DIR__ . "/../Modelos/DetallePedido.php";
 require_once __DIR__ . "/../Comun/GeneradorId.php";
 require_once __DIR__ . "/HistorialCampoRepository.php";
+require_once __DIR__ . "/PedidoPagoRepository.php";
 
 class PedidoRepository
 {
@@ -15,6 +16,7 @@ class PedidoRepository
     private HistorialCampoRepository $historialMotivo;
     private HistorialCampoRepository $historialRetiroCodigo;
     private HistorialCampoRepository $historialProductoCantidad;
+    private PedidoPagoRepository $pagoRepository;
 
     private const SELECT_LISTADO = "
         SELECT p.*,
@@ -41,12 +43,14 @@ class PedidoRepository
         $this->historialRetiroCodigo = new HistorialCampoRepository(
             "tbpedidoretirocodigohistorico", "tbpedidoretirocodigohistoricoid", "tbpedidoid", $this->conexion
         );
+        $this->pagoRepository = new PedidoPagoRepository($this->conexion);
+
         $this->historialProductoCantidad = new HistorialCampoRepository(
             "tbproductocantidadhistorico", "tbproductocantidadhistoricoid", "tbproductoid", $this->conexion
         );
     }
 
-    public function insertar(Pedido $pedido, ?int $idUsuarioAutor = null, ?string $tipoUsuarioAutor = null): int
+    public function insertar(Pedido $pedido, ?int $idUsuarioAutor = null, ?string $tipoUsuarioAutor = null, ?PedidoPago $pago = null): int
     {
         if (empty($pedido->getDetalles())) {
             throw new InvalidArgumentException("El pedido no tiene productos");
@@ -191,6 +195,12 @@ class PedidoRepository
             $this->historialEstado->registrar(
                 $idPedido, null, $pedido->getEstado(), $idUsuarioAutor, $tipoUsuarioAutor
             );
+
+            if ($pago !== null) {
+                $pago->setIdPedido($idPedido);
+                $pago->setMonto($pedido->getTotal());
+                $this->pagoRepository->insertar($pago);
+            }
 
             $this->conexion->commit();
             return $idPedido;
@@ -359,6 +369,16 @@ class PedidoRepository
         return $this->mapearListado($consulta->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    public function generarRecibo(int $idPedido, string $numeroRecibo): bool
+    {
+        return $this->pagoRepository->generarRecibo($idPedido, $numeroRecibo);
+    }
+
+    public function ultimoTelefonoDeCliente(int $idCliente): ?string
+    {
+        return $this->pagoRepository->ultimoTelefonoDeCliente($idCliente);
+    }
+
     public function obtenerHistorialEstado(int $idPedido): array
     {
         return $this->historialEstado->obtenerPorEntidad($idPedido);
@@ -425,6 +445,7 @@ class PedidoRepository
 
         $idsPedidos = array_map(fn($fila) => (int) $fila["tbpedidoid"], $filas);
         $detallesPorPedido = $this->obtenerDetallesPorPedidos($idsPedidos);
+        $pagosPorPedido = $this->pagoRepository->obtenerPorPedidos($idsPedidos);
 
         $resultado = [];
 
@@ -438,7 +459,8 @@ class PedidoRepository
                 "localLogo" => $fila["localLogo"],
                 "localTelefono" => $fila["localTelefono"],
                 "clienteNombre" => $fila["clienteNombre"],
-                "clienteCorreo" => $fila["clienteCorreo"]
+                "clienteCorreo" => $fila["clienteCorreo"],
+                "pago" => $pagosPorPedido[$pedido->getIdPedido()] ?? null
             ];
         }
 

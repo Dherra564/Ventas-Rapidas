@@ -323,6 +323,11 @@
                         <input type="text" id="l-telefono" inputmode="numeric" placeholder="8888-8888" maxlength="9"
                             required>
 
+                        <label for="l-numeroSinpe">Número SINPE Móvil</label>
+                        <input type="text" id="l-numeroSinpe" inputmode="numeric" placeholder="8888-8888" maxlength="9"
+                            required>
+                        <span class="ayuda">Aquí te van a pagar los clientes.</span>
+
                         <label for="l-logo">Logo del local</label>
                         <input type="file" id="l-logo" accept="image/png, image/jpeg, image/webp">
 
@@ -710,6 +715,7 @@
                             <p><strong>Nombre:</strong> <span id="e-solo-nombre"></span></p>
                             <p><strong>Descripción:</strong> <span id="e-solo-descripcion"></span></p>
                             <p><strong>Teléfono:</strong> <span id="e-solo-telefono"></span></p>
+                            <p><strong>SINPE Móvil:</strong> <span id="e-solo-numeroSinpe"></span></p>
                         </div>
 
                         <div class="campo-lectura">
@@ -745,6 +751,10 @@
 
                             <label for="e-telefono">Teléfono</label>
                             <input type="text" id="e-telefono" inputmode="numeric" placeholder="8888-8888" maxlength="9"
+                                required>
+
+                            <label for="e-numeroSinpe">Número SINPE Móvil</label>
+                            <input type="text" id="e-numeroSinpe" inputmode="numeric" placeholder="8888-8888" maxlength="9"
                                 required>
 
                             <label for="e-logo">Nuevo logo (opcional, deja vacío para mantener el actual)</label>
@@ -1346,6 +1356,36 @@
                 <label for="mel-telefono">Teléfono</label>
                 <input type="text" id="mel-telefono" required>
 
+                <label for="mel-numeroSinpe">Número SINPE Móvil</label>
+                <input type="text" id="mel-numeroSinpe" inputmode="numeric" placeholder="8888-8888" maxlength="9" required>
+
+                <label for="mel-provincia">Provincia</label>
+                <select id="mel-provincia" required>
+                    <option value="">Seleccione...</option>
+                </select>
+
+                <label for="mel-canton">Cantón</label>
+                <select id="mel-canton" required disabled>
+                    <option value="">Primero elige provincia</option>
+                </select>
+
+                <label for="mel-distrito">Distrito</label>
+                <select id="mel-distrito" required disabled>
+                    <option value="">Primero elige cantón</option>
+                </select>
+
+                <label for="mel-direccion">Dirección exacta</label>
+                <input type="text" id="mel-direccion" required>
+
+                <label for="mel-referencia">Punto de referencia</label>
+                <input type="text" id="mel-referencia">
+
+                <button type="button" id="btn-gps-editar-local" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                <span class="ayuda" id="mel-gps-msg">También puedes tocar el mapa o arrastrar el pin.</span>
+                <div id="mel-mapa" class="mapa-registro"></div>
+                <input type="hidden" id="mel-latitud">
+                <input type="hidden" id="mel-longitud">
+
                 <label for="mel-logo">Nuevo logo (opcional, deja vacío para mantener el actual)</label>
                 <input type="file" id="mel-logo" accept="image/png, image/jpeg, image/webp">
 
@@ -1482,6 +1522,80 @@
                 <i data-lucide="shopping-cart"></i> Agregar al carrito
             </button>
             <button type="button" id="compra-confirmar" class="btn-comprar-ahora">Comprar ahora</button>
+        </div>
+    </div>
+
+    <div id="modal-pago" class="modal-overlay oculto">
+        <div class="modal-contenido modal-compra-contenido modal-pago-contenido">
+            <button type="button" id="modal-pago-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <h3>Pago por SINPE Móvil</h3>
+            <span id="pago-local-nombre" class="compra-local-nombre"></span>
+
+            <div id="pago-paso-datos" class="pago-datos">
+                <label for="pago-nombre" class="compra-etiqueta">Nombre completo</label>
+                <input type="text" id="pago-nombre" class="pago-campo" maxlength="100" autocomplete="name">
+
+                <label for="pago-telefono" class="compra-etiqueta">Teléfono</label>
+                <input type="text" id="pago-telefono" class="pago-campo" inputmode="numeric" placeholder="8888-8888"
+                    maxlength="9" autocomplete="tel">
+            </div>
+
+            <div id="pago-paso-sinpe" class="pago-pasos oculto">
+                <div class="pago-paso">
+                    <span class="pago-paso-numero">1</span>
+                    <div class="pago-paso-cuerpo">
+                        <strong class="pago-paso-titulo">Realiza el SINPE</strong>
+                        <div class="pago-sinpe">
+                            <span id="pago-numero-sinpe" class="pago-sinpe-numero"></span>
+                            <span class="pago-sinpe-titular">A nombre de: <span id="pago-sinpe-titular"></span></span>
+                        </div>
+                        <div class="pago-codigo">
+                            <p>Escribí este código en el <strong>detalle</strong> del SINPE</p>
+                            <div class="pago-codigo-fila">
+                                <span id="pago-codigo" class="pago-codigo-valor"></span>
+                                <button type="button" id="pago-copiar-codigo" class="pago-copiar">
+                                    <i data-lucide="copy"></i> Copiar
+                                </button>
+                            </div>
+                            <p class="pago-codigo-nota">Con el código el local valida tu pago. Sin él, no se puede confirmar.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pago-paso">
+                    <span class="pago-paso-numero">2</span>
+                    <div class="pago-paso-cuerpo">
+                        <strong class="pago-paso-titulo">Sube el comprobante</strong>
+                        <label for="pago-comprobante" class="pago-subir">
+                            <img id="pago-comprobante-vista" class="pago-subir-vista oculto" alt="Comprobante del SINPE">
+                            <span id="pago-subir-icono" class="pago-subir-icono"><i data-lucide="upload-cloud"></i></span>
+                            <strong id="pago-subir-texto">Subir comprobante</strong>
+                            <span class="ayuda">PNG, JPG o captura de pantalla</span>
+                        </label>
+                        <input type="file" id="pago-comprobante" class="oculto" accept="image/png, image/jpeg, image/webp">
+                    </div>
+                </div>
+
+                <div class="pago-paso">
+                    <span class="pago-paso-numero">3</span>
+                    <div class="pago-paso-cuerpo">
+                        <strong class="pago-paso-titulo">Referencia del SINPE</strong>
+                        <span class="ayuda">Últimos 4 dígitos del número de referencia</span>
+                        <input type="text" id="pago-referencia" class="pago-referencia" inputmode="numeric" maxlength="4"
+                            placeholder="0000">
+                        <span class="ayuda">Aparece en el comprobante como "Referencia" o "N° de comprobante".</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="compra-resumen">
+                <span>Total a pagar</span>
+                <strong id="pago-total">₡0</strong>
+            </div>
+
+            <button type="button" id="pago-continuar" class="btn-comprar-producto">Continuar al pago</button>
+            <button type="button" id="pago-confirmar" class="btn-comprar-producto oculto">Confirmar compra</button>
         </div>
     </div>
 

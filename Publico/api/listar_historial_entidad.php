@@ -17,7 +17,7 @@ try {
     $controlador = new HistorialController();
 
     if ($entidad === 'Local') {
-        $campos = ['nombre', 'telefono', 'logo'];
+        $campos = ['nombre', 'telefono', 'logo', 'numeroSinpe'];
     } else {
         $campos = ['nombre', 'correo', 'perfilImagen', 'password'];
     }
