@@ -27,6 +27,9 @@ try {
             'activo' => $cliente->isActivo()
         ],
         'ubicacion' => [
+            'idProvincia' => $ubicacion->getIdProvincia(),
+            'idCanton' => $ubicacion->getIdCanton(),
+            'idDistrito' => $ubicacion->getIdDistrito(),
             'direccionExacta' => $ubicacion->getDireccionExacta(),
             'referencia' => $ubicacion->getReferencia()
         ]

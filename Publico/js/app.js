@@ -4491,12 +4491,15 @@
                 u.direccionExacta + (u.referencia ? ` (${u.referencia})` : "");
 
             const imgFoto = document.getElementById("mc-foto-actual");
+            
             if (c.fotoPerfil) {
                 imgFoto.src = `imagenes/${c.fotoPerfil}`;
                 imgFoto.classList.remove("oculto");
             } else {
                 imgFoto.classList.add("oculto");
             }
+
+            manejadorUbicacionMc.cargar(u);
 
             cargarLocalesQueSigueCliente(c.idCliente, "mc-locales-lista");
             cargarMisResenasCliente(c.idCliente);
@@ -4795,6 +4798,8 @@
             } else {
                 imgFoto.classList.add("oculto");
             }
+            
+            manejadorUbicacionMco.cargar(res.ubicacion);
         } catch (e) {
             mostrarMensaje("Error al cargar tu cuenta", "error");
         }
@@ -5775,6 +5780,148 @@
             : `${origen} ${coordenadas}. No se pudo identificar provincia/cantón/distrito automáticamente, selecciónalos a mano.`;
     }
 
+    function crearManejadorUbicacionPerfil(prefijo, endpointGuardar) {
+        let mapa = null;
+        let marcador = null;
+
+        const selectProvincia = document.getElementById(`${prefijo}-ubicacion-provincia`);
+        const selectCanton = document.getElementById(`${prefijo}-ubicacion-canton`);
+        const selectDistrito = document.getElementById(`${prefijo}-ubicacion-distrito`);
+
+        if (!selectProvincia || !selectCanton || !selectDistrito) {
+            return { cargar: async () => {} };
+        }
+
+        activarCascadaUbicacion(selectProvincia, selectCanton, selectDistrito);
+
+        async function aplicarUbicacion(lat, lng, origen) {
+            const mensaje = document.getElementById(`${prefijo}-ubicacion-gps-msg`);
+            const coordenadas = `(${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+            if (mensaje) mensaje.textContent = `${origen} ${coordenadas}. Buscando provincia, cantón y distrito...`;
+
+            const completado = await autocompletarUbicacionPorGPS(lat, lng, selectProvincia, selectCanton, selectDistrito);
+
+            if (mensaje) {
+                mensaje.textContent = completado
+                    ? `${origen} ${coordenadas}. Provincia, cantón y distrito actualizados — revísalos antes de guardar.`
+                    : `${origen} ${coordenadas}. No se pudo identificar provincia/cantón/distrito automáticamente, selecciónalos a mano.`;
+            }
+
+            document.getElementById(`${prefijo}-ubicacion-latitud`).value = lat;
+            document.getElementById(`${prefijo}-ubicacion-longitud`).value = lng;
+        }
+
+        function mostrarMapa(latitud, longitud) {
+            const contenedorId = `${prefijo}-ubicacion-mapa`;
+            if (typeof L === 'undefined' || !document.getElementById(contenedorId)) return;
+
+            const tieneCoordenadas = latitud !== null && latitud !== undefined && longitud !== null && longitud !== undefined;
+            const centro = tieneCoordenadas ? [latitud, longitud] : [9.9281, -84.0907];
+            const zoom = tieneCoordenadas ? 16 : 8;
+
+            if (!mapa) {
+                mapa = L.map(contenedorId).setView(centro, zoom);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    maxZoom: 19
+                }).addTo(mapa);
+
+                marcador = L.marker(centro, {
+                    draggable: true,
+                    icon: L.divIcon({
+                        className: 'pin-rapiventas',
+                        html: '<div class="pin-rapiventas-punta"></div>',
+                        iconSize: [30, 42],
+                        iconAnchor: [15, 42],
+                        popupAnchor: [0, -42]
+                    })
+                }).addTo(mapa);
+
+                marcador.on('dragend', () => {
+                    const pos = marcador.getLatLng();
+                    aplicarUbicacion(pos.lat, pos.lng, 'Ubicación seleccionada');
+                });
+
+                mapa.on('click', (evento) => {
+                    const { lat, lng } = evento.latlng;
+                    marcador.setLatLng([lat, lng]);
+                    aplicarUbicacion(lat, lng, 'Ubicación seleccionada');
+                });
+            } else {
+                mapa.setView(centro, zoom);
+                marcador.setLatLng(centro);
+            }
+
+            setTimeout(() => mapa?.invalidateSize(), 150);
+        }
+
+        document.getElementById(`btn-gps-${prefijo}-ubicacion`)?.addEventListener('click', async () => {
+            const mensaje = document.getElementById(`${prefijo}-ubicacion-gps-msg`);
+            if (mensaje) mensaje.textContent = 'Obteniendo ubicación...';
+            try {
+                const coords = await obtenerCoordenadasGPS();
+                if (mapa && marcador) {
+                    mapa.setView([coords.lat, coords.lng], 16);
+                    marcador.setLatLng([coords.lat, coords.lng]);
+                }
+                await aplicarUbicacion(coords.lat, coords.lng, 'Ubicación capturada');
+            } catch (e) {
+                if (mensaje) mensaje.textContent = 'No se pudo obtener tu ubicación. Puedes tocar el mapa o elegir los datos a mano.';
+            }
+        });
+
+        document.getElementById(`form-${prefijo}-ubicacion`)?.addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+
+            const datosEnvio = {
+                idProvincia: selectProvincia.value,
+                idCanton: selectCanton.value,
+                idDistrito: selectDistrito.value,
+                direccionExacta: document.getElementById(`${prefijo}-ubicacion-direccion`).value,
+                referencia: document.getElementById(`${prefijo}-ubicacion-referencia`).value,
+                latitud: document.getElementById(`${prefijo}-ubicacion-latitud`).value,
+                longitud: document.getElementById(`${prefijo}-ubicacion-longitud`).value
+            };
+
+            try {
+                const r = await fetch(endpointGuardar, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosEnvio)
+                });
+                const res = await r.json();
+                mostrarMensaje(res.mensaje, res.exito ? 'exito' : 'error');
+            } catch (e) {
+                mostrarMensaje('Error de conexión con el servidor', 'error');
+            }
+        });
+
+        async function cargar(ubicacion) {
+            if (!ubicacion) {
+                mostrarMapa(null, null);
+                return;
+            }
+
+            document.getElementById(`${prefijo}-ubicacion-direccion`).value = ubicacion.direccionExacta ?? '';
+            document.getElementById(`${prefijo}-ubicacion-referencia`).value = ubicacion.referencia ?? '';
+            document.getElementById(`${prefijo}-ubicacion-latitud`).value = ubicacion.latitud ?? '';
+            document.getElementById(`${prefijo}-ubicacion-longitud`).value = ubicacion.longitud ?? '';
+
+            await seleccionarUbicacionEnSelects(
+                selectProvincia, selectCanton, selectDistrito,
+                ubicacion.idProvincia, ubicacion.idCanton, ubicacion.idDistrito
+            );
+
+            mostrarMapa(ubicacion.latitud, ubicacion.longitud);
+        }
+
+        return { cargar };
+    }
+
+    const manejadorUbicacionMc = crearManejadorUbicacionPerfil('mc', 'api/editar_ubicacion_usuario.php');
+    const manejadorUbicacionMco = crearManejadorUbicacionPerfil('mco', 'api/editar_ubicacion_usuario.php');
+
     function mostrarMapaEditarLocal(latitud, longitud) {
         if (typeof L === "undefined" || !document.getElementById("mel-mapa")) return;
 
@@ -5837,6 +5984,8 @@
                     "No se pudo obtener tu ubicación. Puedes tocar el mapa o elegir los datos a mano.";
             }
         });
+
+    
 
     function cerrarModalEditarLocal() {
         document.getElementById("modal-editar-local").classList.add("oculto");

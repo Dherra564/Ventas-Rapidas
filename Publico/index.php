@@ -535,6 +535,41 @@
                     </form>
 
                     <div class="bloque-separado">
+                        <h3>Mi ubicación</h3>
+                        <form id="form-mc-ubicacion" class="formulario">
+                            <label for="mc-ubicacion-provincia">Provincia</label>
+                            <select id="mc-ubicacion-provincia" required>
+                            <option value="">Seleccione...</option>
+                            </select>
+
+                            <label for="mc-ubicacion-canton">Cantón</label>
+                            <select id="mc-ubicacion-canton" required disabled>
+                            <option value="">Primero elige provincia</option>
+                            </select>
+
+                            <label for="mc-ubicacion-distrito">Distrito</label>
+                            <select id="mc-ubicacion-distrito" required disabled>
+                            <option value="">Primero elige cantón</option>
+                            </select>
+
+                            <label for="mc-ubicacion-direccion">Dirección exacta</label>
+                            <input type="text" id="mc-ubicacion-direccion" required>
+
+                            <label for="mc-ubicacion-referencia">Punto de referencia</label>
+                            <input type="text" id="mc-ubicacion-referencia">
+
+                            <button type="button" id="btn-gps-mc-ubicacion" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                            <span class="ayuda" id="mc-ubicacion-gps-msg">También puedes tocar el mapa o arrastrar el pin.</span>
+                            <input type="hidden" id="mc-ubicacion-latitud">
+                            <input type="hidden" id="mc-ubicacion-longitud">
+
+                            <div id="mc-ubicacion-mapa" class="mapa-registro"></div>
+
+                            <button type="submit">Guardar ubicación</button>
+                        </form>
+                    </div>
+
+                    <div class="bloque-separado">
                         <button type="button" id="mc-btn-abrir-password" class="boton-secundario">🔒 Cambiar
                             contraseña</button>
                     </div>
@@ -582,6 +617,41 @@
 
                         <button type="submit">Guardar Cambios</button>
                     </form>
+
+                    <div class="bloque-separado">
+                        <h3>Mi ubicación</h3>
+                        <form id="form-mco-ubicacion" class="formulario">
+                            <label for="mco-ubicacion-provincia">Provincia</label>
+                            <select id="mco-ubicacion-provincia" required>
+                            <option value="">Seleccione...</option>
+                            </select>
+
+                            <label for="mco-ubicacion-canton">Cantón</label>
+                            <select id="mco-ubicacion-canton" required disabled>
+                            <option value="">Primero elige provincia</option>
+                            </select>
+
+                            <label for="mco-ubicacion-distrito">Distrito</label>
+                            <select id="mco-ubicacion-distrito" required disabled>
+                            <option value="">Primero elige cantón</option>
+                            </select>
+
+                            <label for="mco-ubicacion-direccion">Dirección exacta</label>
+                            <input type="text" id="mco-ubicacion-direccion" required>
+
+                            <label for="mco-ubicacion-referencia">Punto de referencia</label>
+                            <input type="text" id="mco-ubicacion-referencia">
+
+                            <button type="button" id="btn-gps-mco-ubicacion" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                            <span class="ayuda" id="mco-ubicacion-gps-msg">También puedes tocar el mapa o arrastrar el pin.</span>
+                            <input type="hidden" id="mco-ubicacion-latitud">
+                            <input type="hidden" id="mco-ubicacion-longitud">
+
+                            <div id="mco-ubicacion-mapa" class="mapa-registro"></div>
+
+                            <button type="submit">Guardar ubicación</button>
+                        </form>
+                    </div>
 
                     <div class="bloque-separado">
                         <button type="button" id="mco-btn-abrir-password" class="boton-secundario">🔒 Cambiar
