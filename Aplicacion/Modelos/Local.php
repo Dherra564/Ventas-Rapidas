@@ -13,6 +13,7 @@ class Local
     private ?string $logo;
     private bool $activo;
     private ?DateTime $fechaRegistro;
+    private ?string $numeroSinpe;
 
     public function __construct(
         int $idTipoLocal,
@@ -22,7 +23,8 @@ class Local
         ?string $logo = null,
         bool $activo = true,
         int $idLocal = 0,
-        ?DateTime $fechaRegistro = null
+        ?DateTime $fechaRegistro = null,
+        ?string $numeroSinpe = null
     ) {
         $this->idTipoLocal = $idTipoLocal;
         $this->idLocal = $idLocal;
@@ -33,6 +35,7 @@ class Local
         $this->setTelefono($telefono);
         $this->setDescripcion($descripcion);
         $this->setLogo($logo);
+        $this->setNumeroSinpe($numeroSinpe);
     }
 
     public function getIdLocal(): int
@@ -67,6 +70,14 @@ class Local
     {
         return $this->fechaRegistro;
     }
+    public function getNumeroSinpe(): ?string
+    {
+        return $this->numeroSinpe;
+    }
+    public function tieneNumeroSinpe(): bool
+    {
+        return $this->numeroSinpe !== null;
+    }
 
     public function setNombreLocal(string $nombreLocal): void
     {
@@ -96,6 +107,19 @@ class Local
     public function setLogo(?string $logo): void
     {
         $this->logo = $logo;
+    }
+
+    public function setNumeroSinpe(?string $numeroSinpe): void
+    {
+        if ($numeroSinpe !== null && trim($numeroSinpe) === '') {
+            $numeroSinpe = null;
+        }
+
+        if ($numeroSinpe !== null && !preg_match('/^\d{8}$/', trim($numeroSinpe))) {
+            throw new InvalidArgumentException("El número SINPE Móvil debe tener exactamente 8 dígitos");
+        }
+
+        $this->numeroSinpe = $numeroSinpe !== null ? trim($numeroSinpe) : null;
     }
 
     public function setActivo(bool $activo): void
