@@ -52,6 +52,12 @@ try {
         LEFT JOIN tbusuario au ON au.tbusuarioid = h.idusuario
 
         UNION ALL
+        SELECT CONCAT('ls-', h.tblocalnumerosinpehistoricoid), 'numeroSinpe', 'Local', l.tblocalnombre, NULL, au.tbusuarionombrecompleto, h.valoranterior, h.valornuevo, h.fecha
+        FROM tblocalnumerosinpehistorico h
+        JOIN tblocal l ON l.tblocalid = h.tblocalid
+        LEFT JOIN tbusuario au ON au.tbusuarioid = h.idusuario
+
+        UNION ALL
         SELECT CONCAT('pp-', h.tbproductopreciohistoricoid), 'precio', 'Producto', p.tbproductonombre, l2.tblocalnombre, au.tbusuarionombrecompleto, h.valoranterior, h.valornuevo, h.fecha
         FROM tbproductopreciohistorico h
         JOIN tbproducto p ON p.tbproductoid = h.tbproductoid

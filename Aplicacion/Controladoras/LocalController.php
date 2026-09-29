@@ -39,9 +39,14 @@ class LocalController
         string $direccionExacta,
         ?string $referencia,
         ?float $latitud = null,
-        ?float $longitud = null
+        ?float $longitud = null,
+        ?string $numeroSinpe = null
 
     ): int|false {
+
+        if ($numeroSinpe === null || trim($numeroSinpe) === '') {
+            throw new InvalidArgumentException("El número SINPE Móvil es obligatorio para recibir pagos");
+        }
 
         $idTipoLocal = $this->resolverOCrearTipoLocal($nombreTipoLocal);
 
@@ -50,7 +55,11 @@ class LocalController
             $nombreLocal,
             $telefono,
             $descripcion,
-            $logo
+            $logo,
+            true,
+            0,
+            null,
+            $numeroSinpe
         );
 
         $ubicacion = new Ubicacion(
@@ -160,6 +169,10 @@ class LocalController
 
     public function editar(Local $local, ?int $idComercianteAutor = null): bool
     {
+        if (!$local->tieneNumeroSinpe()) {
+            throw new InvalidArgumentException("El número SINPE Móvil es obligatorio para recibir pagos");
+        }
+
         return $this->localRepository->actualizar($local, $idComercianteAutor);
     }
 

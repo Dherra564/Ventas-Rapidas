@@ -50,7 +50,17 @@ $esCopiaCliente = $usuario['tipo'] !== Sesion::TIPO_SUPERADMIN
 $p = FormateadorPedido::aArreglo($datos, $esCopiaCliente);
 $historial = $datos['historial'] ?? [];
 
-$titulo = $p['estado'] === Pedido::ESTADO_ENTREGADO ? 'Comprobante de compra' : 'Comprobante de pedido';
+$pago = $p['pago'];
+$tieneRecibo = $pago !== null && $pago['recibo'] !== null;
+
+if ($tieneRecibo) {
+    $titulo = 'Recibo de compra';
+} else {
+    $titulo = $p['estado'] === Pedido::ESTADO_ENTREGADO ? 'Comprobante de compra' : 'Comprobante de pedido';
+}
+
+$numeroDocumento = $tieneRecibo ? $pago['recibo'] : $p['numero'];
+$reciboFecha = $tieneRecibo ? (new DateTime($pago['reciboFecha']))->format('d/m/Y h:i a') : null;
 $registroFecha = $p['registroFecha'] ? (new DateTime($p['registroFecha']))->format('d/m/Y h:i a') : '—';
 
 $claseEstado = 'estado-pedido-' . strtolower($p['estado']);
@@ -60,7 +70,7 @@ $claseEstado = 'estado-pedido-' . strtolower($p['estado']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($titulo) ?> <?= e($p['numero']) ?></title>
+    <title><?= e($titulo) ?> <?= e($numeroDocumento) ?></title>
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
 <body class="comprobante-pagina">
@@ -73,7 +83,10 @@ $claseEstado = 'estado-pedido-' . strtolower($p['estado']);
             <div class="comprobante-marca">Rapi<span>Ventas</span></div>
             <div>
                 <h1 class="comprobante-titulo"><?= e($titulo) ?></h1>
-                <div class="comprobante-numero"><?= e($p['numero']) ?></div>
+                <div class="comprobante-numero"><?= e($numeroDocumento) ?></div>
+                <?php if ($tieneRecibo): ?>
+                    <div class="comprobante-pedido-numero">Pedido <?= e($p['numero']) ?></div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -136,6 +149,50 @@ $claseEstado = 'estado-pedido-' . strtolower($p['estado']);
             <span><?= colones($p['total']) ?></span>
         </div>
 
+        <?php if ($pago !== null): ?>
+            <h3 class="comprobante-subtitulo">Pago por SINPE Móvil</h3>
+            <div class="comprobante-pago">
+                <div class="comprobante-datos">
+                    <div>
+                        <strong class="comprobante-dato-titulo">SINPE Móvil del local</strong>
+                        <?= e(substr($pago['numeroSinpe'], 0, 4) . '-' . substr($pago['numeroSinpe'], 4)) ?>
+                    </div>
+                    <div>
+                        <strong class="comprobante-dato-titulo">Pagado por</strong>
+                        <?= e($pago['nombre']) ?><br>
+                        Tel. <?= e(substr($pago['telefono'], 0, 4) . '-' . substr($pago['telefono'], 4)) ?>
+                    </div>
+                    <div>
+                        <strong class="comprobante-dato-titulo">Código del SINPE</strong>
+                        <?= e($pago['codigo']) ?>
+                    </div>
+                    <div>
+                        <strong class="comprobante-dato-titulo">Referencia</strong>
+                        ****<?= e($pago['referencia']) ?>
+                    </div>
+                    <div>
+                        <strong class="comprobante-dato-titulo">Monto</strong>
+                        <?= colones($pago['monto']) ?>
+                    </div>
+                    <div>
+                        <strong class="comprobante-dato-titulo">Estado del pago</strong>
+                        <?php if ($tieneRecibo): ?>
+                            <span class="estado-pedido estado-pedido-entregado">Confirmado</span><br>
+                            <?= e($reciboFecha) ?>
+                        <?php elseif (in_array($p['estado'], [Pedido::ESTADO_RECHAZADO, Pedido::ESTADO_CANCELADO], true)): ?>
+                            <span class="estado-pedido estado-pedido-cancelado">No confirmado</span>
+                        <?php else: ?>
+                            <span class="estado-pedido estado-pedido-pendiente">En revisión</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <a href="../imagenes/<?= e($pago['comprobante']) ?>" target="_blank" class="comprobante-pago-imagen">
+                    <img src="../imagenes/<?= e($pago['comprobante']) ?>" alt="Comprobante del SINPE">
+                    <span>Ver comprobante del SINPE</span>
+                </a>
+            </div>
+        <?php endif; ?>
+
         <?php if ($p['retiroCodigo'] && $p['estado'] === Pedido::ESTADO_CONFIRMADO): ?>
             <div class="comprobante-codigo">
                 <span class="comprobante-codigo-etiqueta">Código de retiro — muéstralo en el local</span>
@@ -160,7 +217,7 @@ $claseEstado = 'estado-pedido-' . strtolower($p['estado']);
         <?php endif; ?>
 
         <p class="comprobante-pie">
-            Comprobante generado por RapiVentas el <?= e((new DateTime())->format('d/m/Y h:i a')) ?>.<br>
+            <?= $tieneRecibo ? 'Recibo' : 'Comprobante' ?> generado por RapiVentas el <?= e((new DateTime())->format('d/m/Y h:i a')) ?>.<br>
             Este documento no sustituye una factura electrónica.
         </p>
     </div>

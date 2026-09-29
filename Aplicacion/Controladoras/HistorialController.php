@@ -22,6 +22,7 @@ class HistorialController
                 'nombre' => new HistorialCampoRepository("tblocalnombrehistorico", "tblocalnombrehistoricoid", "tblocalid"),
                 'telefono' => new HistorialCampoRepository("tblocaltelefonohistorico", "tblocaltelefonohistoricoid", "tblocalid"),
                 'logo' => new HistorialCampoRepository("tblocallogohistorico", "tblocallogohistoricoid", "tblocalid"),
+                'numeroSinpe' => new HistorialCampoRepository("tblocalnumerosinpehistorico", "tblocalnumerosinpehistoricoid", "tblocalid"),
             ],
             'Ubicacion' => [
                 'provincia' => new HistorialCampoRepository("tbubicacionprovinciahistorico", "tbubicacionprovinciahistoricoid", "tbubicacionid"),

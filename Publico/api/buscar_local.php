@@ -32,6 +32,7 @@ try {
             'nombreLocal' => $local->getNombreLocal(),
             'descripcion' => $local->getDescripcion(),
             'telefono' => $local->getTelefono(),
+            'numeroSinpe' => $local->getNumeroSinpe(),
             'logo' => $local->getLogo()
         ],
         'ubicacion' => [

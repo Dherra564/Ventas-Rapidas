@@ -8,6 +8,7 @@ require_once __DIR__ . "/../Modelos/CarritoCompraDetalle.php";
 require_once __DIR__ . "/PedidoController.php";
 require_once __DIR__ . "/LocalController.php";
 require_once __DIR__ . "/../Comun/Sesion.php";
+require_once __DIR__ . "/../Modelos/PedidoPago.php";
 
 class CarritoCompraController
 {
@@ -105,8 +106,8 @@ class CarritoCompraController
         return $this->carritoCompraRepository->contarProductosDeCliente($cliente->getIdCliente());
     }
 
-    public function confirmar(array $usuarioSesion, int $idLocal): array
-    {
+    public function confirmar(array $usuarioSesion, int $idLocal, PedidoPago $pago): array
+        {
         $cliente = $this->pedidoController->resolverCliente($usuarioSesion);
         $carritoCompra = $this->obtenerCarritoCompraOFallar($cliente->getIdCliente(), $idLocal);
 
@@ -114,7 +115,7 @@ class CarritoCompraController
             throw new InvalidArgumentException("Tu carrito está vacío");
         }
 
-        $resultado = $this->pedidoController->crearPedido($usuarioSesion, $idLocal, $carritoCompra->aItemsDePedido());
+        $resultado = $this->pedidoController->crearPedido($usuarioSesion, $idLocal, $carritoCompra->aItemsDePedido(), $pago);
 
         $this->carritoCompraRepository->eliminar($carritoCompra->getIdCarritoCompra());
 

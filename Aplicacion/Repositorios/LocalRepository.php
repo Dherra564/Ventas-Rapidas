@@ -21,6 +21,7 @@ class LocalRepository
     private HistorialCampoRepository $historialNombre;
     private HistorialCampoRepository $historialTelefono;
     private HistorialCampoRepository $historialLogo;
+    private HistorialCampoRepository $historialNumeroSinpe;
 
     public function __construct()
     {
@@ -30,6 +31,7 @@ class LocalRepository
         $this->historialNombre = new HistorialCampoRepository("tblocalnombrehistorico", "tblocalnombrehistoricoid", "tblocalid", $this->conexion);
         $this->historialTelefono = new HistorialCampoRepository("tblocaltelefonohistorico", "tblocaltelefonohistoricoid", "tblocalid", $this->conexion);
         $this->historialLogo = new HistorialCampoRepository("tblocallogohistorico", "tblocallogohistoricoid", "tblocalid", $this->conexion);
+        $this->historialNumeroSinpe = new HistorialCampoRepository("tblocalnumerosinpehistorico", "tblocalnumerosinpehistoricoid", "tblocalid", $this->conexion);
     }
     private function resolverIdUsuarioDeComerciante(?int $idComerciante): ?int
     {
@@ -68,7 +70,8 @@ class LocalRepository
                         tblocaldescripcion,
                         tblocaltelefono,
                         tblocallogo,
-                        tblocalactivo
+                        tblocalactivo,
+                        tblocalnumerosinpe
                     )
                     VALUES
                     (
@@ -78,7 +81,8 @@ class LocalRepository
                         :descripcion,
                         :telefono,
                         :logo,
-                        :activo
+                        :activo,
+                        :numeroSinpe
                     )";
 
             $consulta = $this->conexion->prepare($sql);
@@ -90,7 +94,8 @@ class LocalRepository
                 ":descripcion" => $local->getDescripcion(),
                 ":telefono" => $local->getTelefono(),
                 ":logo" => $local->getLogo(),
-                ":activo" => $local->isActivo()
+                ":activo" => $local->isActivo(),
+                ":numeroSinpe" => $local->getNumeroSinpe()
             ]);
 
             $ubicacion->setIdLocal($idLocal);
@@ -102,6 +107,9 @@ class LocalRepository
             $idUsuarioAutor = $this->resolverIdUsuarioDeComerciante($idComerciante);
             $this->historialNombre->registrar($idLocal, null, $local->getNombreLocal(), $idUsuarioAutor, 'Comerciante');
             $this->historialTelefono->registrar($idLocal, null, $local->getTelefono(), $idUsuarioAutor, 'Comerciante');
+            if ($local->getNumeroSinpe() !== null) {
+                $this->historialNumeroSinpe->registrar($idLocal, null, $local->getNumeroSinpe(), $idUsuarioAutor, 'Comerciante');
+            }
             if ($local->getLogo() !== null) {
                 $this->historialLogo->registrar($idLocal, null, $local->getLogo(), $idUsuarioAutor, 'Comerciante');
             }
@@ -281,7 +289,8 @@ class LocalRepository
                 tblocaldescripcion = :descripcion,
                 tblocaltelefono = :telefono,
                 tblocallogo = :logo,
-                tblocalactivo = :activo
+                tblocalactivo = :activo,
+                tblocalnumerosinpe = :numeroSinpe
             WHERE tblocalid = :id";
 
         $consulta = $this->conexion->prepare($sql);
@@ -293,6 +302,7 @@ class LocalRepository
             ":telefono" => $local->getTelefono(),
             ":logo" => $local->getLogo(),
             ":activo" => $local->isActivo(),
+            ":numeroSinpe" => $local->getNumeroSinpe(),
             ":id" => $local->getIdLocal()
         ]);
 
@@ -301,6 +311,7 @@ class LocalRepository
             $this->historialNombre->registrarSiCambio($local->getIdLocal(), $anterior->getNombreLocal(), $local->getNombreLocal(), $idUsuarioAutor, 'Comerciante');
             $this->historialTelefono->registrarSiCambio($local->getIdLocal(), $anterior->getTelefono(), $local->getTelefono(), $idUsuarioAutor, 'Comerciante');
             $this->historialLogo->registrarSiCambio($local->getIdLocal(), $anterior->getLogo(), $local->getLogo(), $idUsuarioAutor, 'Comerciante');
+            $this->historialNumeroSinpe->registrarSiCambio($local->getIdLocal(), $anterior->getNumeroSinpe(), $local->getNumeroSinpe(), $idUsuarioAutor, 'Comerciante');
         }
 
         return $exito;
@@ -418,7 +429,8 @@ class LocalRepository
             (int) $fila["tblocalid"],
             $fila["tblocalregistrofecha"] != null
                 ? new DateTime($fila["tblocalregistrofecha"])
-                : null
+                : null,
+            $fila["tblocalnumerosinpe"] ?? null
         );
     }
 

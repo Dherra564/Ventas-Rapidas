@@ -45,7 +45,9 @@ class EditarLocalHandler
             $_POST['descripcion'] ?? null,
             $logoFinal,
             true,
-            $idLocal
+            $idLocal,
+            null,
+            preg_replace('/\D/', '', $_POST['numeroSinpe'] ?? '')
         );
 
         $actualizado = $controlador->editar($local, $idComerciante);
