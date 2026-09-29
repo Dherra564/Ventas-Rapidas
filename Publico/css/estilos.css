@@ -2878,6 +2878,224 @@ body.comprobante-pagina {
     cursor: not-allowed;
 }
 
+/* ============================================================
+   MÓDULO DE COMPRAS: CARRITO (vista "Mi Carrito")
+   ============================================================ */
+.menu-boton[data-vista="vista-carrito"] { position: relative; }
+
+.carrito-contador {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    margin-left: auto;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: var(--text-white);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.carrito-contador.oculto { display: none; }
+.menu-boton.activo .carrito-contador { background: var(--color-white); color: var(--color-primary); }
+
+.barra-lateral.colapsada .carrito-contador {
+    position: absolute;
+    top: 2px;
+    right: 6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 0.65rem;
+}
+
+#compra-agregar-carrito {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+#compra-agregar-carrito svg { width: 18px; height: 18px; }
+
+.btn-comprar-ahora {
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.75rem;
+    background: var(--color-white);
+    color: var(--color-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-comprar-ahora:hover:not(:disabled) {
+    background: var(--color-lilac-100);
+    border-color: var(--color-primary);
+}
+
+#compra-agregar-carrito:disabled,
+.btn-comprar-ahora:disabled {
+    background: var(--color-gray-200);
+    color: var(--text-secondary);
+    border-color: var(--color-gray-200);
+    cursor: not-allowed;
+}
+
+.carrito-tarjeta .pedido-encabezado .pedido-boton {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.carrito-local-nombre {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.carrito-local-nombre svg { width: 18px; height: 18px; color: var(--color-primary); }
+
+.carrito-items {
+    list-style: none;
+    margin: 0.8rem 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.carrito-item {
+    display: grid;
+    grid-template-columns: 56px 1fr auto auto auto;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.7rem;
+    background: var(--background-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+.carrito-item:hover { background: var(--surface-hover); border-color: var(--border-color); }
+
+.carrito-item-con-aviso,
+.carrito-item-con-aviso:hover {
+    background: var(--surface);
+    border-color: var(--color-warning);
+}
+
+.carrito-item-imagen {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    background: var(--color-lilac-100);
+}
+
+.carrito-item-sin-imagen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-lilac-300);
+}
+.carrito-item-sin-imagen svg { width: 24px; height: 24px; }
+
+.carrito-item-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-width: 0;
+}
+.carrito-item-info strong {
+    font-family: var(--font-primary);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+}
+
+.carrito-item-precio {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+.carrito-item-precio s { color: var(--text-muted); margin-right: 0.3rem; }
+
+.carrito-item-aviso {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-warning);
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.carrito-cantidad-control { margin: 0; }
+.carrito-cantidad-control .compra-cantidad-boton { width: 32px; height: 32px; }
+.carrito-cantidad-control .compra-cantidad-boton svg { width: 15px; height: 15px; }
+.carrito-cantidad-control .compra-cantidad-input { width: 3.2rem; height: 32px; font-size: 0.95rem; }
+
+.carrito-item-cantidad-fija { color: var(--text-muted); text-align: center; }
+
+.carrito-item-subtotal {
+    min-width: 5.5rem;
+    text-align: right;
+    font-family: var(--font-primary);
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.carrito-item-quitar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    color: var(--color-danger);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.carrito-item-quitar:hover {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: var(--text-white);
+}
+.carrito-item-quitar svg { width: 16px; height: 16px; }
+
+.carrito-nota { margin-bottom: 0.9rem; }
+
+.pedido-boton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.pedido-boton-principal:disabled:hover { background: var(--color-primary); }
+
+.carrito-ocupado {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+@media (max-width: 600px) {
+    .carrito-item {
+        grid-template-columns: 48px 1fr auto;
+        grid-template-areas:
+            "imagen info quitar"
+            "imagen cantidad subtotal";
+        row-gap: 0.5rem;
+    }
+    .carrito-item-imagen { grid-area: imagen; width: 48px; height: 48px; align-self: start; }
+    .carrito-item-info { grid-area: info; }
+    .carrito-cantidad-control,
+    .carrito-item-cantidad-fija { grid-area: cantidad; justify-self: start; }
+    .carrito-item-subtotal { grid-area: subtotal; min-width: 0; }
+    .carrito-item-quitar { grid-area: quitar; justify-self: end; }
+}
+
 /* ---------- Opciones de duración del producto (radios) ---------- */
 .opciones-duracion {
     display: flex;
