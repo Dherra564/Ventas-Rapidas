@@ -1756,12 +1756,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 mostrarMensaje(res.mensaje, res.exito ? "exito" : "error");
 
                 if (res.exito) {
-                    evento.target.reset();
-                    document
-                        .getElementById("p-fechaVencimiento-wrap")
-                        ?.classList.add("oculto");
-                    irAVista("vista-mis-productos");
-                }
+                evento.target.reset();
+                document
+                    .getElementById("p-fechaVencimiento-wrap")
+                    ?.classList.add("oculto");
+                document.getElementById("p-fechaVencimiento").disabled = true; // NUEVO
+                irAVista("vista-mis-productos");
+            }
             } catch (e) {
                 mostrarMensaje("Error de conexión con el servidor", "error");
             }
@@ -4814,29 +4815,30 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("hist-buscar")
         ?.addEventListener("input", historialBuscarDebounced);
 
-    document.querySelectorAll('input[name="p-duracion"]').forEach((radio) => {
-        radio.addEventListener("change", () => {
-            document
-                .getElementById("p-fechaVencimiento-wrap")
-                .classList.toggle(
-                    "oculto",
-                    document.querySelector('input[name="p-duracion"]:checked').value !==
-                    "temporal",
-                );
-        });
-    });
+        function configurarDuracionProducto(prefijo) {
+        const contenedorFecha = document.getElementById(`${prefijo}-fechaVencimiento-wrap`);
+        const inputFecha = document.getElementById(`${prefijo}-fechaVencimiento`);
+        if (!contenedorFecha || !inputFecha) return;
 
-    document.querySelectorAll('input[name="ep-duracion"]').forEach((radio) => {
-        radio.addEventListener("change", () => {
-            document
-                .getElementById("ep-fechaVencimiento-wrap")
-                .classList.toggle(
-                    "oculto",
-                    document.querySelector('input[name="ep-duracion"]:checked').value !==
-                    "temporal",
-                );
+        // El formulario arranca en "Permanente", así que el campo empieza deshabilitado
+        inputFecha.disabled = true;
+
+        document.querySelectorAll(`input[name="${prefijo}-duracion"]`).forEach(radio => {
+            radio.addEventListener('change', () => {
+                const esTemporal =
+                    document.querySelector(`input[name="${prefijo}-duracion"]:checked`).value === 'temporal';
+
+                contenedorFecha.classList.toggle('oculto', !esTemporal);
+                inputFecha.disabled = !esTemporal;
+
+                // Al pasar a permanente se borra la fecha, para que no quede un valor viejo escondido
+                if (!esTemporal) inputFecha.value = '';
+            });
         });
-    });
+    }
+
+    configurarDuracionProducto('p');
+    configurarDuracionProducto('ep');
 
     document
         .getElementById("btn-eliminar-local")
