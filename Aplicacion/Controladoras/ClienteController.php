@@ -37,7 +37,9 @@ class ClienteController
         ?int $idCanton = null,
         ?int $idDistrito = null,
         ?string $direccionExacta = null,
-        ?string $referencia = null
+        ?string $referencia = null,
+        ?float $latitud = null,
+        ?float $longitud = null
     ): int|false {
         $this->validarIdentificacion($tipoIdentificacion, $numeroIdentificacion);
         $this->validarFormatoPassword($password);
@@ -54,7 +56,11 @@ class ClienteController
                 $idDistrito,
                 $direccionExacta,
                 $referencia,
-                null
+                null,
+                true,
+                0,
+                $latitud,
+                $longitud
             );
             return $this->clienteRepository->insertarConUbicacion($cliente, $ubicacion);
         }
@@ -162,7 +168,7 @@ class ClienteController
     {
         return $this->clienteRepository->obtenerPorIdentificacion($identificacion);
     }
-        public function buscarPorIdUsuario(int $idUsuario): ?Cliente
+    public function buscarPorIdUsuario(int $idUsuario): ?Cliente
     {
         return $this->clienteRepository->obtenerPorIdUsuario($idUsuario);
     }
