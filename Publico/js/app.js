@@ -1756,13 +1756,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 mostrarMensaje(res.mensaje, res.exito ? "exito" : "error");
 
                 if (res.exito) {
-                evento.target.reset();
-                document
-                    .getElementById("p-fechaVencimiento-wrap")
-                    ?.classList.add("oculto");
-                document.getElementById("p-fechaVencimiento").disabled = true; // NUEVO
-                irAVista("vista-mis-productos");
-            }
+                    evento.target.reset();
+                    document
+                        .getElementById("p-fechaVencimiento-wrap")
+                        ?.classList.add("oculto");
+                    document.getElementById("p-fechaVencimiento").disabled = true; // NUEVO
+                    irAVista("vista-mis-productos");
+                }
             } catch (e) {
                 mostrarMensaje("Error de conexión con el servidor", "error");
             }
@@ -4032,8 +4032,22 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
     }
 
+    function formatearFechaVencimiento(fechaTexto) {
+        const fecha = new Date(fechaTexto);
+        if (isNaN(fecha.getTime())) return "";
+        return "Hasta " + fecha.toLocaleString("es-CR", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            hour: "numeric",
+            minute: "2-digit",
+        });
+    }
+
     function actualizarCronometros() {
         const ahora = Date.now();
+        const UN_DIA = 24 * 60 * 60 * 1000;
+
         document.querySelectorAll("[data-vence]").forEach((elemento) => {
             const vence = new Date(elemento.dataset.vence).getTime();
             const restante = vence - ahora;
@@ -4046,7 +4060,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             elemento.classList.remove("cronometro-vencido");
-            textoSpan.textContent = formatearTiempoRestante(restante);
+
+            textoSpan.textContent =
+                restante > UN_DIA
+                    ? formatearFechaVencimiento(elemento.dataset.vence)
+                    : formatearTiempoRestante(restante);
         });
     }
 
@@ -4781,11 +4799,12 @@ document.addEventListener("DOMContentLoaded", () => {
         input.min = ahora.toISOString().slice(0, 16);
     }
     document
-        .querySelectorAll('input[name="p-duracion"], input[name="ep-duracion"]')
+        .querySelectorAll('input[name="p-duracion"], input[name="ep-duracion"], input[name="mep-duracion"]')
         .forEach((radio) => {
             radio.addEventListener("change", () => {
                 establecerMinimoFechaHoraActual("p-fechaVencimiento");
                 establecerMinimoFechaHoraActual("ep-fechaVencimiento");
+                establecerMinimoFechaHoraActual("mep-fechaVencimiento");
             });
         });
 
@@ -4815,7 +4834,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("hist-buscar")
         ?.addEventListener("input", historialBuscarDebounced);
 
-        function configurarDuracionProducto(prefijo) {
+    function configurarDuracionProducto(prefijo) {
         const contenedorFecha = document.getElementById(`${prefijo}-fechaVencimiento-wrap`);
         const inputFecha = document.getElementById(`${prefijo}-fechaVencimiento`);
         if (!contenedorFecha || !inputFecha) return;
@@ -4839,6 +4858,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     configurarDuracionProducto('p');
     configurarDuracionProducto('ep');
+    configurarDuracionProducto('mep');
 
     document
         .getElementById("btn-eliminar-local")
@@ -5462,7 +5482,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 p.porcentajeDescuento ?? "";
             document.getElementById("mep-descripcion").value = p.descripcion ?? "";
             document.getElementById("mep-cantidad").value = p.cantidadDisponible;
+            document.getElementById("mep-cantidad").value = p.cantidadDisponible;
 
+            const radioDuracionMep = document.querySelector(
+                `input[name="mep-duracion"][value="${p.fechaVencimiento ? "temporal" : "permanente"}"]`,
+            );
+            radioDuracionMep.checked = true;
+            radioDuracionMep.dispatchEvent(new Event("change"));
+
+            if (p.fechaVencimiento) {
+                document.getElementById("mep-fechaVencimiento").value = p.fechaVencimiento;
+            }
             document
                 .getElementById("modal-editar-producto-mp")
                 .classList.remove("oculto");
@@ -5489,6 +5519,21 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("form-modal-editar-producto")
         ?.addEventListener("submit", (evento) => {
             evento.preventDefault();
+
+            const esTemporalMep =
+                document.querySelector('input[name="mep-duracion"]:checked')?.value === "temporal";
+            const fechaMep = document.getElementById("mep-fechaVencimiento").value;
+
+            if (esTemporalMep) {
+                if (!fechaMep) {
+                    mostrarMensaje("Indica hasta cuándo estará disponible el producto", "error");
+                    return;
+                }
+                if (new Date(fechaMep) <= new Date()) {
+                    mostrarMensaje("La fecha de disponibilidad debe ser posterior a este momento", "error");
+                    return;
+                }
+            }
 
             Swal.fire({
                 title: "¿Guardar estos cambios?",
@@ -5528,6 +5573,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     "cantidadDisponible",
                     document.getElementById("mep-cantidad").value,
                 );
+
+                if (esTemporalMep) datos.append("fechaVencimiento", fechaMep);
 
                 const archivoImagen = document.getElementById("mep-imagen").files[0];
                 if (archivoImagen) datos.append("imagen", archivoImagen);
