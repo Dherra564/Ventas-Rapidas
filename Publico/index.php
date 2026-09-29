@@ -534,7 +534,7 @@
                             contraseña</button>
                     </div>
 
-                    <div class="campo-lectura bloque-separado">
+                    <div class="campo-lectura bloque-separado oculto">
                         <strong>Locales que sigo</strong>
                         <div id="mc-locales-lista"></div>
                         <div class="filtros-busqueda">
@@ -545,7 +545,7 @@
                         <span class="ayuda" id="mc-seguir-local-msg"></span>
                     </div>
 
-                    <div class="campo-lectura bloque-separado">
+                    <div class="campo-lectura bloque-separado oculto">
                         <strong>Mis reseñas</strong>
                         <div id="mc-resenas-lista" class="tarjetas"></div>
                     </div>
@@ -656,6 +656,23 @@
                             <p><strong>Teléfono:</strong> <span id="e-solo-telefono"></span></p>
                         </div>
 
+                        <div class="campo-lectura">
+                            <div class="campo-lectura-encabezado">
+                                <strong>Reseñas de este local</strong>
+                                <button type="button" id="btn-dejar-resena-local" class="boton-secundario">Dejar una
+                                    reseña</button>
+                            </div>
+                            <p class="ayuda" id="e-resenas-resumen"></p>
+                            <div class="carrusel" id="carrusel-resenas-local">
+                                <button type="button" class="carrusel-flecha carrusel-flecha-izq"
+                                    id="resenas-carrusel-prev" aria-label="Anterior">&#10094;</button>
+                                <div class="carrusel-pista" id="resenas-carrusel-pista"></div>
+                                <button type="button" class="carrusel-flecha carrusel-flecha-der"
+                                    id="resenas-carrusel-next" aria-label="Siguiente">&#10095;</button>
+                            </div>
+                            <div class="carrusel-puntos" id="resenas-carrusel-puntos"></div>
+                            <div id="e-resena-local-form-wrap" class="oculto" style="margin-top: 1rem;"></div>
+                        </div>
 
                         <form id="form-editar-local" class="formulario" enctype="multipart/form-data">
                             <input type="hidden" id="e-idLocal">
@@ -1350,7 +1367,19 @@
                 </div>
 
                 <button type="button" id="modal-producto-comprar" class="btn-comprar-producto">Comprar</button>
+                <button type="button" id="modal-producto-resenas" class="boton-secundario">Reseñas</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-resenas-producto" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="modal-resenas-producto-cerrar" class="modal-cerrar"
+                aria-label="Cerrar">&times;</button>
+            <h3 id="mrp-nombre-producto"></h3>
+            <p class="ayuda" id="mrp-resumen"></p>
+            <div id="mrp-lista" class="tarjetas"></div>
+            <div id="mrp-form-wrap" style="margin-top: 1rem;"></div>
         </div>
     </div>
 

@@ -208,6 +208,11 @@ class PedidoController
             && $this->localController->perteneceAComerciante($pedido->getIdLocal(), $usuarioSesion["id"]);
     }
 
+    public function clienteComproProducto(int $idCliente, int $idProducto): bool
+    {
+        return $this->pedidoRepository->clienteComproProducto($idCliente, $idProducto);
+    }
+
     public function resolverCliente(array $usuarioSesion): Cliente
     {
         if ($usuarioSesion["tipo"] === Sesion::TIPO_CLIENTE) {
