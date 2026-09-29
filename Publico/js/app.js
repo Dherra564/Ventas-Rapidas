@@ -401,29 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     const inputNombreLocal = document.getElementById("l-nombreLocal");
-    const mensajeNombreLocal = document.getElementById("l-nombre-msg");
 
-    const verificarNombreLocalDebounced = debounce(async () => {
-        const nombre = inputNombreLocal.value.trim();
-        mensajeNombreLocal.textContent = "";
-        mensajeNombreLocal.className = "ayuda";
-        if (nombre.length < 3) return;
-
-        try {
-            const r = await fetch(
-                `api/verificar_nombre_local.php?nombre=${encodeURIComponent(nombre)}`,
-            );
-            const res = await r.json();
-            mensajeNombreLocal.textContent = res.disponible
-                ? "Nombre disponible"
-                : "Ya existe un local con ese nombre";
-            mensajeNombreLocal.className = res.disponible
-                ? "ayuda exito"
-                : "ayuda error";
-        } catch (e) { }
-    }, 400);
-
-    inputNombreLocal.addEventListener("input", verificarNombreLocalDebounced);
 
     activarAlertaSimilares(
         inputNombreLocal,
@@ -684,7 +662,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (res.exito) {
                 formLocal.reset();
-                mensajeNombreLocal.textContent = "";
                 if (mensajeGpsLocal) mensajeGpsLocal.textContent = "";
                 selectCantonLocal.innerHTML =
                     '<option value="">Primero elige provincia</option>';

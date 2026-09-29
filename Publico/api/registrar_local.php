@@ -20,10 +20,6 @@ class RegistrarLocalHandler
 
         $nombreLocal = $_POST['nombreLocal'] ?? '';
 
-        if ($controlador->existeNombreLocal($nombreLocal)) {
-            return ['exito' => false, 'mensaje' => 'Ya existe un local con ese nombre'];
-        }
-
         $nombreLogo = $this->subirImagenPerfil($_FILES['logo'] ?? null, 'local');
 
         $idLocal = $controlador->registrar(
