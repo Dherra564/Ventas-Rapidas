@@ -22,6 +22,7 @@ try {
     $provincia = LectorUbicaciones::provinciaPorId($ubicacion->getIdProvincia());
     $canton = LectorUbicaciones::cantonPorId($ubicacion->getIdCanton());
     $distrito = LectorUbicaciones::distritoPorId($ubicacion->getIdDistrito());
+    $idComercianteDueno = $localControlador->obtenerIdComercianteDueno($idLocal);
 
     echo json_encode([
         'exito' => true,
@@ -33,7 +34,8 @@ try {
             'descripcion' => $local->getDescripcion(),
             'telefono' => $local->getTelefono(),
             'numeroSinpe' => $local->getNumeroSinpe(),
-            'logo' => $local->getLogo()
+            'logo' => $local->getLogo(),
+            'idComerciante' => $idComercianteDueno
         ],
         'ubicacion' => [
             'idProvincia' => $ubicacion->getIdProvincia(),

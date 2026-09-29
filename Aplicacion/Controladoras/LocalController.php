@@ -114,6 +114,11 @@ class LocalController
         return $this->comercianteLocalRepository->obtenerComerciantePorLocal($idLocal) === $idComerciante;
     }
 
+    public function obtenerIdComercianteDueno(int $idLocal): ?int
+    {
+        return $this->comercianteLocalRepository->obtenerComerciantePorLocal($idLocal);
+    }
+
     public function entrarPerfil(int $idLocal, int $idComerciante): bool
     {
         $duenoReal = $this->comercianteLocalRepository->obtenerComerciantePorLocal($idLocal);
@@ -257,5 +262,7 @@ class LocalController
 
         return $this->localRepository->buscarSimilares($nombre, $idLocalExcluir);
     }
+
+
 
 }

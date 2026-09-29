@@ -417,6 +417,26 @@ class PedidoRepository
         return (int) $consulta->fetchColumn() > 0;
     }
 
+    public function clienteComproProducto(int $idCliente, int $idProducto): bool
+    {
+        $sql = "SELECT COUNT(*)
+                FROM tbpedido p
+                INNER JOIN tbpedidodetalle d ON d.tbpedidoid = p.tbpedidoid
+                WHERE p.tbclienteid = :idCliente
+                  AND d.tbproductoid = :idProducto
+                  AND p.tbpedidoestado IN ('Confirmado', 'Entregado')
+                  AND p.tbpedidoactivo = 1
+                  AND d.tbpedidodetalleactivo = 1";
+
+        $consulta = $this->conexion->prepare($sql);
+        $consulta->execute([
+            ":idCliente" => $idCliente,
+            ":idProducto" => $idProducto
+        ]);
+
+        return (int) $consulta->fetchColumn() > 0;
+    }
+
     private function mapearListado(array $filas): array
     {
         if (empty($filas)) {
