@@ -1,9 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../Aplicacion/Controladoras/LocalController.php';
-require_once __DIR__ . '/../../Aplicacion/Controladoras/ProvinciaController.php';
-require_once __DIR__ . '/../../Aplicacion/Controladoras/CantonController.php';
-require_once __DIR__ . '/../../Aplicacion/Controladoras/DistritoController.php';
+require_once __DIR__ . '/../../Aplicacion/Comun/LectorUbicaciones.php';
 
 $idLocal = (int) ($_GET['id'] ?? 0);
 
@@ -21,11 +19,11 @@ try {
 
     $tipo = $localControlador->buscarTipoLocal($local->getIdTipoLocal());
 
-    $provincia = (new ProvinciaController())->buscar($ubicacion->getIdProvincia());
-    $canton = (new CantonController())->buscar($ubicacion->getIdCanton());
-    $distrito = (new DistritoController())->buscar($ubicacion->getIdDistrito());
+    $provincia = LectorUbicaciones::provinciaPorId($ubicacion->getIdProvincia());
+    $canton = LectorUbicaciones::cantonPorId($ubicacion->getIdCanton());
+    $distrito = LectorUbicaciones::distritoPorId($ubicacion->getIdDistrito());
 
-       echo json_encode([
+    echo json_encode([
         'exito' => true,
         'local' => [
             'idLocal' => $local->getIdLocal(),
@@ -37,9 +35,9 @@ try {
             'logo' => $local->getLogo()
         ],
         'ubicacion' => [
-            'provincia' => $provincia?->getNombre(),
-            'canton' => $canton?->getNombre(),
-            'distrito' => $distrito?->getNombre(),
+            'provincia' => $provincia['nombre'] ?? null,
+            'canton' => $canton['nombre'] ?? null,
+            'distrito' => $distrito['nombre'] ?? null,
             'direccionExacta' => $ubicacion->getDireccionExacta(),
             'referencia' => $ubicacion->getReferencia(),
             'latitud' => $ubicacion->getLatitud(),
