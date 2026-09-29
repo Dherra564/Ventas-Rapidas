@@ -36,6 +36,9 @@ try {
             'logo' => $local->getLogo()
         ],
         'ubicacion' => [
+            'idProvincia' => $ubicacion->getIdProvincia(),
+            'idCanton' => $ubicacion->getIdCanton(),
+            'idDistrito' => $ubicacion->getIdDistrito(),
             'provincia' => $provincia['nombre'] ?? null,
             'canton' => $canton['nombre'] ?? null,
             'distrito' => $distrito['nombre'] ?? null,

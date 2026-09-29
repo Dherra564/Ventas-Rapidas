@@ -4,6 +4,7 @@ require_once __DIR__ . "/../Repositorios/LocalRepository.php";
 require_once __DIR__ . "/../Repositorios/TipoLocalRepository.php";
 require_once __DIR__ . "/../Repositorios/SesionActicoHistoricoRepository.php";
 require_once __DIR__ . "/../Repositorios/ComercianteLocalRepository.php";
+require_once __DIR__ . "/../Repositorios/UbicacionRepository.php";
 require_once __DIR__ . "/../Modelos/Local.php";
 require_once __DIR__ . "/../Modelos/Ubicacion.php";
 require_once __DIR__ . "/../Modelos/TipoLocal.php";
@@ -16,6 +17,7 @@ class LocalController
     private TipoLocalRepository $tipoLocalRepository;
     private SesionActicoHistoricoRepository $historialActividadRepository;
     private ComercianteLocalRepository $comercianteLocalRepository;
+    private UbicacionRepository $ubicacionRepository;
 
     public function __construct()
     {
@@ -23,6 +25,7 @@ class LocalController
         $this->tipoLocalRepository = new TipoLocalRepository();
         $this->historialActividadRepository = new SesionActicoHistoricoRepository();
         $this->comercianteLocalRepository = new ComercianteLocalRepository();
+        $this->ubicacionRepository = new UbicacionRepository();
     }
 
     public function registrar(
@@ -167,10 +170,15 @@ class LocalController
         return $this->historialActividadRepository->tieneActividadReciente($idLocal, $dias);
     }
 
-    public function editar(Local $local, ?int $idComercianteAutor = null): bool
+    public function editar(Local $local, ?int $idComercianteAutor = null, ?Ubicacion $ubicacion = null): bool
     {
         if (!$local->tieneNumeroSinpe()) {
             throw new InvalidArgumentException("El número SINPE Móvil es obligatorio para recibir pagos");
+        }
+
+        if ($ubicacion !== null) {
+            $ubicacion->setIdLocal($local->getIdLocal());
+            $this->ubicacionRepository->actualizar($ubicacion);
         }
 
         return $this->localRepository->actualizar($local, $idComercianteAutor);

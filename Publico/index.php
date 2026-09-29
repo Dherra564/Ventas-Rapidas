@@ -1286,6 +1286,33 @@
                 <label for="mel-numeroSinpe">Número SINPE Móvil</label>
                 <input type="text" id="mel-numeroSinpe" inputmode="numeric" placeholder="8888-8888" maxlength="9" required>
 
+                <label for="mel-provincia">Provincia</label>
+                <select id="mel-provincia" required>
+                    <option value="">Seleccione...</option>
+                </select>
+
+                <label for="mel-canton">Cantón</label>
+                <select id="mel-canton" required disabled>
+                    <option value="">Primero elige provincia</option>
+                </select>
+
+                <label for="mel-distrito">Distrito</label>
+                <select id="mel-distrito" required disabled>
+                    <option value="">Primero elige cantón</option>
+                </select>
+
+                <label for="mel-direccion">Dirección exacta</label>
+                <input type="text" id="mel-direccion" required>
+
+                <label for="mel-referencia">Punto de referencia</label>
+                <input type="text" id="mel-referencia">
+
+                <button type="button" id="btn-gps-editar-local" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                <span class="ayuda" id="mel-gps-msg">También puedes tocar el mapa o arrastrar el pin.</span>
+                <div id="mel-mapa" class="mapa-registro"></div>
+                <input type="hidden" id="mel-latitud">
+                <input type="hidden" id="mel-longitud">
+
                 <label for="mel-logo">Nuevo logo (opcional, deja vacío para mantener el actual)</label>
                 <input type="file" id="mel-logo" accept="image/png, image/jpeg, image/webp">
 
