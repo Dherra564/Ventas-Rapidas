@@ -421,7 +421,8 @@
                         <label for="cl-referencia">Punto de referencia</label>
                         <input type="text" id="cl-referencia">
 
-                        <button type="button" id="btn-gps-cliente" class="boton-secundario">📍 Usar mi ubicación GPS</button>
+                        <button type="button" id="btn-gps-cliente" class="boton-secundario">📍 Usar mi ubicación
+                            GPS</button>
                         <span class="ayuda" id="cl-gps-msg"></span>
 
                         <label class="ayuda" style="margin-top: 0.6rem;">O elige tu ubicación en el mapa</label>
@@ -529,16 +530,8 @@
                     </form>
 
                     <div class="bloque-separado">
-                        <h3>Cambiar contraseña</h3>
-                        <form id="form-mi-cuenta-cliente-password" class="formulario">
-                            <label for="mc-password-actual">Contraseña actual</label>
-                            <input type="password" id="mc-password-actual" required>
-
-                            <label for="mc-password-nueva">Nueva contraseña</label>
-                            <input type="password" id="mc-password-nueva" required>
-
-                            <button type="submit">Cambiar Contraseña</button>
-                        </form>
+                        <button type="button" id="mc-btn-abrir-password" class="boton-secundario">🔒 Cambiar
+                            contraseña</button>
                     </div>
 
                     <div class="campo-lectura bloque-separado">
@@ -586,16 +579,8 @@
                     </form>
 
                     <div class="bloque-separado">
-                        <h3>Cambiar contraseña</h3>
-                        <form id="form-mi-cuenta-comerciante-password" class="formulario">
-                            <label for="mco-password-actual">Contraseña actual</label>
-                            <input type="password" id="mco-password-actual" required>
-
-                            <label for="mco-password-nueva">Nueva contraseña</label>
-                            <input type="password" id="mco-password-nueva" required>
-
-                            <button type="submit">Cambiar Contraseña</button>
-                        </form>
+                        <button type="button" id="mco-btn-abrir-password" class="boton-secundario">🔒 Cambiar
+                            contraseña</button>
                     </div>
 
                     <button type="button" class="boton-secundario bloque-separado" id="mco-btn-ir-mis-locales">Ver mis
@@ -1177,6 +1162,36 @@
             </footer>
         </div> <!-- cierra .area-principal -->
     </div> <!-- cierra .app-shell -->
+
+    <div id="modal-cambiar-password" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <button type="button" id="pw-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
+
+            <div class="modal-producto-info">
+                <h3>Cambiar contraseña</h3>
+
+                <form id="form-cambiar-password" class="formulario" novalidate>
+                    <label for="pw-actual">Contraseña actual</label>
+                    <input type="password" id="pw-actual" autocomplete="current-password">
+                    <span class="ayuda" id="pw-actual-msg"></span>
+
+                    <label for="pw-nueva">Nueva contraseña</label>
+                    <input type="password" id="pw-nueva" autocomplete="new-password">
+                    <span class="ayuda" id="pw-nueva-msg"></span>
+
+                    <label for="pw-confirmar">Confirmar nueva contraseña</label>
+                    <input type="password" id="pw-confirmar" autocomplete="new-password">
+                    <span class="ayuda" id="pw-confirmar-msg"></span>
+
+                    <span class="ayuda" id="pw-error"></span>
+
+                    <button type="submit">Cambiar Contraseña</button>
+                </form>
+
+                <button type="button" id="pw-cancelar" class="boton-secundario">Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <div id="modal-permiso-ubicacion" class="modal-overlay oculto">
         <div class="modal-contenido modal-permiso-contenido">

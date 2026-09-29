@@ -4261,34 +4261,152 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+    // ---------- Modal: cambiar contraseña (cliente y comerciante) ----------
+    const modalPassword = document.getElementById("modal-cambiar-password");
+    const formPassword = document.getElementById("form-cambiar-password");
+    const inputPwActual = document.getElementById("pw-actual");
+    const inputPwNueva = document.getElementById("pw-nueva");
+    const inputPwConfirmar = document.getElementById("pw-confirmar");
+    const msgPwActual = document.getElementById("pw-actual-msg");
+    const msgPwNueva = document.getElementById("pw-nueva-msg");
+    const msgPwConfirmar = document.getElementById("pw-confirmar-msg");
+    const msgPwError = document.getElementById("pw-error");
+    let contextoPassword = null; // { idInputId, tipoUsuario }
+
+    // Formato de la nueva contraseña (reutiliza la misma validación del registro)
+    const validarPwNueva = activarValidacionPassword(inputPwNueva, msgPwNueva);
+
+    function validarPwActual() {
+        if (inputPwActual.value === "") {
+            msgPwActual.textContent = "Escribe tu contraseña actual";
+            msgPwActual.className = "ayuda error";
+            return false;
+        }
+        msgPwActual.textContent = "";
+        msgPwActual.className = "ayuda";
+        return true;
+    }
+
+    function validarPwConfirmar() {
+        if (inputPwConfirmar.value === "") {
+            msgPwConfirmar.textContent = "Confirma tu nueva contraseña";
+            msgPwConfirmar.className = "ayuda error";
+            return false;
+        }
+        if (inputPwConfirmar.value !== inputPwNueva.value) {
+            msgPwConfirmar.textContent = "Las contraseñas no coinciden";
+            msgPwConfirmar.className = "ayuda error";
+            return false;
+        }
+        msgPwConfirmar.textContent = "Las contraseñas coinciden";
+        msgPwConfirmar.className = "ayuda exito";
+        return true;
+    }
+
+    inputPwActual.addEventListener("input", () => {
+        if (inputPwActual.value !== "") validarPwActual();
+        msgPwError.textContent = "";
+    });
+    inputPwConfirmar.addEventListener("input", validarPwConfirmar);
+    inputPwConfirmar.addEventListener("blur", validarPwConfirmar);
+    inputPwNueva.addEventListener("input", () => {
+        if (inputPwConfirmar.value !== "") validarPwConfirmar();
+    });
+
+    function limpiarModalPassword() {
+        formPassword.reset();
+        msgPwActual.textContent = "";
+        msgPwActual.className = "ayuda";
+        msgPwNueva.textContent = TEXTO_AYUDA_PASSWORD;
+        msgPwNueva.className = "ayuda";
+        msgPwConfirmar.textContent = "";
+        msgPwConfirmar.className = "ayuda";
+        msgPwError.textContent = "";
+        msgPwError.className = "ayuda";
+    }
+
+    function abrirModalPassword(idInputId, tipoUsuario) {
+        contextoPassword = { idInputId, tipoUsuario };
+        limpiarModalPassword();
+        modalPassword.classList.remove("oculto");
+        setTimeout(() => inputPwActual.focus(), 50);
+    }
+
+    function cerrarModalPassword() {
+        modalPassword.classList.add("oculto");
+        limpiarModalPassword();
+        contextoPassword = null;
+    }
+
     document
-        .getElementById("form-mi-cuenta-cliente-password")
-        ?.addEventListener("submit", async (evento) => {
-            evento.preventDefault();
-
-            const idUsuario = document.getElementById("mc-idCliente").value;
-            const passwordActual =
-                document.getElementById("mc-password-actual").value;
-            const passwordNueva = document.getElementById("mc-password-nueva").value;
-
-            try {
-                const r = await fetch("api/cambiar_password_usuario.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        idUsuario,
-                        tipoUsuario: "Cliente",
-                        passwordActual,
-                        passwordNueva,
-                    }),
-                });
-                const res = await r.json();
-                mostrarMensaje(res.mensaje, res.exito ? "exito" : "error");
-                if (res.exito) evento.target.reset();
-            } catch (e) {
-                mostrarMensaje("Error de conexión con el servidor", "error");
-            }
+        .getElementById("mc-btn-abrir-password")
+        ?.addEventListener("click", () => {
+            abrirModalPassword("mc-idCliente", "Cliente");
         });
+    document
+        .getElementById("mco-btn-abrir-password")
+        ?.addEventListener("click", () => {
+            abrirModalPassword("mco-idComerciante", "Comerciante");
+        });
+    document
+        .getElementById("pw-cerrar")
+        ?.addEventListener("click", cerrarModalPassword);
+    document
+        .getElementById("pw-cancelar")
+        ?.addEventListener("click", cerrarModalPassword);
+    modalPassword?.addEventListener("click", (evento) => {
+        if (evento.target === modalPassword) cerrarModalPassword();
+    });
+    document.addEventListener("keydown", (evento) => {
+        if (
+            evento.key === "Escape" &&
+            modalPassword &&
+            !modalPassword.classList.contains("oculto")
+        ) {
+            cerrarModalPassword();
+        }
+    });
+
+    formPassword?.addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+        if (!contextoPassword) return;
+
+        const camposValidos = [
+            validarPwActual(),
+            validarPwNueva(),
+            validarPwConfirmar(),
+        ];
+        if (camposValidos.includes(false)) return;
+
+        const idUsuario = document.getElementById(contextoPassword.idInputId).value;
+
+        try {
+            const r = await fetch("api/cambiar_password_usuario.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    idUsuario,
+                    tipoUsuario: contextoPassword.tipoUsuario,
+                    passwordActual: inputPwActual.value,
+                    passwordNueva: inputPwNueva.value,
+                }),
+            });
+            const res = await r.json();
+
+            if (!res.exito) {
+                // Errores del servidor (p. ej. "La contraseña actual no es correcta") dentro del modal
+                msgPwError.textContent = res.mensaje;
+                msgPwError.className = "ayuda error";
+                return;
+            }
+
+            cerrarModalPassword();
+            mostrarMensaje(res.mensaje, "exito");
+        } catch (e) {
+            msgPwError.textContent = "Error de conexión con el servidor";
+            msgPwError.className = "ayuda error";
+        }
+    });
 
     document
         .getElementById("mc-btn-seguir-local")
