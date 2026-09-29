@@ -529,6 +529,34 @@
                         <button type="submit">Guardar Cambios</button>
                     </form>
 
+                     <div class="bloque-separado">
+                        <h3>Mi ubicación</h3>
+                        <form id="form-mi-cuenta-cliente-ubicacion" class="formulario">
+                            <label for="mc-ubicacion-provincia">Provincia</label>
+                            <select id="mc-ubicacion-provincia" required>
+                            <option value="">Seleccione...</option>
+                            </select>
+
+                            <label for="mc-ubicacion-canton">Cantón</label>
+                            <select id="mc-ubicacion-canton" required disabled>
+                            <option value="">Primero elige provincia</option>
+                            </select>
+
+                            <label for="mc-ubicacion-distrito">Distrito</label>
+                            <select id="mc-ubicacion-distrito" required disabled>
+                            <option value="">Primero elige cantón</option>
+                            </select>
+
+                            <label for="mc-ubicacion-direccion">Dirección exacta</label>
+                            <input type="text" id="mc-ubicacion-direccion" required>
+
+                            <label for="mc-ubicacion-referencia">Punto de referencia</label>
+                            <input type="text" id="mc-ubicacion-referencia">
+
+                            <button type="submit">Guardar ubicación</button>
+                        </form>
+                    </div>
+
                     <div class="bloque-separado">
                         <button type="button" id="mc-btn-abrir-password" class="boton-secundario">🔒 Cambiar
                             contraseña</button>
@@ -577,6 +605,34 @@
 
                         <button type="submit">Guardar Cambios</button>
                     </form>
+
+                    <div class="bloque-separado">
+                        <h3>Mi ubicación</h3>
+                        <form id="form-mi-cuenta-comerciante-ubicacion" class="formulario">
+                            <label for="mco-ubicacion-provincia">Provincia</label>
+                            <select id="mco-ubicacion-provincia" required>
+                            <option value="">Seleccione...</option>
+                            </select>
+
+                            <label for="mco-ubicacion-canton">Cantón</label>
+                            <select id="mco-ubicacion-canton" required disabled>
+                            <option value="">Primero elige provincia</option>
+                            </select>
+
+                            <label for="mco-ubicacion-distrito">Distrito</label>
+                            <select id="mco-ubicacion-distrito" required disabled>
+                            <option value="">Primero elige cantón</option>
+                            </select>
+
+                            <label for="mco-ubicacion-direccion">Dirección exacta</label>
+                            <input type="text" id="mco-ubicacion-direccion" required>
+
+                            <label for="mco-ubicacion-referencia">Punto de referencia</label>
+                            <input type="text" id="mco-ubicacion-referencia">
+
+                            <button type="submit">Guardar ubicación</button>
+                        </form>
+                    </div>
 
                     <div class="bloque-separado">
                         <button type="button" id="mco-btn-abrir-password" class="boton-secundario">🔒 Cambiar

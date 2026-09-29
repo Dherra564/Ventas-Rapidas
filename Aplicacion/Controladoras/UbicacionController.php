@@ -3,6 +3,7 @@
 require_once __DIR__ . "/../Repositorios/UbicacionRepository.php";
 require_once __DIR__ . "/../Repositorios/UbicacionHistorialRepository.php";
 require_once __DIR__ . "/../Modelos/UbicacionHistorial.php";
+require_once __DIR__ . "/../Modelos/Ubicacion.php";
 
 class UbicacionController
 {
@@ -56,5 +57,37 @@ class UbicacionController
     public function listarHistorialPorUsuario(int $idUsuario, string $tipoUsuario): array
     {
         return $this->historialUbicacionRepository->obtenerPorUsuario($idUsuario, $tipoUsuario);
+    }
+
+    public function buscarPorCliente(int $idCliente): ?Ubicacion
+    {
+        return $this->ubicacionRepository->obtenerPorCliente($idCliente);
+    }
+
+    public function actualizarUbicacionCliente(
+        int $idCliente,
+        int $idProvincia,
+        int $idCanton,
+        int $idDistrito,
+        string $direccionExacta,
+        ?string $referencia
+    ): bool {
+        $actual = $this->ubicacionRepository->obtenerPorCliente($idCliente);
+
+        $ubicacion = new Ubicacion(
+            null,
+            $idProvincia,
+            $idCanton,
+            $idDistrito,
+            $direccionExacta,
+            $referencia,
+            $idCliente,
+            true,
+            $actual?->getIdUbicacion() ?? 0,
+            $actual?->getLatitud(),
+            $actual?->getLongitud()
+        );
+
+        return $this->ubicacionRepository->actualizar($ubicacion);
     }
 }
