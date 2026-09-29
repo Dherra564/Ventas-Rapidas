@@ -400,6 +400,15 @@ document.addEventListener("DOMContentLoaded", () => {
         selectDistritoCliente,
     );
 
+    const selectProvinciaEditarLocal = document.getElementById("mel-provincia");
+    const selectCantonEditarLocal = document.getElementById("mel-canton");
+    const selectDistritoEditarLocal = document.getElementById("mel-distrito");
+    activarCascadaUbicacion(
+        selectProvinciaEditarLocal,
+        selectCantonEditarLocal,
+        selectDistritoEditarLocal,
+    );
+
     const inputNombreLocal = document.getElementById("l-nombreLocal");
 
 
@@ -5342,6 +5351,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // ------------------------------------------------------------
+    // Modal: Editar Mi Local
+    // ------------------------------------------------------------
     async function abrirModalEditarLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
@@ -5363,11 +5375,177 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? formatearNumeroOchoDigitos(local.numeroSinpe)
                 : "";
 
+            const { ubicacion } = res;
+            document.getElementById("mel-direccion").value = ubicacion.direccionExacta ?? "";
+            document.getElementById("mel-referencia").value = ubicacion.referencia ?? "";
+            document.getElementById("mel-latitud").value = ubicacion.latitud ?? "";
+            document.getElementById("mel-longitud").value = ubicacion.longitud ?? "";
+            document.getElementById("mel-gps-msg").textContent =
+                "También puedes tocar el mapa o arrastrar el pin.";
+
+            await seleccionarUbicacionEnSelects(
+                selectProvinciaEditarLocal,
+                selectCantonEditarLocal,
+                selectDistritoEditarLocal,
+                ubicacion.idProvincia,
+                ubicacion.idCanton,
+                ubicacion.idDistrito,
+            );
+
             document.getElementById("modal-editar-local").classList.remove("oculto");
+            mostrarMapaEditarLocal(ubicacion.latitud, ubicacion.longitud);
         } catch (e) {
             mostrarMensaje("Error al cargar el local", "error");
         }
     }
+
+    async function llenarSelectUbicacion(select, url, lista, campoId, idElegido) {
+        select.innerHTML = '<option value="">Cargando...</option>';
+        select.disabled = true;
+
+        const r = await fetch(url);
+        const res = await r.json();
+
+        select.innerHTML = '<option value="">Seleccione...</option>';
+        (res[lista] || []).forEach((item) => {
+            const opcion = document.createElement("option");
+            opcion.value = item[campoId];
+            opcion.textContent = item.nombre;
+            select.appendChild(opcion);
+        });
+        select.disabled = false;
+        select.value = idElegido ? String(idElegido) : "";
+    }
+
+    async function seleccionarUbicacionEnSelects(
+        selectProvincia,
+        selectCanton,
+        selectDistrito,
+        idProvincia,
+        idCanton,
+        idDistrito,
+    ) {
+        try {
+            if (selectProvincia.options.length <= 1) {
+                await llenarSelectUbicacion(
+                    selectProvincia,
+                    "api/listar_provincias.php",
+                    "provincias",
+                    "idProvincia",
+                    idProvincia,
+                );
+            } else {
+                selectProvincia.value = idProvincia ? String(idProvincia) : "";
+            }
+
+            if (!idProvincia) return;
+
+            await llenarSelectUbicacion(
+                selectCanton,
+                `api/listar_cantones.php?idProvincia=${idProvincia}`,
+                "cantones",
+                "idCanton",
+                idCanton,
+            );
+
+            if (!idCanton) return;
+
+            await llenarSelectUbicacion(
+                selectDistrito,
+                `api/listar_distritos.php?idCanton=${idCanton}`,
+                "distritos",
+                "idDistrito",
+                idDistrito,
+            );
+        } catch (e) { }
+    }
+
+    let mapaEditarLocal = null;
+    let marcadorEditarLocal = null;
+
+    async function aplicarUbicacionEditarLocal(lat, lng, origen) {
+        document.getElementById("mel-latitud").value = lat;
+        document.getElementById("mel-longitud").value = lng;
+
+        const mensaje = document.getElementById("mel-gps-msg");
+        const coordenadas = `(${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+        mensaje.textContent = `${origen} ${coordenadas}. Buscando provincia, cantón y distrito...`;
+
+        const completado = await autocompletarUbicacionPorGPS(
+            lat,
+            lng,
+            selectProvinciaEditarLocal,
+            selectCantonEditarLocal,
+            selectDistritoEditarLocal,
+        );
+
+        mensaje.textContent = completado
+            ? `${origen} ${coordenadas}. Provincia, cantón y distrito actualizados — revísalos antes de guardar.`
+            : `${origen} ${coordenadas}. No se pudo identificar provincia/cantón/distrito automáticamente, selecciónalos a mano.`;
+    }
+
+    function mostrarMapaEditarLocal(latitud, longitud) {
+        if (typeof L === "undefined" || !document.getElementById("mel-mapa")) return;
+
+        const tieneCoordenadas = latitud !== null && latitud !== undefined && longitud !== null && longitud !== undefined;
+        const centro = tieneCoordenadas ? [latitud, longitud] : [9.9281, -84.0907];
+        const zoom = tieneCoordenadas ? 16 : 8;
+
+        if (!mapaEditarLocal) {
+            mapaEditarLocal = L.map("mel-mapa").setView(centro, zoom);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19,
+            }).addTo(mapaEditarLocal);
+
+            marcadorEditarLocal = L.marker(centro, {
+                draggable: true,
+                icon: L.divIcon({
+                    className: "pin-rapiventas",
+                    html: '<div class="pin-rapiventas-punta"></div>',
+                    iconSize: [30, 42],
+                    iconAnchor: [15, 42],
+                    popupAnchor: [0, -42],
+                }),
+            }).addTo(mapaEditarLocal);
+
+            marcadorEditarLocal.on("dragend", () => {
+                const pos = marcadorEditarLocal.getLatLng();
+                aplicarUbicacionEditarLocal(pos.lat, pos.lng, "Ubicación seleccionada");
+            });
+
+            mapaEditarLocal.on("click", (evento) => {
+                const { lat, lng } = evento.latlng;
+                marcadorEditarLocal.setLatLng([lat, lng]);
+                aplicarUbicacionEditarLocal(lat, lng, "Ubicación seleccionada");
+            });
+        } else {
+            mapaEditarLocal.setView(centro, zoom);
+            marcadorEditarLocal.setLatLng(centro);
+        }
+
+        setTimeout(() => mapaEditarLocal?.invalidateSize(), 150);
+    }
+
+    document
+        .getElementById("btn-gps-editar-local")
+        ?.addEventListener("click", async () => {
+            const mensaje = document.getElementById("mel-gps-msg");
+            mensaje.textContent = "Obteniendo ubicación...";
+            try {
+                const coords = await obtenerCoordenadasGPS();
+                if (mapaEditarLocal && marcadorEditarLocal) {
+                    mapaEditarLocal.setView([coords.lat, coords.lng], 16);
+                    marcadorEditarLocal.setLatLng([coords.lat, coords.lng]);
+                }
+                await aplicarUbicacionEditarLocal(coords.lat, coords.lng, "Ubicación capturada");
+            } catch (e) {
+                mensaje.textContent =
+                    "No se pudo obtener tu ubicación. Puedes tocar el mapa o elegir los datos a mano.";
+            }
+        });
 
     function cerrarModalEditarLocal() {
         document.getElementById("modal-editar-local").classList.add("oculto");
@@ -5415,6 +5593,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
                 datos.append("telefono", document.getElementById("mel-telefono").value);
                 datos.append("numeroSinpe", document.getElementById("mel-numeroSinpe").value);
+                datos.append("idProvincia", selectProvinciaEditarLocal.value);
+                datos.append("idCanton", selectCantonEditarLocal.value);
+                datos.append("idDistrito", selectDistritoEditarLocal.value);
+                datos.append("direccionExacta", document.getElementById("mel-direccion").value);
+                datos.append("referencia", document.getElementById("mel-referencia").value);
+                datos.append("latitud", document.getElementById("mel-latitud").value);
+                datos.append("longitud", document.getElementById("mel-longitud").value);
 
                 const archivoLogo = document.getElementById("mel-logo").files[0];
                 if (archivoLogo) datos.append("logo", archivoLogo);
@@ -5441,6 +5626,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+    // ------------------------------------------------------------
+    // Modal: Editar Mi Producto
+    // ------------------------------------------------------------
     async function abrirModalEditarMiProducto(idProducto) {
         try {
             const r = await fetch(`api/buscar_producto.php?id=${idProducto}`);
@@ -5552,6 +5740,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+    // ============================================================
+    // Módulo de compras: ventana para elegir cantidad y generar pedido
+    // ============================================================
     const CANTIDAD_MAXIMA_POR_PRODUCTO = 99;
 
     let compraActual = null;
