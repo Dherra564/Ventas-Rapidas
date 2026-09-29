@@ -1284,7 +1284,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <p>${precioHtml}</p>
                         <p>${producto.agotado ? '<span class="ayuda error">Agotado</span>' : `Disponibles: ${producto.cantidadDisponible}`}</p>
                         ${botonAccion}
-                        <button type="button" class="boton-secundario btn-comparar-producto">Comparar</button>
                     `;
                     contenedorProductos.appendChild(tarjeta);
 
@@ -1301,12 +1300,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             );
                         });
                     }
-
-                    tarjeta
-                        .querySelector(".btn-comparar-producto")
-                        ?.addEventListener("click", () => {
-                            mostrarMensaje("Pronto podrás comparar productos 🔍", "exito");
-                        });
 
                     const btnLogin = tarjeta.querySelector(".btn-login-para-comprar");
                     if (btnLogin) {
@@ -5349,9 +5342,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // ------------------------------------------------------------
-    // Modal: Editar Mi Local
-    // ------------------------------------------------------------
     async function abrirModalEditarLocal(idLocal) {
         try {
             const r = await fetch(`api/buscar_local.php?id=${idLocal}`);
@@ -5451,9 +5441,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-    // ------------------------------------------------------------
-    // Modal: Editar Mi Producto
-    // ------------------------------------------------------------
     async function abrirModalEditarMiProducto(idProducto) {
         try {
             const r = await fetch(`api/buscar_producto.php?id=${idProducto}`);
@@ -5565,9 +5552,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-    // ============================================================
-    // Módulo de compras: ventana para elegir cantidad y generar pedido
-    // ============================================================
     const CANTIDAD_MAXIMA_POR_PRODUCTO = 99;
 
     let compraActual = null;
