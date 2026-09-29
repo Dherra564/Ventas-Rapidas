@@ -47,6 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarMisProductos();
             }
 
+            if (boton.dataset.vista === 'vista-carrito') {
+                cargarCarritos();
+            }
+
             if (boton.dataset.vista === 'vista-mis-pedidos') {
                 cargarMisPedidos();
             }
@@ -2401,6 +2405,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function actualizarIndicadorSesion(usuario) {
         usuarioSesionActual = usuario;
+        actualizarContadorCarrito();
 
         const indicador = document.getElementById('sesion-indicador');
         const texto = document.getElementById('sesion-texto');
@@ -4530,7 +4535,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const botonConfirmar = document.getElementById('compra-confirmar');
         botonConfirmar.disabled = false;
-        botonConfirmar.textContent = 'Confirmar pedido';
+        botonConfirmar.textContent = 'Comprar ahora';
+
+        const botonAgregarCarrito = document.getElementById('compra-agregar-carrito');
+        if (botonAgregarCarrito) botonAgregarCarrito.disabled = false;
 
         actualizarTotalCompra();
 
@@ -4633,7 +4641,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMensaje('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.', 'error');
         } finally {
             botonConfirmar.disabled = false;
-            botonConfirmar.textContent = 'Confirmar pedido';
+            botonConfirmar.textContent = 'Comprar ahora';
         }
     });
 
@@ -4986,6 +4994,352 @@ document.addEventListener('DOMContentLoaded', () => {
                 await enviarAccionPedido(pedido.idPedido, 'entregar', { retiroCodigo: resultado.value.trim() });
             }
         }
+    }
+
+    let carritosCache = [];
+    let carritoOcupado = false;
+
+    async function enviarAccionCarrito(url, datos) {
+        const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+        return r.json();
+    }
+
+    function mostrarContadorCarrito(total) {
+        const contador = document.getElementById('carrito-contador');
+        if (!contador) return;
+
+        const cantidad = Number(total) || 0;
+        contador.textContent = cantidad > 99 ? '99+' : String(cantidad);
+        contador.classList.toggle('oculto', cantidad === 0);
+    }
+
+    async function actualizarContadorCarrito(total) {
+        if (total !== undefined) {
+            mostrarContadorCarrito(total);
+            return;
+        }
+
+        if (!usuarioSesionActual || usuarioSesionActual.tipo === 'SuperAdmin') {
+            mostrarContadorCarrito(0);
+            return;
+        }
+
+        try {
+            const r = await fetch('api/listar_carritos.php');
+            const res = await r.json();
+            mostrarContadorCarrito(res.exito ? res.totalProductos : 0);
+        } catch (e) {
+            mostrarContadorCarrito(0);
+        }
+    }
+
+    document.getElementById('compra-agregar-carrito')?.addEventListener('click', async () => {
+        if (!compraActual) return;
+
+        const boton = document.getElementById('compra-agregar-carrito');
+        const cantidad = leerCantidadCompra();
+        const idLocal = compraActual.idLocal;
+        const idProducto = compraActual.producto.idProducto;
+
+        boton.disabled = true;
+
+        try {
+            const res = await enviarAccionCarrito('api/agregar_al_carrito.php', { idLocal, idProducto, cantidad });
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo agregar al carrito', 'error');
+                return;
+            }
+
+            cerrarModalCompra();
+            mostrarContadorCarrito(res.totalProductos);
+
+            const resultado = await Swal.fire({
+                icon: 'success',
+                title: 'Agregado al carrito',
+                text: `${cantidad} × ${res.productoNombre}. En tu carrito de ${res.localNombre} ahora tienes ${res.cantidadEnCarrito} de este producto.`,
+                showCancelButton: true,
+                confirmButtonText: 'Ver mi carrito',
+                cancelButtonText: 'Seguir comprando',
+                confirmButtonColor: '#8E7CC3',
+                cancelButtonColor: '#6B7280'
+            });
+
+            if (resultado.isConfirmed) {
+                cerrarModalLocal();
+                irAVista('vista-carrito');
+            }
+        } catch (e) {
+            mostrarMensaje('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.', 'error');
+        } finally {
+            boton.disabled = false;
+        }
+    });
+
+    async function cargarCarritos() {
+        const contenedor = document.getElementById('lista-carritos');
+        if (!contenedor) return;
+
+        if (carritosCache.length === 0) {
+            contenedor.innerHTML = '<p class="ayuda">Cargando tu carrito...</p>';
+        }
+
+        try {
+            const r = await fetch('api/listar_carritos.php');
+            const res = await r.json();
+
+            if (!res.exito) {
+                contenedor.innerHTML = `<p class="ayuda error">${escaparHtml(res.mensaje || 'No se pudo cargar tu carrito')}</p>`;
+                return;
+            }
+
+            carritosCache = res.carritos;
+            mostrarContadorCarrito(res.totalProductos);
+            renderizarCarritos();
+        } catch (e) {
+            contenedor.innerHTML = '<p class="ayuda error">Error de conexión al cargar tu carrito.</p>';
+        }
+    }
+
+    function renderizarCarritos() {
+        const contenedor = document.getElementById('lista-carritos');
+        if (!contenedor) return;
+
+        if (carritosCache.length === 0) {
+            contenedor.innerHTML = `
+                <div class="estado-vacio">
+                    <i data-lucide="shopping-cart"></i>
+                    <p>Tu carrito está vacío. Entra a un local y agrega los productos que quieras comprar.</p>
+                </div>`;
+        } else {
+            contenedor.innerHTML = '';
+            carritosCache.forEach(carrito => contenedor.appendChild(crearTarjetaCarrito(carrito)));
+        }
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function crearTarjetaCarrito(carrito) {
+        const tarjeta = document.createElement('article');
+        tarjeta.className = 'pedido-tarjeta carrito-tarjeta';
+
+        const itemsHtml = carrito.items.map(item => {
+            const noDisponible = item.estado === 'no_disponible' || item.estado === 'agotado';
+
+            const imagenHtml = item.imagen
+                ? `<img src="imagenes/${escaparHtml(item.imagen)}" alt="${escaparHtml(item.nombre)}" class="carrito-item-imagen">`
+                : '<div class="carrito-item-imagen carrito-item-sin-imagen"><i data-lucide="package"></i></div>';
+
+            const precioHtml = noDisponible
+                ? ''
+                : item.porcentajeDescuento
+                    ? `<s>${formatearColones(item.precioOriginal)}</s> ${formatearColones(item.precioUnitario)} c/u <span class="etiqueta-tipo">-${item.porcentajeDescuento}%</span>`
+                    : `${formatearColones(item.precioUnitario)} c/u`;
+
+            const controlHtml = noDisponible
+                ? '<span class="carrito-item-cantidad-fija">—</span>'
+                : `
+                    <div class="compra-cantidad-control carrito-cantidad-control">
+                        <button type="button" class="compra-cantidad-boton" data-accion="menos" aria-label="Menos" ${item.cantidad <= 1 ? 'disabled' : ''}>
+                            <i data-lucide="minus"></i>
+                        </button>
+                        <input type="number" class="compra-cantidad-input" data-accion="cantidad" min="1" max="${item.maximo}" step="1" value="${item.cantidad}">
+                        <button type="button" class="compra-cantidad-boton" data-accion="mas" aria-label="Más" ${item.cantidad >= item.maximo ? 'disabled' : ''}>
+                            <i data-lucide="plus"></i>
+                        </button>
+                    </div>`;
+
+            return `
+                <li class="carrito-item ${item.estado !== 'ok' ? 'carrito-item-con-aviso' : ''}" data-id-producto="${item.idProducto}">
+                    ${imagenHtml}
+                    <div class="carrito-item-info">
+                        <strong>${escaparHtml(item.nombre)}</strong>
+                        <span class="carrito-item-precio">${precioHtml}</span>
+                        ${item.aviso ? `<span class="carrito-item-aviso">${escaparHtml(item.aviso)}</span>` : ''}
+                    </div>
+                    ${controlHtml}
+                    <span class="carrito-item-subtotal">${noDisponible ? '' : formatearColones(item.subtotal)}</span>
+                    <button type="button" class="carrito-item-quitar" data-accion="quitar" aria-label="Quitar del carrito" title="Quitar del carrito">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </li>`;
+        }).join('');
+
+        let avisoHtml = '';
+        if (!carrito.localDisponible) {
+            avisoHtml = '<p class="pedido-motivo">Este local no está recibiendo pedidos en este momento.</p>';
+        } else if (!carrito.puedeConfirmar) {
+            avisoHtml = '<p class="pedido-aviso">Revisa los productos marcados antes de generar el pedido.</p>';
+        } else {
+            avisoHtml = '<p class="ayuda carrito-nota">Al generar el pedido, el local debe confirmarlo. Luego verás tu código de retiro en "Mis Pedidos".</p>';
+        }
+
+        const articulos = carrito.cantidadArticulos === 1 ? '1 artículo' : `${carrito.cantidadArticulos} artículos`;
+
+        tarjeta.innerHTML = `
+            <div class="pedido-encabezado">
+                <div>
+                    <span class="pedido-numero carrito-local-nombre"><i data-lucide="store"></i> ${escaparHtml(carrito.localNombre)}</span>
+                    <span class="pedido-fecha">${articulos}</span>
+                </div>
+                <button type="button" class="pedido-boton pedido-boton-secundario" data-accion="ver-local">
+                    <i data-lucide="plus"></i> Agregar más
+                </button>
+            </div>
+            <ul class="carrito-items">${itemsHtml}</ul>
+            <div class="pedido-total">
+                <span>Total</span>
+                <strong>${formatearColones(carrito.total)}</strong>
+            </div>
+            ${avisoHtml}
+            <div class="pedido-acciones">
+                <button type="button" class="pedido-boton pedido-boton-principal" data-accion="confirmar" ${carrito.puedeConfirmar ? '' : 'disabled'}>
+                    <i data-lucide="check"></i> Comprar ahora
+                </button>
+                <button type="button" class="pedido-boton pedido-boton-peligro" data-accion="vaciar">Vaciar carrito</button>
+            </div>
+        `;
+
+        tarjeta.querySelectorAll('.carrito-item').forEach(fila => {
+            const idProducto = Number(fila.dataset.idProducto);
+            const item = carrito.items.find(i => i.idProducto === idProducto);
+
+            fila.querySelector('[data-accion="menos"]')?.addEventListener('click', () =>
+                cambiarCantidadCarrito(carrito, item, item.cantidad - 1));
+
+            fila.querySelector('[data-accion="mas"]')?.addEventListener('click', () =>
+                cambiarCantidadCarrito(carrito, item, item.cantidad + 1));
+
+            fila.querySelector('[data-accion="cantidad"]')?.addEventListener('change', (evento) => {
+                let cantidad = parseInt(evento.target.value, 10);
+                if (!Number.isFinite(cantidad) || cantidad < 1) cantidad = 1;
+                if (cantidad > item.maximo) cantidad = item.maximo;
+                cambiarCantidadCarrito(carrito, item, cantidad);
+            });
+
+            fila.querySelector('[data-accion="quitar"]')?.addEventListener('click', () =>
+                quitarDelCarrito(carrito, item));
+        });
+
+        tarjeta.querySelector('[data-accion="ver-local"]')?.addEventListener('click', () =>
+            abrirModalLocal(carrito.idLocal));
+        tarjeta.querySelector('[data-accion="confirmar"]')?.addEventListener('click', () =>
+            confirmarCarrito(carrito));
+        tarjeta.querySelector('[data-accion="vaciar"]')?.addEventListener('click', () =>
+            vaciarCarrito(carrito));
+
+        return tarjeta;
+    }
+
+    async function ejecutarAccionCarrito(accion) {
+        if (carritoOcupado) return;
+        carritoOcupado = true;
+        document.getElementById('lista-carritos')?.classList.add('carrito-ocupado');
+
+        try {
+            await accion();
+        } catch (e) {
+            mostrarMensaje('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.', 'error');
+        } finally {
+            carritoOcupado = false;
+            document.getElementById('lista-carritos')?.classList.remove('carrito-ocupado');
+        }
+    }
+
+    function cambiarCantidadCarrito(carrito, item, cantidad) {
+        if (cantidad < 1 || cantidad === item.cantidad) {
+            renderizarCarritos();
+            return;
+        }
+
+        ejecutarAccionCarrito(async () => {
+            const res = await enviarAccionCarrito('api/cambiar_cantidad_carrito.php', {
+                idLocal: carrito.idLocal,
+                idProducto: item.idProducto,
+                cantidad
+            });
+
+            if (!res.exito) mostrarMensaje(res.mensaje || 'No se pudo cambiar la cantidad', 'error');
+            await cargarCarritos();
+        });
+    }
+
+    function quitarDelCarrito(carrito, item) {
+        ejecutarAccionCarrito(async () => {
+            const res = await enviarAccionCarrito('api/quitar_producto_carrito.php', {
+                idLocal: carrito.idLocal,
+                idProducto: item.idProducto
+            });
+
+            if (!res.exito) mostrarMensaje(res.mensaje || 'No se pudo quitar el producto', 'error');
+            await cargarCarritos();
+        });
+    }
+
+    async function vaciarCarrito(carrito) {
+        const resultado = await Swal.fire({
+            title: '¿Vaciar carrito?',
+            text: `Se quitarán todos los productos de tu carrito de ${carrito.localNombre}.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, vaciar',
+            cancelButtonText: 'Volver',
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280'
+        });
+
+        if (!resultado.isConfirmed) return;
+
+        ejecutarAccionCarrito(async () => {
+            const res = await enviarAccionCarrito('api/vaciar_carrito.php', { idLocal: carrito.idLocal });
+            if (!res.exito) mostrarMensaje(res.mensaje || 'No se pudo vaciar el carrito', 'error');
+            await cargarCarritos();
+        });
+    }
+
+    async function confirmarCarrito(carrito) {
+        const resultado = await Swal.fire({
+            title: 'Comprar ahora',
+            text: `Se enviará un pedido a ${carrito.localNombre} por ${formatearColones(carrito.total)}.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Comprar ahora',
+            cancelButtonText: 'Volver',
+            confirmButtonColor: '#8E7CC3',
+            cancelButtonColor: '#6B7280'
+        });
+
+        if (!resultado.isConfirmed) return;
+
+        ejecutarAccionCarrito(async () => {
+            const res = await enviarAccionCarrito('api/confirmar_carrito.php', { idLocal: carrito.idLocal });
+
+            if (!res.exito) {
+                mostrarMensaje(res.mensaje || 'No se pudo generar el pedido', 'error');
+                await cargarCarritos();
+                return;
+            }
+
+            mostrarContadorCarrito(res.totalProductos);
+            await cargarCarritos();
+
+            const siguiente = await Swal.fire({
+                icon: 'success',
+                title: `¡Pedido ${res.numero} generado!`,
+                text: `Total: ${formatearColones(res.total)}. El local debe confirmarlo; cuando lo haga verás tu código de retiro en "Mis Pedidos".`,
+                showCancelButton: true,
+                confirmButtonText: 'Ver mis pedidos',
+                cancelButtonText: 'Quedarme aquí',
+                confirmButtonColor: '#8E7CC3',
+                cancelButtonColor: '#6B7280'
+            });
+
+            if (siguiente.isConfirmed) irAVista('vista-mis-pedidos');
+        });
     }
 
 });

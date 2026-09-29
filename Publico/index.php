@@ -44,6 +44,7 @@
                 <button class="menu-boton" data-vista="vista-mis-productos" data-rol="Comerciante"><i data-lucide="package"></i><span class="menu-boton-texto">Mis Productos</span></button>
                 <button class="menu-boton" data-vista="vista-pedidos-recibidos" data-rol="Comerciante"><i data-lucide="clipboard-list"></i><span class="menu-boton-texto">Pedidos Recibidos</span></button>
                 <button class="menu-boton" data-vista="vista-listado"><i data-lucide="store"></i><span class="menu-boton-texto">Ver Locales</span></button>
+                <button class="menu-boton" data-vista="vista-carrito" data-rol="Cliente,Comerciante"><i data-lucide="shopping-cart"></i><span class="menu-boton-texto">Mi Carrito</span><span id="carrito-contador" class="carrito-contador oculto">0</span></button>
                 <button class="menu-boton" data-vista="vista-mis-pedidos" data-rol="Cliente,Comerciante"><i data-lucide="shopping-bag"></i><span class="menu-boton-texto">Mis Pedidos</span></button>
                 <!-- <button class="menu-boton" data-vista="vista-cercanos">Locales Cercanos</button> -->
                 <button class="menu-boton" data-vista="vista-resenas" data-rol="SuperAdmin"><i data-lucide="star"></i><span class="menu-boton-texto">Reseñas</span></button>
@@ -416,6 +417,14 @@
                         <input type="text" id="mp-productos-buscar" placeholder="Buscar producto o local...">
                     </div>
                     <div id="lista-mis-productos" class="tarjetas"></div>
+                </section>
+
+                <!-- Vista: Mi Carrito (Cliente y Comerciante como comprador) -->
+                <section id="vista-carrito" class="vista oculto">
+                    <h2>Mi Carrito</h2>
+                    <p class="ayuda">Un carrito por cada local.</p>
+
+                    <div id="lista-carritos" class="pedidos-lista"></div>
                 </section>
 
                 <!-- Vista: Mis Pedidos (Cliente y Comerciante como comprador) -->
@@ -989,6 +998,10 @@
                                 <i data-lucide="clipboard-list"></i>
                                 <span>Pedidos Recibidos</span>
                             </button>
+                            <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-carrito">
+                                <i data-lucide="shopping-cart"></i>
+                                <span>Mi Carrito</span>
+                            </button>
                             <button type="button" class="acceso-dashboard-boton acceso-dashboard-tarjeta" data-vista="vista-mis-pedidos">
                                 <i data-lucide="shopping-bag"></i>
                                 <span>Mis Compras</span>
@@ -1279,7 +1292,7 @@
         <div class="modal-contenido modal-compra-contenido">
             <button type="button" id="modal-compra-cerrar" class="modal-cerrar" aria-label="Cerrar">&times;</button>
 
-            <h3>Confirmar pedido</h3>
+            <h3>Agregar al carrito</h3>
 
             <div class="compra-producto">
                 <img id="compra-imagen" src="" alt="" class="compra-producto-imagen">
@@ -1311,10 +1324,13 @@
             </div>
 
             <p class="ayuda compra-nota">
-                El local debe confirmar tu pedido. Cuando lo haga, verás tu código de retiro en "Mis Pedidos".
+                Agrégalo al carrito o cómpralo ahora.
             </p>
 
-            <button type="button" id="compra-confirmar" class="btn-comprar-producto">Confirmar pedido</button>
+            <button type="button" id="compra-agregar-carrito" class="btn-comprar-producto">
+                <i data-lucide="shopping-cart"></i> Agregar al carrito
+            </button>
+            <button type="button" id="compra-confirmar" class="btn-comprar-ahora">Comprar ahora</button>
         </div>
     </div>
 
